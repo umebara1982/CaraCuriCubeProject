@@ -151,7 +151,6 @@
       position: relative;
     }
 
-    /* ヘッダー固定 (sticky) */
     .gantt-header-container {
       display: flex;
       flex-direction: column;
@@ -179,7 +178,7 @@
       color: var(--primary-color);
       box-sizing: border-box;
       height: 22px;
-      flex-shrink: 0; /* ★固定幅を保持 */
+      flex-shrink: 0;
     }
 
     .day-cell {
@@ -222,7 +221,6 @@
     .gantt-bg-cell.sat { background-color: #F7FAFC; }
     .gantt-bg-cell.sun { background-color: #FFF5F5; }
 
-    /* バーデザイン */
     .bar {
       position: absolute;
       top: 8px;
@@ -237,7 +235,13 @@
 
     .bar.cp { background-color: var(--accent-color); }
 
-    .badge-cp { background: #FCE4D6; color: var(--accent-color); padding: 1px 3px; border-radius: 3px; font-weight: bold; font-size: 0.7rem; }
+    /* ★CPバッジのデザイン調整（★マークのみでシンプル化） */
+    .badge-cp {
+      color: var(--accent-color);
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
     .legend { display: flex; gap: 10px; font-size: 0.75rem; align-items: center; margin-left: auto; }
     .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
   </style>
@@ -246,7 +250,7 @@
 
   <header>
     <div>
-      <h1>✈️ 【Cuebus × Hamaru Strategy × NAA】統合管理工程表（ガントチャート）</h1>
+      <h1>✈️ 【NAA × Cuebus × Hamaru Strategy】統合管理工程表</h1>
       <p>期間: 2026年8月1日 〜 2027年3月31日 | オープン目標: 2026年11月10日（火）</p>
     </div>
     <div class="countdown">
@@ -259,9 +263,9 @@
     <label>絞り込み:</label>
     <select id="filter-owner" onchange="renderAll()">
       <option value="ALL">全社表示</option>
+      <option value="成田国際空港">成田国際空港</option>
       <option value="Cuebus">Cuebus</option>
       <option value="Hamaru Strategy">Hamaru Strategy</option>
-      <option value="成田国際空港">成田国際空港</option>
       <option value="全社合同">全社合同</option>
     </select>
 
@@ -291,7 +295,7 @@
             <th style="width: 85px;">担当</th>
             <th style="width: 85px;">開始日</th>
             <th style="width: 85px;">完了期限</th>
-            <th style="width: 32px;">CP</th>
+            <th style="width: 25px;">CP</th>
             <th style="width: 28px;">操作</th>
           </tr>
         </thead>
@@ -355,7 +359,6 @@
       localStorage.setItem('narita_gantt_tasks', JSON.stringify(tasks));
     }
 
-    /* ★修正版：正確な月幅計算ロジック */
     function renderGanttHeader() {
       const headerContainer = document.getElementById("gantt-header");
       headerContainer.innerHTML = "";
@@ -424,7 +427,7 @@
           <td style="text-align:center;">${t.owner}</td>
           <td><input type="date" value="${t.start}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
           <td><input type="date" value="${t.end}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
-          <td style="text-align:center;">${t.cp ? '<span class="badge-cp">★CP</span>' : '-'}</td>
+          <td style="text-align:center;">${t.cp ? '<span class="badge-cp">★</span>' : '-'}</td>
           <td style="text-align:center;"><button class="btn-delete" onclick="deleteTask(${realIdx})">消</button></td>
         `;
         tbody.appendChild(tr);
