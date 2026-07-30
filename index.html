@@ -90,7 +90,6 @@
     .btn-add { background-color: #27ae60; }
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
 
-    /* ★全体コンテナ */
     .gantt-wrapper {
       display: flex;
       width: 100%;
@@ -103,7 +102,7 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
-    /* ★左側：タスク表（幅60%） */
+    /* 左側：タスク表（幅60%） */
     .task-side {
       width: 60%;
       flex-shrink: 0;
@@ -143,7 +142,7 @@
       text-overflow: ellipsis;
     }
 
-    /* ★右側：カレンダーガント（幅40%） */
+    /* 右側：カレンダーガント（幅40%） */
     .gantt-side {
       width: 40%;
       flex-grow: 1;
@@ -242,7 +241,6 @@
       font-size: 0.9rem;
     }
 
-    /* 進捗状況プルダウンの色分けスタイル */
     .status-select {
       padding: 2px 4px;
       border-radius: 3px;
@@ -298,17 +296,17 @@
   </div>
 
   <div class="gantt-wrapper">
-    <!-- 左側：タスク表（60%） -->
+    <!-- 左側：タスク表 -->
     <div class="task-side" id="task-side" onscroll="syncScroll('task')">
       <table class="task-table">
         <thead>
           <tr>
-            <th style="width: 28px;">ID</th>
-            <th style="width: 160px;">タスク名称</th>
-            <th style="width: 85px;">担当</th>
+            <th style="width: 45px;">ID</th>
+            <th style="width: 150px;">タスク名称</th>
+            <th style="width: 100px;">担当</th>
             <th style="width: 85px;">開始日</th>
             <th style="width: 85px;">完了期限</th>
-            <th style="width: 70px;">進捗状況</th>
+            <th style="width: 65px;">進捗状況</th>
             <th style="width: 25px;">CP</th>
             <th style="width: 28px;">操作</th>
           </tr>
@@ -318,7 +316,7 @@
       </table>
     </div>
 
-    <!-- 右側：ガントチャート（40%） -->
+    <!-- 右側：ガントチャート -->
     <div class="gantt-side" id="gantt-side" onscroll="syncScroll('gantt')">
       <div class="gantt-header-container" id="gantt-header">
       </div>
@@ -332,7 +330,6 @@
     const END_DATE = new Date("2027-03-31");
     const DAY_WIDTH = 24;
 
-    /* ★初期設定：開始日・完了期限ともに「未入力（空欄）""」に設定 */
     const defaultTasks = [
       { id: "1.1", cat: "開発", name: "CUEBUS詳細設計（100V 4.5kW電源対応）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
       { id: "1.2", cat: "空港対応", name: "T2現地与件確認（床荷重・電源位置）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
@@ -444,9 +441,18 @@
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td style="text-align:center;">${t.id}</td>
+          <!-- ★ID手入力変更可能 -->
+          <td><input type="text" value="${t.id}" onchange="updateTask(${realIdx}, 'id', this.value)" style="width: 100%; text-align: center;"></td>
           <td><input type="text" value="${t.name}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
-          <td style="text-align:center;">${t.owner}</td>
+          <!-- ★担当3社＋合同プルダウン選択可能 -->
+          <td style="text-align:center;">
+            <select onchange="updateTask(${realIdx}, 'owner', this.value)" style="width: 100%;">
+              <option value="Cuebus" ${t.owner === 'Cuebus' ? 'selected' : ''}>Cuebus</option>
+              <option value="Hamaru Strategy" ${t.owner === 'Hamaru Strategy' ? 'selected' : ''}>Hamaru Strategy</option>
+              <option value="成田国際空港" ${t.owner === '成田国際空港' ? 'selected' : ''}>成田国際空港</option>
+              <option value="全社合同" ${t.owner === '全社合同' ? 'selected' : ''}>全社合同</option>
+            </select>
+          </td>
           <td><input type="date" value="${t.start}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
           <td><input type="date" value="${t.end}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
           <td style="text-align:center;">
@@ -475,7 +481,6 @@
           gRow.appendChild(bgCell);
         });
 
-        // 開始日と完了期限の両方が入力されている場合のみバーを描画
         if (t.start && t.end) {
           const tStart = new Date(t.start);
           const tEnd = new Date(t.end);
@@ -530,10 +535,11 @@
       }
     }
 
+    /* ★新規タスク追加ロジック：空欄ID・初期担当Cuebusで追加 */
     function addNewTask() {
-      const newId = "加-" + (tasks.length + 1);
+      const nextNum = tasks.length + 1;
       tasks.push({
-        id: newId, cat: "追加", name: "新規タスク", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false
+        id: "8." + nextNum, cat: "追加", name: "新規追加タスク", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false
       });
       saveTasks();
       renderAll();
