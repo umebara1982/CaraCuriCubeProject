@@ -90,6 +90,7 @@
     .btn-add { background-color: #27ae60; }
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
 
+    /* ★全体コンテナ */
     .gantt-wrapper {
       display: flex;
       width: 100%;
@@ -102,9 +103,9 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
-    /* 左側：タスク表 */
+    /* ★左側：タスク表（幅60%） */
     .task-side {
-      width: 50%;
+      width: 60%;
       flex-shrink: 0;
       border-right: 2px solid var(--primary-color);
       background: #FFF;
@@ -142,9 +143,9 @@
       text-overflow: ellipsis;
     }
 
-    /* 右側：カレンダーガント */
+    /* ★右側：カレンダーガント（幅40%） */
     .gantt-side {
-      width: 50%;
+      width: 40%;
       flex-grow: 1;
       overflow: auto;
       background: #FAFAFA;
@@ -235,12 +236,24 @@
 
     .bar.cp { background-color: var(--accent-color); }
 
-    /* ★CPバッジのデザイン調整（★マークのみでシンプル化） */
     .badge-cp {
       color: var(--accent-color);
       font-weight: bold;
       font-size: 0.9rem;
     }
+
+    /* 進捗状況プルダウンの色分けスタイル */
+    .status-select {
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-weight: bold;
+      font-size: 0.72rem;
+      border: 1px solid #ccc;
+    }
+    .status-not-started { background-color: #f2f2f2; color: #666; }
+    .status-in-progress { background-color: #fff3cd; color: #856404; }
+    .status-pending { background-color: #ffe8d6; color: #d9534f; }
+    .status-completed { background-color: #d4edda; color: #155724; }
 
     .legend { display: flex; gap: 10px; font-size: 0.75rem; align-items: center; margin-left: auto; }
     .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
@@ -285,16 +298,17 @@
   </div>
 
   <div class="gantt-wrapper">
-    <!-- 左側：タスク表 -->
+    <!-- 左側：タスク表（60%） -->
     <div class="task-side" id="task-side" onscroll="syncScroll('task')">
       <table class="task-table">
         <thead>
           <tr>
             <th style="width: 28px;">ID</th>
-            <th style="width: 170px;">タスク名称</th>
+            <th style="width: 160px;">タスク名称</th>
             <th style="width: 85px;">担当</th>
             <th style="width: 85px;">開始日</th>
             <th style="width: 85px;">完了期限</th>
+            <th style="width: 70px;">進捗状況</th>
             <th style="width: 25px;">CP</th>
             <th style="width: 28px;">操作</th>
           </tr>
@@ -304,7 +318,7 @@
       </table>
     </div>
 
-    <!-- 右側：ガントチャート -->
+    <!-- 右側：ガントチャート（40%） -->
     <div class="gantt-side" id="gantt-side" onscroll="syncScroll('gantt')">
       <div class="gantt-header-container" id="gantt-header">
       </div>
@@ -318,29 +332,30 @@
     const END_DATE = new Date("2027-03-31");
     const DAY_WIDTH = 24;
 
+    /* ★初期設定：開始日・完了期限ともに「未入力（空欄）""」に設定 */
     const defaultTasks = [
-      { id: "1.1", cat: "開発", name: "CUEBUS詳細設計（100V 4.5kW電源対応）", owner: "Cuebus", start: "2026-08-01", end: "2026-08-10", cp: true, status: "進行中" },
-      { id: "1.2", cat: "空港対応", name: "T2現地与件確認（床荷重・電源位置）", owner: "Cuebus", start: "2026-08-01", end: "2026-08-15", cp: true, status: "進行中" },
-      { id: "1.3", cat: "開発", name: "昇降リフト・メカ機構詳細設計", owner: "Cuebus", start: "2026-08-11", end: "2026-08-31", cp: true, status: "未着手" },
-      { id: "1.4", cat: "開発", name: "制御開発（昇降・カプセル排出ロジック）", owner: "Cuebus", start: "2026-08-20", end: "2026-09-20", cp: true, status: "未着手" },
-      { id: "1.5", cat: "開発", name: "演出設計（光・音演出・正面ハンガー連動）", owner: "Cuebus", start: "2026-08-20", end: "2026-09-20", cp: false, status: "未着手" },
-      { id: "2.1", cat: "商品/IP", name: "第1弾IP交渉・契約締結・デザイン許諾", owner: "Hamaru Strategy", start: "2026-08-01", end: "2026-08-20", cp: true, status: "進行中" },
-      { id: "2.2", cat: "商品/IP", name: "Tシャツ仕様決定・証紙タグ作成", owner: "Hamaru Strategy", start: "2026-08-15", end: "2026-08-25", cp: false, status: "未着手" },
-      { id: "2.3", cat: "商品/IP", name: "Tシャツ量産発注 & BOXアセンブリ", owner: "Hamaru Strategy", start: "2026-08-26", end: "2026-09-25", cp: true, status: "未着手" },
-      { id: "2.4", cat: "商品/IP", name: "Tシャツ納品・現地支給手配", owner: "Hamaru Strategy", start: "2026-09-26", end: "2026-10-20", cp: true, status: "未着手" },
-      { id: "3.1", cat: "システム", name: "Shopify構築（多言語・決済連携）", owner: "Hamaru Strategy", start: "2026-08-20", end: "2026-09-30", cp: false, status: "未着手" },
-      { id: "3.2", cat: "システム", name: "QR認証・真贋証明システム開発", owner: "Hamaru Strategy", start: "2026-09-01", end: "2026-10-10", cp: false, status: "未着手" },
-      { id: "4.1", cat: "行政", name: "消防確認（成田市消防・不燃証明提出）", owner: "Cuebus", start: "2026-08-15", end: "2026-09-30", cp: true, status: "未着手" },
-      { id: "5.1", cat: "空港対応", name: "共通決済端末調達・プロトコル開示", owner: "成田国際空港", start: "2026-08-10", end: "2026-09-15", cp: true, status: "進行中" },
-      { id: "5.2", cat: "空港対応", name: "搬入計画書作成・セキュリティパス申請", owner: "Cuebus", start: "2026-09-15", end: "2026-10-15", cp: true, status: "未着手" },
-      { id: "5.3", cat: "店舗運用", name: "現場接客・補充スタッフ（バイト）採用", owner: "Cuebus", start: "2026-09-15", end: "2026-10-15", cp: false, status: "未着手" },
-      { id: "6.1", cat: "結合テスト", name: "工場内FAT（動作×演出×決済×QR）", owner: "Cuebus", start: "2026-10-21", end: "2026-10-25", cp: true, status: "未着手" },
-      { id: "6.2", cat: "現地施工", name: "成田空港 T2現場 夜間搬入・設置工事", owner: "Cuebus", start: "2026-10-28", end: "2026-11-02", cp: true, status: "未着手" },
-      { id: "6.3", cat: "リハーサル", name: "現地夜間総合リハーサル・消防検査", owner: "全社合同", start: "2026-11-03", end: "2026-11-05", cp: true, status: "未着手" },
-      { id: "6.4", cat: "運用準備", name: "プレオープン（関係者内覧・運用テスト）", owner: "全社合同", start: "2026-11-06", end: "2026-11-09", cp: true, status: "未着手" },
-      { id: "6.5", cat: "オープン", name: "★グランドオープン（9:00〜21:00）", owner: "全社合同", start: "2026-11-10", end: "2026-11-10", cp: true, status: "未着手" },
-      { id: "7.1", cat: "初期運用", name: "初期稼働モニタリング & 商品追加手配", owner: "Cuebus", start: "2026-11-11", end: "2026-12-31", cp: false, status: "未着手" },
-      { id: "7.2", cat: "Phase2", name: "第2弾IP企画 & 他グッズ展開検討", owner: "Hamaru Strategy", start: "2027-01-05", end: "2027-03-31", cp: false, status: "未着手" }
+      { id: "1.1", cat: "開発", name: "CUEBUS詳細設計（100V 4.5kW電源対応）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
+      { id: "1.2", cat: "空港対応", name: "T2現地与件確認（床荷重・電源位置）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
+      { id: "1.3", cat: "開発", name: "昇降リフト・メカ機構詳細設計", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
+      { id: "1.4", cat: "開発", name: "制御開発（昇降・カプセル排出ロジック）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
+      { id: "1.5", cat: "開発", name: "演出設計（光・音演出・正面ハンガー連動）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false },
+      { id: "2.1", cat: "商品/IP", name: "第1弾IP交渉・契約締結・デザイン許諾", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: true },
+      { id: "2.2", cat: "商品/IP", name: "Tシャツ仕様決定・証紙タグ作成", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false },
+      { id: "2.3", cat: "商品/IP", name: "Tシャツ量産発注 & BOXアセンブリ", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: true },
+      { id: "2.4", cat: "商品/IP", name: "Tシャツ納品・現地支給手配", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: true },
+      { id: "3.1", cat: "システム", name: "Shopify構築（多言語・決済連携）", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false },
+      { id: "3.2", cat: "システム", name: "QR認証・真贋証明システム開発", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false },
+      { id: "4.1", cat: "行政", name: "消防確認（成田市消防・不燃証明提出）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
+      { id: "5.1", cat: "空港対応", name: "共通決済端末調達・プロトコル開示", owner: "成田国際空港", start: "", end: "", status: "未着手", cp: true },
+      { id: "5.2", cat: "空港対応", name: "搬入計画書作成・セキュリティパス申請", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
+      { id: "5.3", cat: "店舗運用", name: "現場接客・補充スタッフ（バイト）採用", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false },
+      { id: "6.1", cat: "結合テスト", name: "工場内FAT（動作×演出×決済×QR）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
+      { id: "6.2", cat: "現地施工", name: "成田空港 T2現場 夜間搬入・設置工事", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
+      { id: "6.3", cat: "リハーサル", name: "現地夜間総合リハーサル・消防検査", owner: "全社合同", start: "", end: "", status: "未着手", cp: true },
+      { id: "6.4", cat: "運用準備", name: "プレオープン（関係者内覧・運用テスト）", owner: "全社合同", start: "", end: "", status: "未着手", cp: true },
+      { id: "6.5", cat: "オープン", name: "★グランドオープン（9:00〜21:00）", owner: "全社合同", start: "", end: "", status: "未着手", cp: true },
+      { id: "7.1", cat: "初期運用", name: "初期稼働モニタリング & 商品追加手配", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false },
+      { id: "7.2", cat: "Phase2", name: "第2弾IP企画 & 他グッズ展開検討", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false }
     ];
 
     let tasks = JSON.parse(localStorage.getItem('narita_gantt_tasks')) || defaultTasks;
@@ -396,6 +411,13 @@
       headerContainer.appendChild(dayRow);
     }
 
+    function getStatusClass(status) {
+      if (status === '進行中') return 'status-in-progress';
+      if (status === '保留中') return 'status-pending';
+      if (status === '完了') return 'status-completed';
+      return 'status-not-started';
+    }
+
     function renderAll() {
       initDays();
       renderGanttHeader();
@@ -427,6 +449,14 @@
           <td style="text-align:center;">${t.owner}</td>
           <td><input type="date" value="${t.start}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
           <td><input type="date" value="${t.end}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
+          <td style="text-align:center;">
+            <select class="status-select ${getStatusClass(t.status)}" onchange="updateTask(${realIdx}, 'status', this.value)">
+              <option value="未着手" ${t.status === '未着手' ? 'selected' : ''}>未着手</option>
+              <option value="進行中" ${t.status === '進行中' ? 'selected' : ''}>進行中</option>
+              <option value="保留中" ${t.status === '保留中' ? 'selected' : ''}>保留中</option>
+              <option value="完了" ${t.status === '完了' ? 'selected' : ''}>完了</option>
+            </select>
+          </td>
           <td style="text-align:center;">${t.cp ? '<span class="badge-cp">★</span>' : '-'}</td>
           <td style="text-align:center;"><button class="btn-delete" onclick="deleteTask(${realIdx})">消</button></td>
         `;
@@ -445,20 +475,23 @@
           gRow.appendChild(bgCell);
         });
 
-        const tStart = new Date(t.start);
-        const tEnd = new Date(t.end);
+        // 開始日と完了期限の両方が入力されている場合のみバーを描画
+        if (t.start && t.end) {
+          const tStart = new Date(t.start);
+          const tEnd = new Date(t.end);
 
-        if (tEnd >= START_DATE && tStart <= END_DATE) {
-          const startDiff = Math.max(0, Math.floor((tStart - START_DATE) / (1000 * 60 * 60 * 24)));
-          const duration = Math.max(1, Math.floor((tEnd - tStart) / (1000 * 60 * 60 * 24)) + 1);
+          if (tEnd >= START_DATE && tStart <= END_DATE) {
+            const startDiff = Math.max(0, Math.floor((tStart - START_DATE) / (1000 * 60 * 60 * 24)));
+            const duration = Math.max(1, Math.floor((tEnd - tStart) / (1000 * 60 * 60 * 24)) + 1);
 
-          const bar = document.createElement("div");
-          bar.className = "bar" + (t.cp ? " cp" : "");
-          bar.style.left = (startDiff * DAY_WIDTH) + "px";
-          bar.style.width = (duration * DAY_WIDTH - 1) + "px";
-          bar.title = `${t.name} (${t.start} 〜 ${t.end})`;
+            const bar = document.createElement("div");
+            bar.className = "bar" + (t.cp ? " cp" : "");
+            bar.style.left = (startDiff * DAY_WIDTH) + "px";
+            bar.style.width = (duration * DAY_WIDTH - 1) + "px";
+            bar.title = `${t.name} (${t.start} 〜 ${t.end})`;
 
-          gRow.appendChild(bar);
+            gRow.appendChild(bar);
+          }
         }
 
         ganttBody.appendChild(gRow);
@@ -500,7 +533,7 @@
     function addNewTask() {
       const newId = "加-" + (tasks.length + 1);
       tasks.push({
-        id: newId, cat: "追加", name: "新規タスク", owner: "Cuebus", start: "2026-08-01", end: "2026-08-10", cp: false, status: "未着手"
+        id: newId, cat: "追加", name: "新規タスク", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false
       });
       saveTasks();
       renderAll();
