@@ -89,9 +89,21 @@
 
     .btn-add { background-color: #27ae60; }
     .btn-csv { background-color: #8e44ad; }
-    .btn-copy-code { background-color: #6c5ce7; } /* コピー機能用パープル */
+    .btn-copy-full { background-color: #6c5ce7; } /* 全コピー機能用パープル */
+    .btn-admin { background-color: #d35400; } /* 管理者ボタン用オレンジ */
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
     .btn-move { background-color: #34495e; padding: 2px 4px; font-size: 0.72rem; }
+
+    /* 裏メニューエリアの初期状態（非表示） */
+    .admin-menu {
+      display: none;
+      gap: 10px;
+      align-items: center;
+      background: #f1f2f6;
+      padding: 4px 10px;
+      border-radius: 4px;
+      border: 1px dashed #d35400;
+    }
 
     .drag-handle {
       cursor: grab;
@@ -374,10 +386,18 @@
     </select>
 
     <button onclick="addNewTask()" class="btn-add">＋ 新規タスク追加</button>
-    <button onclick="reorderAllIDs()" style="background: #2980b9;">🔢 ID一括振り直し</button>
-    <button onclick="copyCurrentConfig()" class="btn-copy-code">📋 初期値コードをコピー</button>
     <button onclick="exportCSV()" class="btn-csv">📥 CSV出力</button>
-    <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
+
+    <!-- 🔑 裏メニュー解放用ボタン -->
+    <button onclick="toggleAdminMenu()" class="btn-admin">🔑 管理者</button>
+
+    <!-- 🔒 秘密の裏メニューエリア（パスワード入力時のみ表示） -->
+    <div id="admin-menu" class="admin-menu">
+      <span style="font-size:0.75rem; font-weight:bold; color:#d35400;">【裏メニュー】</span>
+      <button onclick="reorderAllIDs()" style="background: #2980b9;">🔢 ID一括振り直し</button>
+      <button onclick="copyFullHTML()" class="btn-copy-full">📋 HTML全体をコピー（GitHub用）</button>
+      <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
+    </div>
 
     <div class="legend">
       <span><span class="legend-box" style="background:#C00000;"></span> 赤：最重要パス(CP)</span>
@@ -436,34 +456,39 @@
     const DAY_WIDTH = 24;
     const TODAY = new Date();
 
+    // 🔒 管理者用パスワード（※必要に応じて変更してください）
+    const ADMIN_PASSWORD = "1234";
+
     const defaultTasks = [
-      { id: "1.1", cat: "開発", name: "CUEBUS詳細設計（100V 4.5kW電源対応）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
-      { id: "1.2", cat: "空港対応", name: "現地与件確認（電源位置）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
-      { id: "1.3", cat: "開発", name: "昇降リフト・メカ機構詳細設計", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
-      { id: "1.4", cat: "開発", name: "制御開発（昇降・カプセル排出ロジック）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
-      { id: "1.5", cat: "開発", name: "演出設計（光・音演出・正面ハンガー連動）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false },
+      { id: "1.1", cat: "開発", name: "CUEBUS詳細設計", owner: "Cuebus", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true },
+      { id: "1.2", cat: "空港対応", name: "現地与件確認（電源位置）", owner: "Cuebus", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true },
+      { id: "1.3", cat: "追加", name: "電源確認（用意可能A数）", owner: "成田国際空港", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true },
+      { id: "1.4", cat: "開発", name: "昇降リフト・メカ機構詳細設計", owner: "Cuebus", start: "2026-09-01", end: "2026-10-30", status: "進行中", cp: true },
+      { id: "1.5", cat: "開発", name: "制御開発（昇降・動きのロジック）", owner: "Cuebus", start: "2026-09-01", end: "2026-10-30", status: "未着手", cp: true },
+      { id: "1.6", cat: "開発", name: "演出設計（光・音演出・連動）", owner: "Cuebus", start: "2026-09-01", end: "2026-09-30", status: "未着手", cp: false },
       { id: "2.1", cat: "商品/IP", name: "第1弾IP交渉・契約締結・デザイン許諾", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: true },
       { id: "2.2", cat: "商品/IP", name: "Tシャツ仕様決定・証紙タグ作成", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false },
       { id: "2.3", cat: "商品/IP", name: "Tシャツ量産発注 & BOXアセンブリ", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: true },
       { id: "2.4", cat: "商品/IP", name: "Tシャツ納品・現地支給手配", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: true },
-      { id: "3.1", cat: "システム", name: "Shopify構築（多言語・決済連携）", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false },
-      { id: "3.2", cat: "システム", name: "QR認証・真贋証明システム開発", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false },
-      { id: "4.1", cat: "行政", name: "消防確認（成田市消防・不燃証明提出）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
+      { id: "3.1", cat: "システム", name: "Shopify構築（多言語・決済連携）", owner: "Cuebus", start: "2026-08-28", end: "2026-08-28", status: "未着手", cp: false },
+      { id: "3.2", cat: "システム", name: "QR認証・真贋証明システム確定", owner: "Cuebus", start: "2026-10-30", end: "2026-10-30", status: "未着手", cp: false },
+      { id: "4.1", cat: "行政", name: "消防確認（成田市消防・不燃証明提出）", owner: "Cuebus", start: "2026-09-01", end: "2026-09-30", status: "未着手", cp: true },
       { id: "5.1", cat: "空港対応", name: "共通決済端末調達・プロトコル開示", owner: "成田国際空港", start: "", end: "", status: "未着手", cp: true },
-      { id: "5.2", cat: "空港対応", name: "搬入計画書作成・セキュリティパス申請", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
-      { id: "5.3", cat: "店舗運用", name: "現場接客・補充スタッフ（バイト）採用", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false },
-      { id: "6.1", cat: "結合テスト", name: "工場内FAT（搬入前事前テスト）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
-      { id: "6.2", cat: "現地施工", name: "成田空港 T2現場 夜間搬入・設置工事", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
-      { id: "6.3", cat: "リハーサル", name: "現地夜間総合リハーサル・消防検査", owner: "全社合同", start: "", end: "", status: "未着手", cp: true },
-      { id: "6.4", cat: "運用準備", name: "プレオープン（関係者内覧・運用テスト）", owner: "全社合同", start: "", end: "", status: "未着手", cp: true },
-      { id: "6.5", cat: "オープン", name: "★グランドオープン（9:00〜21:00）", owner: "全社合同", start: "", end: "", status: "未着手", cp: true },
-      { id: "7.1", cat: "初期運用", name: "初期稼働モニタリング & 商品追加手配", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false },
+      { id: "5.2", cat: "空港対応", name: "搬入計画書作成", owner: "Cuebus", start: "2026-10-01", end: "2026-10-30", status: "未着手", cp: true },
+      { id: "5.3", cat: "店舗運用", name: "現場接客・補充スタッフ（バイト）採用", owner: "Cuebus", start: "2026-10-01", end: "2026-10-30", status: "未着手", cp: false },
+      { id: "6.1", cat: "結合テスト", name: "搬入前事前テスト（動作×演出×決済×QR）", owner: "Cuebus", start: "2026-10-01", end: "2026-10-30", status: "未着手", cp: true },
+      { id: "6.2", cat: "現地施工", name: "成田空港 T2現場 搬入・設置工事", owner: "Cuebus", start: "2026-11-02", end: "2026-11-06", status: "未着手", cp: true },
+      { id: "6.3", cat: "リハーサル", name: "現地総合リハーサル", owner: "全社合同", start: "2026-11-06", end: "2026-11-06", status: "未着手", cp: true },
+      { id: "6.4", cat: "運用準備", name: "プレオープン（関係者内覧・運用テスト）", owner: "全社合同", start: "2026-11-09", end: "2026-11-09", status: "未着手", cp: true },
+      { id: "6.5", cat: "オープン", name: "★グランドオープン（9:00〜）", owner: "全社合同", start: "2026-11-10", end: "2026-11-10", status: "未着手", cp: true },
+      { id: "7.1", cat: "初期運用", name: "初期稼働モニタリング", owner: "Cuebus", start: "2026-11-10", end: "2026-11-30", status: "未着手", cp: false },
       { id: "7.2", cat: "Phase2", name: "第2弾IP企画 & 他グッズ展開検討", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false }
     ];
 
     let tasks = [];
     let daysArray = [];
     let draggedIndex = null;
+    let isAdminUnlocked = false;
 
     tasksRef.on('value', (snapshot) => {
       const data = snapshot.val();
@@ -490,19 +515,44 @@
       updateRef.set(timeString);
     }
 
-    /* 📋 今画面に入力されている最新データを「defaultTasks」用のコードとしてクリップボードにコピーする関数 */
-    function copyCurrentConfig() {
-      let code = "    const defaultTasks = [\n";
+    /* 🔑 管理者裏メニューの表示・非表示切替 */
+    function toggleAdminMenu() {
+      const menu = document.getElementById("admin-menu");
+      if (isAdminUnlocked) {
+        menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+      } else {
+        const input = prompt("管理者パスワードを入力してください:");
+        if (input === ADMIN_PASSWORD) {
+          isAdminUnlocked = true;
+          menu.style.display = "flex";
+          alert("管理者モードが解放されました！");
+        } else if (input !== null) {
+          alert("パスワードが違います。");
+        }
+      }
+    }
+
+    /* 📋 【改善点】一番上から一番下までの完全なHTMLソースコードを自動生成して一括コピー */
+    function copyFullHTML() {
+      let defaultTasksCode = "    const defaultTasks = [\n";
       tasks.forEach((t, index) => {
         const isLast = index === tasks.length - 1;
-        code += `      { id: "${t.id || ''}", cat: "${t.cat || ''}", name: "${t.name || ''}", owner: "${t.owner || ''}", start: "${t.start || ''}", end: "${t.end || ''}", status: "${t.status || '未着手'}", cp: ${t.cp ? 'true' : 'false'} }${isLast ? '' : ','}\n`;
+        defaultTasksCode += `      { id: "${t.id || ''}", cat: "${t.cat || ''}", name: "${t.name || ''}", owner: "${t.owner || ''}", start: "${t.start || ''}", end: "${t.end || ''}", status: "${t.status || '未着手'}", cp: ${t.cp ? 'true' : 'false'} }${isLast ? '' : ','}\n`;
       });
-      code += "    ];";
+      defaultTasksCode += "    ];";
 
-      navigator.clipboard.writeText(code).then(() => {
-        alert("現在の最新タスクデータを「初期値コード」としてコピーしました！\n\nGitHubの「const defaultTasks = [ ... ];」の部分にそのまま上書き貼り付けしてください。");
+      // 現在のドキュメントのHTML全体を取得し、defaultTasks部分だけ最新版に置換
+      let fullDoc = document.documentElement.outerHTML;
+      let newHTML = "<!DOCTYPE html>\n<html lang=\"ja\">\n" + fullDoc;
+
+      // HTML内の defaultTasks 部分を入れ替える
+      const reg = /const defaultTasks = \[[\s\S]*?\];/;
+      newHTML = newHTML.replace(reg, defaultTasksCode);
+
+      navigator.clipboard.writeText(newHTML).then(() => {
+        alert("🎉 最新のHTMLコード一式（最初から最後まで）をコピーしました！\n\nGitHubの `index.html` 編集画面で 全選択（Cmd+A または Ctrl+A）して、そのまま貼り付け（Cmd+V または Ctrl+V）してください！");
       }).catch(err => {
-        alert("コピーに失敗しました。手動でコピーしてください。");
+        alert("コピーに失敗しました。");
       });
     }
 
