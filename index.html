@@ -368,6 +368,7 @@
     </select>
 
     <button onclick="addNewTask()" class="btn-add">＋ 新規タスク追加</button>
+    <button onclick="reorderAllIDs()" style="background: #2980b9;">🔢 ID一括振り直し</button>
     <button onclick="exportCSV()" class="btn-csv">📥 CSV出力</button>
     <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
 
@@ -384,7 +385,7 @@
         <thead>
           <tr>
             <th style="width: 25px;"></th>
-            <th style="width: 40px;">ID</th>
+            <th style="width: 45px;">ID</th>
             <th style="width: 150px;">タスク名称</th>
             <th style="width: 95px;">担当</th>
             <th style="width: 85px;">開始日</th>
@@ -480,6 +481,54 @@
       const now = new Date();
       const timeString = `${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
       updateRef.set(timeString);
+    }
+
+    /* 🔢 並び順（親番号）を保持したまま自動でIDを順にナンバリングし直す処理 */
+    function autoRenumberIDs() {
+      let currentMainGroup = "1";
+      let subIndex = 1;
+
+      tasks.forEach((t) => {
+        let mainGroup = "1";
+        if (t.id && String(t.id).includes('.')) {
+          mainGroup = String(t.id).split('.')[0];
+        } else if (t.id && !isNaN(parseInt(t.id))) {
+          mainGroup = String(t.id);
+        }
+
+        if (mainGroup !== currentMainGroup) {
+          currentMainGroup = mainGroup;
+          subIndex = 1;
+        }
+
+        t.id = `${currentMainGroup}.${subIndex}`;
+        subIndex++;
+      });
+    }
+
+    /* ボタンを押した時に1.1から順に全体を一括再ナンバリングする機能 */
+    function reorderAllIDs() {
+      let currentGroup = 1;
+      let subGroup = 1;
+
+      tasks.forEach((t, i) => {
+        // 親番号が切り替わっている場合の自動グループ判別
+        if (i > 0) {
+          const prevMain = tasks[i-1].id ? tasks[i-1].id.split('.')[0] : "1";
+          const currMain = t.id ? t.id.split('.')[0] : "1";
+          if (prevMain !== currMain) {
+            currentGroup = currMain;
+            subGroup = 1;
+          }
+        } else {
+          currentGroup = t.id ? t.id.split('.')[0] : "1";
+        }
+
+        t.id = `${currentGroup}.${subGroup}`;
+        subGroup++;
+      });
+
+      saveTasks();
     }
 
     function initDays() {
@@ -686,6 +735,7 @@
       if (draggedIndex !== null && draggedIndex !== targetIndex) {
         const item = tasks.splice(draggedIndex, 1)[0];
         tasks.splice(targetIndex, 0, item);
+        autoRenumberIDs(); // ⚡ ドラッグ移動後に自動でIDを綺麗に繰り上げて再割り振る
         saveTasks();
       }
     }
@@ -699,10 +749,12 @@
       if (direction === 'up' && idx > 0) {
         const item = tasks.splice(idx, 1)[0];
         tasks.splice(idx - 1, 0, item);
+        autoRenumberIDs(); // ⚡ 移動後に自動でIDを再ナンバリング
         saveTasks();
       } else if (direction === 'down' && idx < tasks.length - 1) {
         const item = tasks.splice(idx, 1)[0];
         tasks.splice(idx + 1, 0, item);
+        autoRenumberIDs(); // ⚡ 移動後に自動でIDを再ナンバリング
         saveTasks();
       }
     }
@@ -735,38 +787,19 @@
     function deleteTask(idx) {
       if (confirm(`タスク「${tasks[idx].name}」を削除しますか？`)) {
         tasks.splice(idx, 1);
+        autoRenumberIDs(); // ⚡ 削除後も綺麗に詰め直す
         saveTasks();
       }
     }
 
-    // 💡 文脈に合わせて自動でIDを推測・計算するロジック
-    function generateSmartID() {
-      if (tasks.length === 0) return "1.1";
-
-      const lastTask = tasks[tasks.length - 1];
-      const lastId = lastTask ? String(lastTask.id || '') : '';
-
-      // IDが「1.2」のような小数形式の場合
-      if (lastId.includes('.')) {
-        const parts = lastId.split('.');
-        const main = parts[0];
-        const sub = parseInt(parts[1], 10);
-        if (!isNaN(sub)) {
-          return `${main}.${sub + 1}`;
-        }
-      }
-      
-      // IDが単一の数字（「1」「2」など）の場合
-      const num = parseInt(lastId, 10);
-      if (!isNaN(num)) {
-        return `${num + 1}.1`;
-      }
-
-      return `${tasks.length + 1}.1`;
-    }
-
     function addNewTask() {
-      const newID = generateSmartID();
+      const lastTask = tasks[tasks.length - 1];
+      let newID = "1.1";
+      if (lastTask && lastTask.id) {
+        const parts = lastTask.id.split('.');
+        newID = `${parts[0]}.${parseInt(parts[1] || 0) + 1}`;
+      }
+
       tasks.push({
         id: newID, cat: "追加", name: "新規追加タスク", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false
       });
