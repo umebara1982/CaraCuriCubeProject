@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>成田空港 IPエンタメ什器導入 プロジェクト統合管理工程表</title>
+
+  <!-- Firebase SDK の読み込み -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
   <style>
     :root {
       --primary-color: #1B365D;
@@ -20,7 +25,7 @@
       color: #333;
       margin: 0;
       padding: 15px;
-      user-select: none; /* ドラッグ中のテキスト選択防止 */
+      user-select: none;
     }
 
     header {
@@ -34,16 +39,8 @@
       align-items: center;
     }
 
-    header h1 {
-      margin: 0;
-      font-size: 1.2rem;
-    }
-
-    header p {
-      margin: 3px 0 0 0;
-      font-size: 0.8rem;
-      opacity: 0.8;
-    }
+    header h1 { margin: 0; font-size: 1.2rem; }
+    header p { margin: 3px 0 0 0; font-size: 0.8rem; opacity: 0.8; }
 
     .countdown {
       background: rgba(255, 255, 255, 0.15);
@@ -52,11 +49,7 @@
       text-align: center;
     }
 
-    .countdown-num {
-      font-size: 1.3rem;
-      font-weight: bold;
-      color: #FFD700;
-    }
+    .countdown-num { font-size: 1.3rem; font-weight: bold; color: #FFD700; }
 
     .controls {
       background: var(--card-bg);
@@ -92,6 +85,19 @@
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
     .btn-move { background-color: #34495e; padding: 2px 4px; font-size: 0.72rem; }
 
+    .sync-badge {
+      background-color: #27ae60;
+      color: white;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
     .gantt-wrapper {
       display: flex;
       width: 100%;
@@ -105,7 +111,6 @@
       position: relative;
     }
 
-    /* ★可変左側：タスク表（デフォルト60%） */
     .task-side {
       width: 60%;
       min-width: 300px;
@@ -115,7 +120,6 @@
       overflow-x: auto;
     }
 
-    /* ★境界調整バー（リサイザー） */
     .resizer {
       width: 8px;
       background: var(--primary-color);
@@ -123,14 +127,10 @@
       flex-shrink: 0;
       z-index: 20;
       transition: background 0.2s;
-      position: relative;
     }
 
-    .resizer:hover, .resizer.resizing {
-      background: #3498db;
-    }
+    .resizer:hover, .resizer.resizing { background: #3498db; }
 
-    /* ★可変右側：カレンダーガント */
     .gantt-side {
       flex-grow: 1;
       min-width: 200px;
@@ -169,16 +169,9 @@
       text-overflow: ellipsis;
     }
 
-    tr.draggable-row {
-      cursor: grab;
-    }
-    tr.draggable-row:active {
-      cursor: grabbing;
-    }
-    tr.dragging {
-      opacity: 0.4;
-      background-color: #e0e0e0;
-    }
+    tr.draggable-row { cursor: grab; }
+    tr.draggable-row:active { cursor: grabbing; }
+    tr.dragging { opacity: 0.4; background-color: #e0e0e0; }
 
     .gantt-header-container {
       display: flex;
@@ -192,9 +185,7 @@
       box-sizing: border-box;
     }
 
-    .month-row, .day-row {
-      display: flex;
-    }
+    .month-row, .day-row { display: flex; }
 
     .month-cell {
       border-right: 1px solid var(--border-color);
@@ -227,10 +218,7 @@
     .day-cell.sat { background-color: #F0F6FF; color: #0055AA; }
     .day-cell.sun { background-color: #FFF0F0; color: #CC0000; }
 
-    .gantt-body {
-      position: relative;
-      background-color: #FFFFFF;
-    }
+    .gantt-body { position: relative; background-color: #FFFFFF; }
 
     .gantt-row {
       display: flex;
@@ -267,10 +255,7 @@
 
     .bar.cp { background-color: var(--accent-color); }
 
-    .cp-select {
-      font-weight: bold;
-      color: var(--accent-color);
-    }
+    .cp-select { font-weight: bold; color: var(--accent-color); }
 
     .status-select {
       padding: 2px 4px;
@@ -307,9 +292,12 @@
       <h1>✈️ 【NAA × Cuebus × Hamaru Strategy】統合管理工程表</h1>
       <p>期間: 2026年8月1日 〜 2027年3月31日 | オープン目標: 2026年11月10日（火）</p>
     </div>
-    <div class="countdown">
-      オープンまで
-      <div class="countdown-num" id="countdown">-- 日</div>
+    <div style="display: flex; gap: 15px; align-items: center;">
+      <div class="sync-badge">⚡ リアルタイム全社同期中</div>
+      <div class="countdown">
+        オープンまで
+        <div class="countdown-num" id="countdown">-- 日</div>
+      </div>
     </div>
   </header>
 
@@ -332,8 +320,6 @@
     <button onclick="addNewTask()" class="btn-add">＋ 新規タスク追加</button>
     <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
 
-    <span style="font-size: 0.75rem; color: #666;">💡 境界線をドラッグすると幅を自由に変更できます</span>
-
     <div class="legend">
       <span><span class="legend-box" style="background:#C00000;"></span> 赤：最重要パス(CP)</span>
       <span><span class="legend-box" style="background:#3498db;"></span> 青：通常タスク</span>
@@ -341,7 +327,6 @@
   </div>
 
   <div class="gantt-wrapper" id="gantt-wrapper">
-    <!-- 左側：タスク表 -->
     <div class="task-side" id="task-side" onscroll="syncScroll('task')">
       <table class="task-table">
         <thead>
@@ -361,19 +346,30 @@
       </table>
     </div>
 
-    <!-- ★幅調整用リサイザー -->
     <div class="resizer" id="resizer"></div>
 
-    <!-- 右側：ガントチャート -->
     <div class="gantt-side" id="gantt-side" onscroll="syncScroll('gantt')">
-      <div class="gantt-header-container" id="gantt-header">
-      </div>
-      <div class="gantt-body" id="gantt-body">
-      </div>
+      <div class="gantt-header-container" id="gantt-header"></div>
+      <div class="gantt-body" id="gantt-body"></div>
     </div>
   </div>
 
   <script>
+    // ★ CaraCuriCube Firebase設定情報
+    const firebaseConfig = {
+      apiKey: "AIzaSyCICc75-iLAn2vIWBoxJBLGQQRd7lhiLDs",
+      authDomain: "caracuricube.firebaseapp.com",
+      databaseURL: "https://caracuricube-default-rtdb.firebaseio.com",
+      projectId: "caracuricube",
+      storageBucket: "caracuricube.firebasestorage.app",
+      messagingSenderId: "117840131260",
+      appId: "1:117840131260:web:dff3a523c7e41927b80cb9"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const tasksRef = db.ref('narita_gantt_tasks');
+
     const START_DATE = new Date("2026-08-01");
     const END_DATE = new Date("2027-03-31");
     const DAY_WIDTH = 24;
@@ -403,9 +399,25 @@
       { id: "7.2", cat: "Phase2", name: "第2弾IP企画 & 他グッズ展開検討", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false }
     ];
 
-    let tasks = JSON.parse(localStorage.getItem('narita_gantt_tasks')) || defaultTasks;
+    let tasks = [];
     let daysArray = [];
     let draggedIndex = null;
+
+    // ⚡ クラウドDB（Firebase）の自動リアルタイム同期リスナー
+    tasksRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        tasks = data;
+      } else {
+        tasks = JSON.parse(JSON.stringify(defaultTasks));
+        saveTasks();
+      }
+      renderAll();
+    });
+
+    function saveTasks() {
+      tasksRef.set(tasks);
+    }
 
     function initDays() {
       daysArray = [];
@@ -414,10 +426,6 @@
         daysArray.push(new Date(cur));
         cur.setDate(cur.getDate() + 1);
       }
-    }
-
-    function saveTasks() {
-      localStorage.setItem('narita_gantt_tasks', JSON.stringify(tasks));
     }
 
     function renderGanttHeader() {
@@ -506,8 +514,8 @@
         tr.addEventListener("dragend", handleDragEnd);
 
         tr.innerHTML = `
-          <td><input type="text" value="${t.id}" onchange="updateTask(${realIdx}, 'id', this.value)" style="width: 100%; text-align: center;"></td>
-          <td><input type="text" value="${t.name}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
+          <td><input type="text" value="${t.id || ''}" onchange="updateTask(${realIdx}, 'id', this.value)" style="width: 100%; text-align: center;"></td>
+          <td><input type="text" value="${t.name || ''}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
           <td style="text-align:center;">
             <select class="owner-select ${getOwnerClass(t.owner)}" onchange="updateTask(${realIdx}, 'owner', this.value)" style="width: 100%;">
               <option value="Cuebus" class="owner-cuebus" ${t.owner === 'Cuebus' ? 'selected' : ''}>Cuebus</option>
@@ -516,8 +524,8 @@
               <option value="全社合同" class="owner-joint" ${t.owner === '全社合同' ? 'selected' : ''}>全社合同</option>
             </select>
           </td>
-          <td><input type="date" value="${t.start}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
-          <td><input type="date" value="${t.end}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
+          <td><input type="date" value="${t.start || ''}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
+          <td><input type="date" value="${t.end || ''}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
           <td style="text-align:center;">
             <select class="status-select ${getStatusClass(t.status)}" onchange="updateTask(${realIdx}, 'status', this.value)">
               <option value="未着手" ${t.status === '未着手' ? 'selected' : ''}>未着手</option>
@@ -575,7 +583,6 @@
       });
 
       updateCountdown();
-      document.getElementById("gantt-side").scrollLeft = 0;
     }
 
     function handleDragStart(e) {
@@ -596,7 +603,6 @@
         const item = tasks.splice(draggedIndex, 1)[0];
         tasks.splice(targetIndex, 0, item);
         saveTasks();
-        renderAll();
       }
     }
 
@@ -610,12 +616,10 @@
         const item = tasks.splice(idx, 1)[0];
         tasks.splice(idx - 1, 0, item);
         saveTasks();
-        renderAll();
       } else if (direction === 'down' && idx < tasks.length - 1) {
         const item = tasks.splice(idx, 1)[0];
         tasks.splice(idx + 1, 0, item);
         saveTasks();
-        renderAll();
       }
     }
 
@@ -637,20 +641,17 @@
     function updateTask(idx, field, val) {
       tasks[idx][field] = val;
       saveTasks();
-      renderAll();
     }
 
     function updateTaskBool(idx, field, val) {
       tasks[idx][field] = (val === 'true');
       saveTasks();
-      renderAll();
     }
 
     function deleteTask(idx) {
       if (confirm(`タスク「${tasks[idx].name}」を削除しますか？`)) {
         tasks.splice(idx, 1);
         saveTasks();
-        renderAll();
       }
     }
 
@@ -660,14 +661,12 @@
         id: "8." + nextNum, cat: "追加", name: "新規追加タスク", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false
       });
       saveTasks();
-      renderAll();
     }
 
     function resetData() {
-      if (confirm("初期のタスク・日付状態にリセットしますか？")) {
+      if (confirm("初期のタスク・日付状態にリセットしますか？（全社のデータが初期化されます）")) {
         tasks = JSON.parse(JSON.stringify(defaultTasks));
         saveTasks();
-        renderAll();
       }
     }
 
@@ -679,7 +678,6 @@
       document.getElementById("countdown").innerText = days > 0 ? days + " 日" : "本日オープン！";
     }
 
-    /* ★リサイザー（ドラッグによる幅変更）機能の初期化 */
     function initResizer() {
       const resizer = document.getElementById("resizer");
       const taskSide = document.getElementById("task-side");
@@ -687,7 +685,7 @@
 
       let isResizing = false;
 
-      resizer.addEventListener("mousedown", function (e) {
+      resizer.addEventListener("mousedown", function () {
         isResizing = true;
         resizer.classList.add("resizing");
         document.body.style.cursor = "col-resize";
@@ -698,7 +696,6 @@
         const wrapperRect = wrapper.getBoundingClientRect();
         let newWidth = e.clientX - wrapperRect.left;
 
-        // 最小・最大幅制限
         if (newWidth < 250) newWidth = 250;
         if (newWidth > wrapperRect.width - 200) newWidth = wrapperRect.width - 200;
 
@@ -714,7 +711,6 @@
       });
     }
 
-    renderAll();
     initResizer();
   </script>
 </body>
