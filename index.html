@@ -17,6 +17,8 @@
       --card-bg: #FFFFFF;
       --border-color: #D0D7DE;
       --day-width: 24px;
+      --row-height: 36px;       /* 通常行の高さ */
+      --phase-height: 28px;     /* フェーズ行の高さ */
     }
     
     body {
@@ -192,40 +194,53 @@
       z-index: 10;
       background: var(--primary-color);
       color: white;
-      padding: 6px 2px;
+      padding: 0;
       text-align: center;
       height: 46px;
       box-sizing: border-box;
       white-space: nowrap;
     }
 
+    .task-table tr {
+      height: var(--row-height);
+      box-sizing: border-box;
+    }
+
     .task-table td {
-      padding: 3px 2px;
+      padding: 0 2px;
       border-bottom: 1px solid var(--border-color);
-      height: 36px;
+      height: var(--row-height);
       box-sizing: border-box;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      vertical-align: middle;
     }
 
-    .phase-header-row td {
+    /* 📌 フェーズ行（左右で高さ・境界線を完全同期） */
+    .task-table tr.phase-header-row {
+      height: var(--phase-height);
+    }
+
+    .task-table tr.phase-header-row td {
       background-color: #E6ECF2;
       color: var(--primary-color);
       font-weight: bold;
       font-size: 0.82rem;
-      padding: 4px 10px;
-      border-top: 2px solid #B0C4DE;
-      border-bottom: 2px solid #B0C4DE;
-      height: 28px;
+      padding: 0 10px;
+      border-top: 1px solid #B0C4DE;
+      border-bottom: 1px solid #B0C4DE;
+      height: var(--phase-height);
+      box-sizing: border-box;
     }
 
     .gantt-phase-row {
-      background-color: #F4F6F9;
-      height: 28px;
-      border-top: 2px solid #B0C4DE;
-      border-bottom: 2px solid #B0C4DE;
+      background-color: #E6ECF2;
+      height: var(--phase-height);
+      border-top: 1px solid #B0C4DE;
+      border-bottom: 1px solid #B0C4DE;
       box-sizing: border-box;
+      flex-shrink: 0;
     }
 
     .is-delayed {
@@ -287,10 +302,11 @@
 
     .gantt-row {
       display: flex;
-      height: 36px;
+      height: var(--row-height);
       border-bottom: 1px solid var(--border-color);
       box-sizing: border-box;
       position: relative;
+      flex-shrink: 0;
     }
 
     .gantt-bg-cell {
@@ -943,12 +959,14 @@
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.setAttribute("href", url);
-      link.setAttribute("download", `成田空港プロジェクト工程表_${new Date().toISOString().slice(0,10)}.csv`);
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const link = document.append ? document.createElement("a") : null;
+      if (link) {
+        link.setAttribute("href", url);
+        link.setAttribute("download", `成田空港プロジェクト工程表_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
     }
 
     function updateCountdown() {
