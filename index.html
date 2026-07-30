@@ -20,6 +20,7 @@
       color: #333;
       margin: 0;
       padding: 15px;
+      user-select: none; /* ドラッグ中のテキスト選択防止 */
     }
 
     header {
@@ -101,16 +102,41 @@
       border-radius: 6px;
       overflow: hidden;
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      position: relative;
     }
 
-    /* 左側：タスク表 */
+    /* ★可変左側：タスク表（デフォルト60%） */
     .task-side {
       width: 60%;
+      min-width: 300px;
       flex-shrink: 0;
-      border-right: 2px solid var(--primary-color);
       background: #FFF;
       overflow-y: auto;
       overflow-x: auto;
+    }
+
+    /* ★境界調整バー（リサイザー） */
+    .resizer {
+      width: 8px;
+      background: var(--primary-color);
+      cursor: col-resize;
+      flex-shrink: 0;
+      z-index: 20;
+      transition: background 0.2s;
+      position: relative;
+    }
+
+    .resizer:hover, .resizer.resizing {
+      background: #3498db;
+    }
+
+    /* ★可変右側：カレンダーガント */
+    .gantt-side {
+      flex-grow: 1;
+      min-width: 200px;
+      overflow: auto;
+      background: #FFFFFF;
+      position: relative;
     }
 
     .task-table {
@@ -152,15 +178,6 @@
     tr.dragging {
       opacity: 0.4;
       background-color: #e0e0e0;
-    }
-
-    /* 右側：カレンダーガント */
-    .gantt-side {
-      width: 40%;
-      flex-grow: 1;
-      overflow: auto;
-      background: #FFFFFF;
-      position: relative;
     }
 
     .gantt-header-container {
@@ -255,7 +272,6 @@
       color: var(--accent-color);
     }
 
-    /* 進捗状況プルダウンの色分け */
     .status-select {
       padding: 2px 4px;
       border-radius: 3px;
@@ -268,7 +284,6 @@
     .status-pending { background-color: #ffe8d6; color: #d9534f; }
     .status-completed { background-color: #d4edda; color: #155724; }
 
-    /* ★担当会社プルダウンの色分けスタイル */
     .owner-select {
       padding: 2px 4px;
       border-radius: 3px;
@@ -276,10 +291,10 @@
       font-size: 0.72rem;
       border: 1px solid #ccc;
     }
-    .owner-naa { background-color: #D0E1F9; color: #003366; }      /* NAA：ブルー系 */
-    .owner-cuebus { background-color: #FFF2CC; color: #7F6000; }   /* Cuebus：イエロー系 */
-    .owner-hamaru { background-color: #FCE4D6; color: #C00000; }   /* Hamaru：ピンク系 */
-    .owner-joint { background-color: #E2EFDA; color: #375623; }    /* 全社合同：グリーン系 */
+    .owner-naa { background-color: #D0E1F9; color: #003366; }
+    .owner-cuebus { background-color: #FFF2CC; color: #7F6000; }
+    .owner-hamaru { background-color: #FCE4D6; color: #C00000; }
+    .owner-joint { background-color: #E2EFDA; color: #375623; }
 
     .legend { display: flex; gap: 10px; font-size: 0.75rem; align-items: center; margin-left: auto; }
     .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
@@ -317,7 +332,7 @@
     <button onclick="addNewTask()" class="btn-add">＋ 新規タスク追加</button>
     <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
 
-    <span style="font-size: 0.75rem; color: #666;">💡 行をドラッグ＆ドロップ、または「↑」「↓」で上下移動できます</span>
+    <span style="font-size: 0.75rem; color: #666;">💡 境界線をドラッグすると幅を自由に変更できます</span>
 
     <div class="legend">
       <span><span class="legend-box" style="background:#C00000;"></span> 赤：最重要パス(CP)</span>
@@ -325,7 +340,7 @@
     </div>
   </div>
 
-  <div class="gantt-wrapper">
+  <div class="gantt-wrapper" id="gantt-wrapper">
     <!-- 左側：タスク表 -->
     <div class="task-side" id="task-side" onscroll="syncScroll('task')">
       <table class="task-table">
@@ -345,6 +360,9 @@
         </tbody>
       </table>
     </div>
+
+    <!-- ★幅調整用リサイザー -->
+    <div class="resizer" id="resizer"></div>
 
     <!-- 右側：ガントチャート -->
     <div class="gantt-side" id="gantt-side" onscroll="syncScroll('gantt')">
@@ -446,7 +464,6 @@
       return 'status-not-started';
     }
 
-    /* ★担当会社カラー取得 */
     function getOwnerClass(owner) {
       if (owner === '成田国際空港') return 'owner-naa';
       if (owner === 'Cuebus') return 'owner-cuebus';
@@ -491,7 +508,6 @@
         tr.innerHTML = `
           <td><input type="text" value="${t.id}" onchange="updateTask(${realIdx}, 'id', this.value)" style="width: 100%; text-align: center;"></td>
           <td><input type="text" value="${t.name}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
-          <!-- ★カラー対応担当プルダウン -->
           <td style="text-align:center;">
             <select class="owner-select ${getOwnerClass(t.owner)}" onchange="updateTask(${realIdx}, 'owner', this.value)" style="width: 100%;">
               <option value="Cuebus" class="owner-cuebus" ${t.owner === 'Cuebus' ? 'selected' : ''}>Cuebus</option>
@@ -663,7 +679,43 @@
       document.getElementById("countdown").innerText = days > 0 ? days + " 日" : "本日オープン！";
     }
 
+    /* ★リサイザー（ドラッグによる幅変更）機能の初期化 */
+    function initResizer() {
+      const resizer = document.getElementById("resizer");
+      const taskSide = document.getElementById("task-side");
+      const wrapper = document.getElementById("gantt-wrapper");
+
+      let isResizing = false;
+
+      resizer.addEventListener("mousedown", function (e) {
+        isResizing = true;
+        resizer.classList.add("resizing");
+        document.body.style.cursor = "col-resize";
+      });
+
+      document.addEventListener("mousemove", function (e) {
+        if (!isResizing) return;
+        const wrapperRect = wrapper.getBoundingClientRect();
+        let newWidth = e.clientX - wrapperRect.left;
+
+        // 最小・最大幅制限
+        if (newWidth < 250) newWidth = 250;
+        if (newWidth > wrapperRect.width - 200) newWidth = wrapperRect.width - 200;
+
+        taskSide.style.width = newWidth + "px";
+      });
+
+      document.addEventListener("mouseup", function () {
+        if (isResizing) {
+          isResizing = false;
+          resizer.classList.remove("resizing");
+          document.body.style.cursor = "default";
+        }
+      });
+    }
+
     renderAll();
+    initResizer();
   </script>
 </body>
 </html>
