@@ -760,7 +760,7 @@
       }).join("\n");
     }
 
-    /* ✨ Gemini API 呼び出し v1 正式エンドポイント指定 */
+    /* ✨ Gemini API 呼び出し（最も安定した無料モデル gemini-1.5-flash 専用） */
     async function callGeminiAPI(promptText) {
       const apiKey = localStorage.getItem("GEMINI_API_KEY");
       if (!apiKey) {
@@ -768,40 +768,35 @@
         throw new Error("APIキー未設定");
       }
 
-      // Google AI Studioの正式エンドポイント群 (v1 / v1beta 両対応)
-      const endpoints = [
-        `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
-      ];
+      // 無料枠の制限が最も緩く動作が安定している gemini-1.5-flash に一本化
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
-      let lastErrorMessage = "";
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }]
+          })
+        });
 
-      for (const url of endpoints) {
-        try {
-          const response = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: promptText }] }]
-            })
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
-              return data.candidates[0].content.parts[0].text.trim();
-            }
-          } else {
-            const errData = await response.json().catch(() => ({}));
-            lastErrorMessage = errData.error ? errData.error.message : `HTTP ${response.status}`;
+        if (response.ok) {
+          const data = await response.json();
+          if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+            return data.candidates[0].content.parts[0].text.trim();
           }
-        } catch (e) {
-          lastErrorMessage = e.message;
         }
-      }
 
-      throw new Error(lastErrorMessage || "Gemini API呼び出し失敗");
+        if (response.status === 429) {
+          throw new Error("無料利用の制限（連投制限）がかかりました。30秒ほど待ってから再度ボタンを押してください。");
+        }
+
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error ? errData.error.message : `HTTP ${response.status}`);
+
+      } catch (e) {
+        throw e;
+      }
     }
 
     /* ✨ Gemini AI診断ロジック */
@@ -847,7 +842,7 @@ ${getTaskSummaryText()}
 
       } catch (err) {
         if (err.message !== "APIキー未設定") {
-          alert("Gemini診断でエラーが発生しました: " + err.message);
+          alert("Gemini診断メッセージ: " + err.message);
         }
       } finally {
         btn.innerText = "🔄 最新状態でGemini診断を実行";
@@ -877,7 +872,7 @@ ${getTaskSummaryText()}
         appendChatMessage("ai", reply);
       } catch (err) {
         if (err.message !== "APIキー未設定") {
-          appendChatMessage("ai", "エラー: レポート作成に失敗しました。");
+          appendChatMessage("ai", "エラー: " + err.message);
         }
       }
     }
@@ -909,7 +904,7 @@ ${userMsg}
         appendChatMessage("ai", reply);
       } catch (err) {
         if (err.message !== "APIキー未設定") {
-          appendChatMessage("ai", "エラーが発生しました。APIキーまたは通信状況を確認してください。");
+          appendChatMessage("ai", "エラー: " + err.message);
         }
       }
     }
