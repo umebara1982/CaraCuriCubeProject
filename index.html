@@ -760,7 +760,7 @@
       }).join("\n");
     }
 
-    /* ✨ Gemini API 呼び出し決定版 (2.0-flash / 1.5-flash 正式モデルID) */
+    /* ✨ Gemini API 呼び出し v1 正式エンドポイント指定 */
     async function callGeminiAPI(promptText) {
       const apiKey = localStorage.getItem("GEMINI_API_KEY");
       if (!apiKey) {
@@ -768,12 +768,17 @@
         throw new Error("APIキー未設定");
       }
 
-      const models = ["gemini-2.0-flash", "gemini-1.5-flash"];
+      // Google AI Studioの正式エンドポイント群 (v1 / v1beta 両対応)
+      const endpoints = [
+        `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`
+      ];
+
       let lastErrorMessage = "";
 
-      for (const model of models) {
+      for (const url of endpoints) {
         try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
           const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
