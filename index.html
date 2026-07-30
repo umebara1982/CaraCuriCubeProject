@@ -804,12 +804,588 @@ ${getTaskSummaryText()}
 {
   "score": "A", 
   "summary": "進捗は概ね順調です。消防申請の準備を急ぎましょう。",
-  "risks": "・1.2 現地与件確認の完了期限が迫っています\n・4.1 消防確認の未着手リスク",
-  "actions": "・Cuebus: 消防関連書類の提出準備\n・Hamaru: 第1弾IP契約の確定"
+  "risks": "・1.2 現地与件確認の完了期限が迫っています\\n・4.1 消防確認の未着手リスク",
+  "actions": "・Cuebus: 消防関連書類の提出準備\\n・Hamaru: 第1弾IP契約の確定"
 }
 ※ scoreは S, A, B, C, D の5段階で評価してください。
 `;
 
       try {
         let rawContent = await callGeminiAPI(promptMessage);
-        rawContent = rawContent.replace(/```json/g, "").replace(/
+        rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
+
+        const result = JSON.parse(rawContent);
+
+        document.getElementById("ai-score").innerText = result.score || "A";
+        document.getElementById("ai-status-summary").innerText = result.summary || "解析完了";
+        document.getElementById("ai-risks-list").innerText = result.risks || "特に重大なリスクは検出されませんでした。";
+        document.getElementById("ai-actions-list").innerText = result.actions || "予定通りのタスクを進めてください。";
+
+        const scoreBadge = document.getElementById("ai-score");
+        if (result.score === "S" || result.score === "A") scoreBadge.style.background = "#27ae60";
+        else if (result.score === "B") scoreBadge.style.background = "#f39c12";
+        else scoreBadge.style.background = "#c00000";
+
+      } catch (err) {
+        if (err.message !== "APIキー未設定") {
+          alert("Gemini診断でエラーが発生しました: " + err.message);
+        }
+      } finally {
+        btn.innerText = "🔄 最新状態でGemini診断を実行";
+        btn.disabled = false;
+      }
+    }
+
+    /* 📊 朝会用レポート自動生成 */
+    async function generateMorningReport() {
+      appendChatMessage("user", "📊 今朝の進捗会用サマリーレポートを作成して");
+
+      const promptMessage = `
+以下のプロジェクトタスクデータを元に、毎朝の3社合同進捗会議（朝会）でそのまま1分間でスピーチ・報告できる「朝会用サマリーレポート」を作成してください。
+
+【データ】
+${getTaskSummaryText()}
+
+【報告構成】
+1. 現在の全体進捗ステータス
+2. 今週最優先で動くべきCPタスク（会社別）
+3. 遅延・注意点
+簡潔かつ実用的に記述してください。
+`;
+
+      try {
+        const reply = await callGeminiAPI(promptMessage);
+        appendChatMessage("ai", reply);
+      } catch (err) {
+        if (err.message !== "APIキー未設定") {
+          appendChatMessage("ai", "エラー: レポート作成に失敗しました。");
+        }
+      }
+    }
+
+    /* 💬 Geminiチャット自由対話処理 */
+    async function sendAIChat() {
+      const inputEl = document.getElementById("ai-chat-input");
+      const userMsg = inputEl.value.trim();
+      if (!userMsg) return;
+
+      appendChatMessage("user", userMsg);
+      inputEl.value = "";
+
+      const promptMessage = `
+あなたは【成田空港IP什器導入プロジェクト】の優秀なPMアシスタント「Gemini」です。
+目標オープン日は2026年11月10日です。
+
+以下の最新タスクデータを背景知識として持った上で、ユーザーからの質問にわかりやすく親切に答えてください。
+
+【最新タスクデータ】
+${getTaskSummaryText()}
+
+【ユーザーの質問】
+${userMsg}
+`;
+
+      try {
+        const reply = await callGeminiAPI(promptMessage);
+        appendChatMessage("ai", reply);
+      } catch (err) {
+        if (err.message !== "APIキー未設定") {
+          appendChatMessage("ai", "エラーが発生しました。APIキーまたは通信状況を確認してください。");
+        }
+      }
+    }
+
+    function appendChatMessage(role, text) {
+      const history = document.getElementById("ai-chat-history");
+      const msgDiv = document.createElement("div");
+      msgDiv.className = `chat-msg ${role}`;
+      msgDiv.innerText = text;
+      history.appendChild(msgDiv);
+      history.scrollTop = history.scrollHeight;
+    }
+
+    function toggleAdminMenu() {
+      const menu = document.getElementById("admin-menu");
+      if (isAdminUnlocked) {
+        menu.style.display = menu.style.display === "flex" ? "none" : "flex";
+      } else {
+        const input = prompt("管理者パスワードを入力してください:");
+        if (input === ADMIN_PASSWORD) {
+          isAdminUnlocked = true;
+          menu.style.display = "flex";
+          alert("管理者モードが解放されました！");
+        } else if (input !== null) {
+          alert("パスワードが違います。");
+        }
+      }
+    }
+
+    function copyFullHTML() {
+      let defaultTasksCode = "    const defaultTasks = [\n";
+      tasks.forEach((t, index) => {
+        const isLast = index === tasks.length - 1;
+        defaultTasksCode += `      { id: "${t.id || ''}", cat: "${t.cat || ''}", name: "${t.name || ''}", owner: "${t.owner || ''}", start: "${t.start || ''}", end: "${t.end || ''}", status: "${t.status || '未着手'}", cp: ${t.cp ? 'true' : 'false'} }${isLast ? '' : ','}\n`;
+      });
+      defaultTasksCode += "    ];";
+
+      let fullDoc = document.documentElement.outerHTML;
+      let newHTML = "<!DOCTYPE html>\n<html lang=\"ja\">\n" + fullDoc;
+
+      const reg = /const defaultTasks = \[[\s\S]*?\];/;
+      newHTML = newHTML.replace(reg, defaultTasksCode);
+
+      navigator.clipboard.writeText(newHTML).then(() => {
+        alert("🎉 最新のHTMLコード一式（最初から最後まで）をコピーしました！\n\nGitHubの `index.html` 編集画面で 全選択（Cmd+A または Ctrl+A）して、そのまま貼り付け（Cmd+V または Ctrl+V）してください！");
+      }).catch(err => {
+        alert("コピーに失敗しました。");
+      });
+    }
+
+    function autoRenumberIDs() {
+      let currentMainGroup = "1";
+      let subIndex = 1;
+
+      tasks.forEach((t) => {
+        let mainGroup = "1";
+        if (t.id && String(t.id).includes('.')) {
+          mainGroup = String(t.id).split('.')[0];
+        } else if (t.id && !isNaN(parseInt(t.id))) {
+          mainGroup = String(t.id);
+        }
+
+        if (mainGroup !== currentMainGroup) {
+          currentMainGroup = mainGroup;
+          subIndex = 1;
+        }
+
+        t.id = `${currentMainGroup}.${subIndex}`;
+        subIndex++;
+      });
+    }
+
+    function reorderAllIDs() {
+      let currentGroup = 1;
+      let subGroup = 1;
+
+      tasks.forEach((t, i) => {
+        if (i > 0) {
+          const prevMain = tasks[i-1].id ? tasks[i-1].id.split('.')[0] : "1";
+          const currMain = t.id ? t.id.split('.')[0] : "1";
+          if (prevMain !== currMain) {
+            currentGroup = currMain;
+            subGroup = 1;
+          }
+        } else {
+          currentGroup = t.id ? t.id.split('.')[0] : "1";
+        }
+
+        t.id = `${currentGroup}.${subGroup}`;
+        subGroup++;
+      });
+
+      saveTasks();
+    }
+
+    function initDays() {
+      daysArray = [];
+      let cur = new Date(START_DATE);
+      while (cur <= END_DATE) {
+        daysArray.push(new Date(cur));
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+
+    function renderGanttHeader() {
+      const headerContainer = document.getElementById("gantt-header");
+      headerContainer.innerHTML = "";
+
+      const monthRow = document.createElement("div");
+      monthRow.className = "month-row";
+
+      const dayRow = document.createElement("div");
+      dayRow.className = "day-row";
+
+      let monthCounts = {};
+
+      daysArray.forEach((d) => {
+        const mKey = `${d.getFullYear()}年 ${d.getMonth() + 1}月`;
+        monthCounts[mKey] = (monthCounts[mKey] || 0) + 1;
+
+        const dayCell = document.createElement("div");
+        let cls = "day-cell";
+        if (d.getDay() === 6) cls += " sat";
+        if (d.getDay() === 0) cls += " sun";
+        
+        if (d.toDateString() === TODAY.toDateString()) cls += " today";
+
+        dayCell.className = cls;
+        dayCell.innerText = d.getDate();
+        dayRow.appendChild(dayCell);
+      });
+
+      for (let mKey in monthCounts) {
+        const monthCell = document.createElement("div");
+        monthCell.className = "month-cell";
+        monthCell.style.width = (monthCounts[mKey] * DAY_WIDTH) + "px";
+        monthCell.innerText = mKey;
+        monthRow.appendChild(monthCell);
+      }
+
+      headerContainer.appendChild(monthRow);
+      headerContainer.appendChild(dayRow);
+    }
+
+    function getStatusClass(status) {
+      if (status === '進行中') return 'status-in-progress';
+      if (status === '保留中') return 'status-pending';
+      if (status === '完了') return 'status-completed';
+      return 'status-not-started';
+    }
+
+    function getOwnerClass(owner) {
+      if (owner === '成田国際空港') return 'owner-naa';
+      if (owner === 'Cuebus') return 'owner-cuebus';
+      if (owner === 'Hamaru Strategy') return 'owner-hamaru';
+      return 'owner-joint';
+    }
+
+    function renderAll() {
+      initDays();
+      renderGanttHeader();
+
+      const ownerVal = document.getElementById("filter-owner").value;
+      const cpVal = document.getElementById("filter-cp").value;
+
+      let filtered = tasks.filter(t => {
+        if (ownerVal !== "ALL" && t.owner !== ownerVal) return false;
+
+        if (cpVal === "CP" && !t.cp) return false;
+        if (cpVal === "STATUS_UNCOMPLETED" && t.status === "完了") return false;
+        if (cpVal.startsWith("STATUS_")) {
+          const targetStatus = cpVal.replace("STATUS_", "");
+          if (targetStatus !== "UNCOMPLETED" && t.status !== targetStatus) return false;
+        }
+
+        return true;
+      });
+
+      const tbody = document.getElementById("task-tbody");
+      const ganttBody = document.getElementById("gantt-body");
+
+      tbody.innerHTML = "";
+      ganttBody.innerHTML = "";
+
+      const totalWidth = daysArray.length * DAY_WIDTH;
+
+      let currentCategoryGroup = null;
+
+      filtered.forEach((t) => {
+        const realIdx = tasks.findIndex(item => item.id === t.id);
+
+        const mainGroup = t.id ? String(t.id).split('.')[0] : "1";
+        if (mainGroup !== currentCategoryGroup) {
+          currentCategoryGroup = mainGroup;
+          const cName = categoryNames[mainGroup] || `📂 カテゴリー ${mainGroup}`;
+
+          const phaseTr = document.createElement("tr");
+          phaseTr.className = "phase-header-row";
+          phaseTr.innerHTML = `<td colspan="9">${cName}</td>`;
+          tbody.appendChild(phaseTr);
+
+          const gPhaseRow = document.createElement("div");
+          gPhaseRow.className = "gantt-phase-row";
+          gPhaseRow.style.width = totalWidth + "px";
+          ganttBody.appendChild(gPhaseRow);
+        }
+
+        let isDelayed = false;
+        if (t.end && t.status !== '完了') {
+          const endDate = new Date(t.end);
+          if (endDate < TODAY) isDelayed = true;
+        }
+
+        const tr = document.createElement("tr");
+        tr.dataset.index = realIdx;
+
+        tr.addEventListener("dragover", handleDragOver);
+        tr.addEventListener("drop", handleDrop);
+
+        tr.innerHTML = `
+          <td style="text-align:center;"><span class="drag-handle" draggable="true">≡</span></td>
+          <td><input type="text" value="${t.id || ''}" onchange="updateTask(${realIdx}, 'id', this.value)" style="width: 100%; text-align: center;"></td>
+          <td><input type="text" value="${t.name || ''}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
+          <td style="text-align:center;">
+            <select class="owner-select ${getOwnerClass(t.owner)}" onchange="updateTask(${realIdx}, 'owner', this.value)" style="width: 100%;">
+              <option value="Cuebus" class="owner-cuebus" ${t.owner === 'Cuebus' ? 'selected' : ''}>Cuebus</option>
+              <option value="Hamaru Strategy" class="owner-hamaru" ${t.owner === 'Hamaru Strategy' ? 'selected' : ''}>Hamaru Strategy</option>
+              <option value="成田国際空港" class="owner-naa" ${t.owner === '成田国際空港' ? 'selected' : ''}>成田国際空港</option>
+              <option value="全社合同" class="owner-joint" ${t.owner === '全社合同' ? 'selected' : ''}>全社合同</option>
+            </select>
+          </td>
+          <td><input type="date" value="${t.start || ''}" class="${isDelayed ? 'is-delayed' : ''}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
+          <td><input type="date" value="${t.end || ''}" class="${isDelayed ? 'is-delayed' : ''}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
+          <td style="text-align:center;">
+            <select class="status-select ${getStatusClass(t.status)}" onchange="updateTask(${realIdx}, 'status', this.value)">
+              <option value="未着手" ${t.status === '未着手' ? 'selected' : ''}>未着手</option>
+              <option value="進行中" ${t.status === '進行中' ? 'selected' : ''}>進行中</option>
+              <option value="保留中" ${t.status === '保留中' ? 'selected' : ''}>保留中</option>
+              <option value="完了" ${t.status === '完了' ? 'selected' : ''}>完了</option>
+            </select>
+          </td>
+          <td style="text-align:center;">
+            <select class="cp-select" onchange="updateTaskBool(${realIdx}, 'cp', this.value)" style="width: 100%; padding: 2px 0;">
+              <option value="true" ${t.cp ? 'selected' : ''}>★</option>
+              <option value="false" ${!t.cp ? 'selected' : ''}>-</option>
+            </select>
+          </td>
+          <td style="text-align:center;">
+            <button class="btn-move" title="1行上に移動" onclick="moveTask('up', ${realIdx})">↑</button>
+            <button class="btn-move" title="1行下に移動" onclick="moveTask('down', ${realIdx})">↓</button>
+            <button class="btn-delete" title="削除" onclick="deleteTask(${realIdx})">消</button>
+          </td>
+        `;
+
+        const handle = tr.querySelector('.drag-handle');
+        handle.addEventListener("dragstart", (e) => handleDragStart(e, realIdx, tr));
+        handle.addEventListener("dragend", (e) => handleDragEnd(tr));
+
+        tbody.appendChild(tr);
+
+        const gRow = document.createElement("div");
+        gRow.className = "gantt-row";
+        gRow.style.width = totalWidth + "px";
+
+        daysArray.forEach(d => {
+          const bgCell = document.createElement("div");
+          let cls = "gantt-bg-cell";
+          if (d.getDay() === 6) cls += " sat";
+          if (d.getDay() === 0) cls += " sun";
+          bgCell.className = cls;
+          gRow.appendChild(bgCell);
+        });
+
+        if (t.start && t.end) {
+          const tStart = new Date(t.start);
+          const tEnd = new Date(t.end);
+
+          if (tEnd >= START_DATE && tStart <= END_DATE) {
+            const startDiff = Math.max(0, Math.floor((tStart - START_DATE) / (1000 * 60 * 60 * 24)));
+            const duration = Math.max(1, Math.floor((tEnd - tStart) / (1000 * 60 * 60 * 24)) + 1);
+
+            const bar = document.createElement("div");
+            bar.className = "bar" + (t.cp ? " cp" : "");
+            bar.style.left = (startDiff * DAY_WIDTH) + "px";
+            bar.style.width = (duration * DAY_WIDTH - 1) + "px";
+            bar.title = `${t.name} (${t.start} 〜 ${t.end})`;
+
+            gRow.appendChild(bar);
+          }
+        }
+
+        ganttBody.appendChild(gRow);
+      });
+
+      if (TODAY >= START_DATE && TODAY <= END_DATE) {
+        const todayDiff = Math.floor((TODAY - START_DATE) / (1000 * 60 * 60 * 24));
+        const todayLine = document.createElement("div");
+        todayLine.className = "today-line";
+        todayLine.style.left = (todayDiff * DAY_WIDTH + DAY_WIDTH / 2) + "px";
+        ganttBody.appendChild(todayLine);
+      }
+
+      updateCountdown();
+    }
+
+    function handleDragStart(e, index, tr) {
+      draggedIndex = index;
+      tr.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      let targetTr = e.target.closest('tr');
+      if (!targetTr) return;
+      const targetIndex = parseInt(targetTr.dataset.index);
+      if (draggedIndex !== null && draggedIndex !== targetIndex) {
+        const item = tasks.splice(draggedIndex, 1)[0];
+        tasks.splice(targetIndex, 0, item);
+        autoRenumberIDs();
+        saveTasks();
+      }
+    }
+
+    function handleDragEnd(tr) {
+      tr.classList.remove("dragging");
+      draggedIndex = null;
+    }
+
+    function moveTask(direction, idx) {
+      if (direction === 'up' && idx > 0) {
+        const item = tasks.splice(idx, 1)[0];
+        tasks.splice(idx - 1, 0, item);
+        autoRenumberIDs();
+        saveTasks();
+      } else if (direction === 'down' && idx < tasks.length - 1) {
+        const item = tasks.splice(idx, 1)[0];
+        tasks.splice(idx + 1, 0, item);
+        autoRenumberIDs();
+        saveTasks();
+      }
+    }
+
+    let isSyncing = false;
+    function syncScroll(source) {
+      if (isSyncing) return;
+      isSyncing = true;
+      const taskSide = document.getElementById("task-side");
+      const ganttSide = document.getElementById("gantt-side");
+
+      if (source === 'task') {
+        ganttSide.scrollTop = taskSide.scrollTop;
+      } else {
+        taskSide.scrollTop = ganttSide.scrollTop;
+      }
+      isSyncing = false;
+    }
+
+    function updateTask(idx, field, val) {
+      tasks[idx][field] = val;
+      if (field === 'id') {
+        renderAll();
+      }
+      saveTasks();
+    }
+
+    function updateTaskBool(idx, field, val) {
+      tasks[idx][field] = (val === 'true');
+      saveTasks();
+    }
+
+    function deleteTask(idx) {
+      if (confirm(`タスク「${tasks[idx].name}」を削除しますか？`)) {
+        tasks.splice(idx, 1);
+        autoRenumberIDs();
+        saveTasks();
+      }
+    }
+
+    function addNewTask() {
+      const lastTask = tasks[tasks.length - 1];
+      let newID = "1.1";
+      if (lastTask && lastTask.id) {
+        const parts = lastTask.id.split('.');
+        newID = `${parts[0]}.${parseInt(parts[1] || 0) + 1}`;
+      }
+
+      tasks.push({
+        id: newID, cat: "追加", name: "新規追加タスク", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false
+      });
+      saveTasks();
+    }
+
+    function resetData() {
+      if (confirm("初期のタスク・日付状態にリセットしますか？（全社のデータが初期化されます）")) {
+        tasks = JSON.parse(JSON.stringify(defaultTasks));
+        saveTasks();
+      }
+    }
+
+    function exportCSV() {
+      let csvContent = "\uFEFF";
+      csvContent += "ID,タスク名称,担当,開始日,完了期限,進捗,CP(クリティカルパス)\n";
+
+      tasks.forEach(t => {
+        const cpStr = t.cp ? "★" : "-";
+        csvContent += `"${t.id}","${t.name}","${t.owner}","${t.start}","${t.end}","${t.status}","${cpStr}"\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `成田空港プロジェクト工程表_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function downloadManual() {
+      const manualText = `==================================================
+【工程表】成田空港IP什器導入プロジェクト 取扱マニュアル
+==================================================
+
+本システムは【NAA × Cuebus × Hamaru Strategy】3社間における
+リアルタイム工程管理を目的としたオンラインガントチャートシステムです。
+
+--------------------------------------------------
+1. 基本機能と画面構成
+--------------------------------------------------
+・リアルタイム自動同期: 
+  誰かがタスクや日付を編集すると、クラウドを介して全ユーザーの画面へ即座に自動反映されます。
+
+・✨ Gemini AI Assistant:
+  Google AI Studioで無料発行できる「Gemini APIキー」を設定することで、0円で完全無料のAI分析・診断・相談が利用できます。
+
+==================================================`;
+
+      const blob = new Blob([manualText], { type: 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "成田空港プロジェクト工程表_取扱マニュアル.txt");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function updateCountdown() {
+      const target = new Date("2026-11-10T00:00:00").getTime();
+      const now = new Date().getTime();
+      const diff = target - now;
+      const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+      document.getElementById("countdown").innerText = days > 0 ? days + " 日" : "本日オープン！";
+    }
+
+    function initResizer() {
+      const resizer = document.getElementById("resizer");
+      const taskSide = document.getElementById("task-side");
+      const wrapper = document.getElementById("gantt-wrapper");
+
+      let isResizing = false;
+
+      resizer.addEventListener("mousedown", function () {
+        isResizing = true;
+        resizer.classList.add("resizing");
+        document.body.style.cursor = "col-resize";
+      });
+
+      document.addEventListener("mousemove", function (e) {
+        if (!isResizing) return;
+        const wrapperRect = wrapper.getBoundingClientRect();
+        let newWidth = e.clientX - wrapperRect.left;
+
+        if (newWidth < 250) newWidth = 250;
+        if (newWidth > wrapperRect.width - 200) newWidth = wrapperRect.width - 200;
+
+        taskSide.style.width = newWidth + "px";
+      });
+
+      document.addEventListener("mouseup", function () {
+        if (isResizing) {
+          isResizing = false;
+          resizer.classList.remove("resizing");
+          document.body.style.cursor = "default";
+        }
+      });
+    }
+
+    initResizer();
+  </script>
+</body>
+</html>
