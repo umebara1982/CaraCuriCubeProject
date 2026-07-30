@@ -3,31 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>成田空港 IPエンタメ什器導入 プロジェクト管理ダッシュボード</title>
+  <title>成田空港 IPエンタメ什器導入 プロジェクト統合管理工程表</title>
   <style>
     :root {
       --primary-color: #1B365D;
       --accent-color: #C00000;
       --bg-color: #F4F6F9;
       --card-bg: #FFFFFF;
-      --text-color: #333333;
-      --border-color: #E0E0E0;
+      --border-color: #D0D7DE;
+      --day-width: 28px; /* 日別セルの幅 */
     }
     
     body {
       font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
       background-color: var(--bg-color);
-      color: var(--text-color);
+      color: #333;
       margin: 0;
-      padding: 20px;
+      padding: 15px;
     }
 
     header {
       background-color: var(--primary-color);
       color: white;
-      padding: 20px 30px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+      padding: 15px 20px;
+      border-radius: 6px;
+      margin-bottom: 15px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -36,80 +36,45 @@
 
     header h1 {
       margin: 0;
-      font-size: 1.5rem;
+      font-size: 1.3rem;
     }
 
     header p {
       margin: 5px 0 0 0;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       opacity: 0.8;
     }
 
     .countdown {
       background: rgba(255, 255, 255, 0.15);
-      padding: 10px 20px;
+      padding: 8px 15px;
       border-radius: 6px;
       text-align: center;
     }
 
     .countdown-num {
-      font-size: 1.8rem;
+      font-size: 1.5rem;
       font-weight: bold;
       color: #FFD700;
     }
 
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 20px;
-      margin-bottom: 20px;
-    }
-
-    .card {
-      background: var(--card-bg);
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-      border-left: 5px solid var(--primary-color);
-    }
-
-    .card.critical {
-      border-left-color: var(--accent-color);
-    }
-
-    .card h3 {
-      margin-top: 0;
-      font-size: 1rem;
-      color: #666;
-    }
-
-    .card .val {
-      font-size: 1.4rem;
-      font-weight: bold;
-      color: var(--primary-color);
-    }
-
     .controls {
       background: var(--card-bg);
-      padding: 15px 20px;
-      border-radius: 8px;
-      margin-bottom: 20px;
+      padding: 10px 15px;
+      border-radius: 6px;
+      margin-bottom: 15px;
       display: flex;
-      gap: 15px;
+      gap: 10px;
       align-items: center;
       flex-wrap: wrap;
-    }
-
-    .controls label {
-      font-weight: bold;
-      font-size: 0.9rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
     select, button, input[type="date"], input[type="text"] {
-      padding: 8px 12px;
+      padding: 6px 10px;
       border: 1px solid var(--border-color);
       border-radius: 4px;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
 
     button {
@@ -117,186 +82,415 @@
       color: white;
       border: none;
       cursor: pointer;
-      transition: background 0.2s;
+      font-weight: bold;
     }
 
-    button:hover {
-      background-color: #122440;
-    }
+    button:hover { opacity: 0.9; }
 
-    .btn-add {
-      background-color: #27ae60;
-    }
+    .btn-add { background-color: #27ae60; }
+    .btn-delete { background-color: #e74c3c; padding: 2px 6px; font-size: 0.75rem; }
 
-    .btn-add:hover {
-      background-color: #219150;
-    }
-
-    .table-container {
+    /* スプリットレイアウト構造（左固定テーブル＋右横スクロールガント） */
+    .gantt-wrapper {
+      display: flex;
       background: var(--card-bg);
-      border-radius: 8px;
-      overflow-x: auto;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
-    table {
+    /* 左側：固定タスクテーブル */
+    .task-side {
+      width: 520px;
+      flex-shrink: 0;
+      border-right: 2px solid var(--primary-color);
+      background: #FFF;
+      z-index: 10;
+    }
+
+    .task-table {
       width: 100%;
       border-collapse: collapse;
-      text-align: left;
-      font-size: 0.9rem;
+      font-size: 0.8rem;
     }
 
-    th {
-      background-color: var(--primary-color);
+    .task-table th {
+      background: var(--primary-color);
       color: white;
-      padding: 12px 15px;
-      white-space: nowrap;
+      padding: 8px;
+      text-align: left;
+      height: 48px;
+      box-sizing: border-box;
     }
 
-    td {
-      padding: 10px 12px;
+    .task-table td {
+      padding: 6px 8px;
       border-bottom: 1px solid var(--border-color);
+      height: 38px;
+      box-sizing: border-box;
       white-space: nowrap;
     }
 
-    tr:hover {
-      background-color: #F0F4F8;
+    /* 右側：横スクロールタイムライン */
+    .gantt-side {
+      flex-grow: 1;
+      overflow-x: auto;
+      background: #FAFAFA;
+      position: relative;
     }
 
-    .badge-cp {
-      background-color: #FCE4D6;
-      color: var(--accent-color);
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-weight: bold;
-      font-size: 0.8rem;
+    .gantt-header-container {
+      display: flex;
+      flex-direction: column;
+      background: #F0F4F8;
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 5;
     }
 
-    .status-select {
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-weight: bold;
+    .month-row, .day-row {
+      display: flex;
     }
 
-    .status-not-started { background-color: #E0E0E0; color: #555; }
-    .status-in-progress { background-color: #FFF2CC; color: #7F6000; }
-    .status-completed { background-color: #E2EFDA; color: #375623; }
-
-    footer {
-      margin-top: 30px;
+    .month-cell {
+      border-right: 1px solid var(--border-color);
+      border-bottom: 1px solid var(--border-color);
       text-align: center;
+      font-weight: bold;
       font-size: 0.8rem;
-      color: #888;
+      padding: 4px 0;
+      background: #E6ECF2;
+      color: var(--primary-color);
     }
+
+    .day-cell {
+      width: var(--day-width);
+      min-width: var(--day-width);
+      border-right: 1px solid #EAEAEA;
+      text-align: center;
+      font-size: 0.7rem;
+      padding: 3px 0;
+      box-sizing: border-box;
+    }
+
+    .day-cell.sat { background-color: #EBF3FB; color: #0055AA; }
+    .day-cell.sun { background-color: #FDE8E8; color: #CC0000; }
+
+    /* ガントチャート本体の行とバー */
+    .gantt-body {
+      position: relative;
+    }
+
+    .gantt-row {
+      display: flex;
+      height: 38px;
+      border-bottom: 1px solid var(--border-color);
+      box-sizing: border-box;
+      position: relative;
+    }
+
+    .gantt-bg-cell {
+      width: var(--day-width);
+      min-width: var(--day-width);
+      border-right: 1px solid #F0F0F0;
+      box-sizing: border-box;
+    }
+
+    .gantt-bg-cell.sat { background-color: #F7FAFC; }
+    .gantt-bg-cell.sun { background-color: #FFF5F5; }
+
+    /* スケジュールバー */
+    .bar {
+      position: absolute;
+      top: 7px;
+      height: 22px;
+      background-color: #2980b9;
+      border-radius: 4px;
+      opacity: 0.85;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      z-index: 2;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .bar:hover { transform: scaleY(1.1); opacity: 1; }
+    .bar.cp { background-color: var(--accent-color); } /* クリティカルパスは赤色 */
+
+    .badge-cp { background: #FCE4D6; color: var(--accent-color); padding: 2px 4px; border-radius: 3px; font-weight: bold; }
+    .status-select { padding: 2px 4px; border-radius: 3px; font-weight: bold; font-size: 0.75rem; }
   </style>
 </head>
 <body>
 
   <header>
     <div>
-      <h1>✈️ 成田空港 IPエンタメ什器「CaraCuriCube」統合管理システム</h1>
-      <p>グランドオープン：2026年11月10日（火） | 主管：Cuebus × Hamaru Strategy × 成田国際空港</p>
+      <h1>✈️ 【Cuebus × Hamaru Strategy × NAA】統合管理工程表（ガントチャート）</h1>
+      <p>期間: 2026年8月1日 〜 2027年3月31日 | オープン目標: 2026年11月10日（火）</p>
     </div>
     <div class="countdown">
-      オープンまであと
+      グランドオープンまで
       <div class="countdown-num" id="countdown">-- 日</div>
     </div>
   </header>
 
-  <div class="dashboard-grid">
-    <div class="card">
-      <h3>次回最重要マイルストーン</h3>
-      <div class="val">8/20：第1弾IP許諾獲得</div>
-    </div>
-    <div class="card critical">
-      <h3>最優先デッドライン（量産発注）</h3>
-      <div class="val">9/25：Tシャツ製造開始</div>
-    </div>
-    <div class="card">
-      <h3>現場インフラ与件</h3>
-      <div class="val">1,500W × 3口（4.5kW）確保済</div>
-    </div>
-    <div class="card">
-      <h3>店舗運用形態</h3>
-      <div class="val">9:00〜21:00（スタッフ常駐）</div>
-    </div>
-  </div>
-
   <div class="controls">
-    <label for="filter-owner">担当会社で絞り込み:</label>
-    <select id="filter-owner" onchange="filterTasks()">
-      <option value="ALL">すべて表示</option>
+    <label>絞り込み:</label>
+    <select id="filter-owner" onchange="renderAll()">
+      <option value="ALL">全社表示</option>
       <option value="Cuebus">Cuebus</option>
       <option value="Hamaru Strategy">Hamaru Strategy</option>
       <option value="成田国際空港">成田国際空港</option>
       <option value="全社合同">全社合同</option>
     </select>
 
-    <label for="filter-cp">表示フィルター:</label>
-    <select id="filter-cp" onchange="filterTasks()">
+    <label>表示条件:</label>
+    <select id="filter-cp" onchange="renderAll()">
       <option value="ALL">全タスク</option>
-      <option value="CP">クリティカルパス（★CP）のみ</option>
+      <option value="CP">★クリティカルパス（CP）のみ</option>
     </select>
 
-    <button onclick="resetFilters()">フィルター解除</button>
-    <button class="btn-add" onclick="addNewTask()">＋ タスク追加</button>
-    <button onclick="resetData()" style="background-color: #7f8c8d;">初期日付にリセット</button>
+    <button onclick="addNewTask()" class="btn-add">＋ タスク追加</button>
+    <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
+    <span style="font-size: 0.8rem; color: #666; margin-left: auto;">👉 右側のカレンダー領域は横スクロールできます（2027年3月まで）</span>
   </div>
 
-  <div class="table-container">
-    <table id="task-table">
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>カテゴリ</th>
-          <th>タスク名称（編集可）</th>
-          <th>主担当</th>
-          <th>開始日（手入力可）</th>
-          <th>完了期限（手入力可）</th>
-          <th>CP</th>
-          <th>進捗ステータス</th>
-        </tr>
-      </thead>
-      <tbody id="task-tbody">
-      </tbody>
-    </table>
-  </div>
+  <div class="gantt-wrapper">
+    <!-- 左側：タスク固定テーブル -->
+    <div class="task-side">
+      <table class="task-table">
+        <thead>
+          <tr>
+            <th style="width: 35px;">ID</th>
+            <th style="width: 140px;">タスク名称</th>
+            <th style="width: 80px;">担当</th>
+            <th style="width: 90px;">開始日</th>
+            <th style="width: 90px;">完了期限</th>
+            <th style="width: 35px;">CP</th>
+            <th style="width: 40px;">操作</th>
+          </tr>
+        </thead>
+        <tbody id="task-tbody">
+        </tbody>
+      </table>
+    </div>
 
-  <footer>
-    <p>成田空港 IPエンタメ什器導入プロジェクト統括マネジメントシステム | Powered by Professional PM Office</p>
-  </footer>
+    <!-- 右側：日別カレンダー・ガントチャートバー（横スクロール領域） -->
+    <div class="gantt-side" id="gantt-side">
+      <div class="gantt-header-container" id="gantt-header">
+        <!-- JSで月・日ヘッダーを動的生成 -->
+      </div>
+      <div class="gantt-body" id="gantt-body">
+        <!-- JSで背景セルおよびスケジュールバーを動的生成 -->
+      </div>
+    </div>
+  </div>
 
   <script>
-    // デフォルトのタスク一覧
+    // 期間設定：2026年8月1日 〜 2027年3月31日
+    const START_DATE = new Date("2026-08-01");
+    const END_DATE = new Date("2027-03-31");
+    const DAY_WIDTH = 28; // 1日あたりのピクセル幅
+
+    // 初期タスクリスト
     const defaultTasks = [
-      { id: "1.1", cat: "開発", name: "CUEBUS詳細設計（7列×5段・100V 4.5kW電源適応）", owner: "Cuebus", sub: "成田空港", start: "2026-08-01", end: "2026-08-10", cp: true, status: "進行中" },
-      { id: "1.2", cat: "空港対応", name: "T2現地与件最終確認（床荷重・搬入ルート・電源位置）", owner: "Cuebus", sub: "成田空港", start: "2026-08-01", end: "2026-08-15", cp: true, status: "進行中" },
-      { id: "1.3", cat: "開発", name: "昇降リフト・メカ機構詳細設計", owner: "Cuebus", sub: "-", start: "2026-08-11", end: "2026-08-31", cp: true, status: "未着手" },
-      { id: "1.4", cat: "開発", name: "制御開発（昇降・カプセル排出ロジック）", owner: "Cuebus", sub: "-", start: "2026-08-20", end: "2026-09-20", cp: true, status: "未着手" },
-      { id: "1.5", cat: "開発", name: "演出設計（光・音演出・正面ハンガー展示連動）", owner: "Cuebus", sub: "Hamaru Strategy", start: "2026-08-20", end: "2026-09-20", cp: false, status: "未着手" },
-      { id: "2.1", cat: "商品/IP", name: "第1弾IP交渉・契約締結・デザイン許諾", owner: "Hamaru Strategy", sub: "-", start: "2026-08-01", end: "2026-08-20", cp: true, status: "進行中" },
-      { id: "2.2", cat: "商品/IP", name: "Tシャツ仕様決定・証紙タグデザイン作成", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026-08-15", end: "2026-08-25", cp: false, status: "未着手" },
-      { id: "2.3", cat: "商品/IP", name: "Tシャツ量産発注 & 証紙アタッチ・BOXアセンブリ", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026-08-26", end: "2026-09-25", cp: true, status: "未着手" },
-      { id: "2.4", cat: "商品/IP", name: "Tシャツ納品・現地倉庫/支給管理", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026-09-26", end: "2026-10-20", cp: true, status: "未着手" },
-      { id: "3.1", cat: "システム", name: "Shopify構築（多言語・決済連携ベース）", owner: "Hamaru Strategy", sub: "-", start: "2026-08-20", end: "2026-09-30", cp: false, status: "未着手" },
-      { id: "3.2", cat: "システム", name: "QR認証・真贋証明システム開発", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026-09-01", end: "2026-10-10", cp: false, status: "未着手" },
-      { id: "3.3", cat: "法務", name: "商標登録（CaraCuriCube）・ドメイン手配", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026-08-01", end: "2026-08-31", cp: false, status: "進行中" },
-      { id: "4.1", cat: "行政", name: "消防確認（成田市消防・防炎不燃証明書類提出）", owner: "Cuebus", sub: "成田空港", start: "2026-08-15", end: "2026-09-30", cp: true, status: "未着手" },
-      { id: "5.1", cat: "空港対応", name: "共通決済端末の手配・通信プロトコル開示", owner: "成田国際空港", sub: "Cuebus", start: "2026-08-10", end: "2026-09-15", cp: true, status: "進行中" },
-      { id: "5.2", cat: "空港対応", name: "搬入計画書作成・養生計画・入館パス申請", owner: "Cuebus", sub: "成田空港", start: "2026-09-15", end: "2026-10-15", cp: true, status: "未着手" },
-      { id: "5.3", cat: "店舗運用", name: "現場接客・補充スタッフ（アルバイト）手配", owner: "Cuebus", sub: "-", start: "2026-09-15", end: "2026-10-15", cp: false, status: "未着手" },
-      { id: "6.1", cat: "結合テスト", name: "工場内FAT（実機動作×演出×決済×QR 結合テスト）", owner: "Cuebus", sub: "Hamaru Strategy", start: "2026-10-21", end: "2026-10-25", cp: true, status: "未着手" },
-      { id: "6.2", cat: "現地施工", name: "成田空港 T2現場 夜間搬入・設置・一次電源結線", owner: "Cuebus", sub: "成田空港", start: "2026-10-28", end: "2026-11-02", cp: true, status: "未着手" },
-      { id: "6.3", cat: "リハーサル", name: "現地夜間総合リハーサル・消防最終実地検査", owner: "全社合同", sub: "成田空港", start: "2026-11-03", end: "2026-11-05", cp: true, status: "未着手" },
-      { id: "6.4", cat: "運用準備", name: "プレオープン（関係者内覧・スタッフ運用テスト）", owner: "全社合同", sub: "成田空港", start: "2026-11-06", end: "2026-11-09", cp: true, status: "未着手" },
-      { id: "6.5", cat: "オープン", name: "★グランドオープン（9:00〜21:00 スタッフ常駐）", owner: "全社合同", sub: "成田空港", start: "2026-11-10", end: "2026-11-10", cp: true, status: "未着手" }
+      { id: "1.1", cat: "開発", name: "CUEBUS詳細設計（100V 4.5kW電源対応）", owner: "Cuebus", start: "2026-08-01", end: "2026-08-10", cp: true, status: "進行中" },
+      { id: "1.2", cat: "空港対応", name: "T2現地与件確認（床荷重・電源位置）", owner: "Cuebus", start: "2026-08-01", end: "2026-08-15", cp: true, status: "進行中" },
+      { id: "1.3", cat: "開発", name: "昇降リフト・メカ機構詳細設計", owner: "Cuebus", start: "2026-08-11", end: "2026-08-31", cp: true, status: "未着手" },
+      { id: "1.4", cat: "開発", name: "制御開発（昇降・カプセル排出ロジック）", owner: "Cuebus", start: "2026-08-20", end: "2026-09-20", cp: true, status: "未着手" },
+      { id: "1.5", cat: "開発", name: "演出設計（光・音演出・正面ハンガー連動）", owner: "Cuebus", start: "2026-08-20", end: "2026-09-20", cp: false, status: "未着手" },
+      { id: "2.1", cat: "商品/IP", name: "第1弾IP交渉・契約締結・デザイン許諾", owner: "Hamaru Strategy", start: "2026-08-01", end: "2026-08-20", cp: true, status: "進行中" },
+      { id: "2.2", cat: "商品/IP", name: "Tシャツ仕様決定・証紙タグ作成", owner: "Hamaru Strategy", start: "2026-08-15", end: "2026-08-25", cp: false, status: "未着手" },
+      { id: "2.3", cat: "商品/IP", name: "Tシャツ量産発注 & BOXアセンブリ", owner: "Hamaru Strategy", start: "2026-08-26", end: "2026-09-25", cp: true, status: "未着手" },
+      { id: "2.4", cat: "商品/IP", name: "Tシャツ納品・現地支給手配", owner: "Hamaru Strategy", start: "2026-09-26", end: "2026-10-20", cp: true, status: "未着手" },
+      { id: "3.1", cat: "システム", name: "Shopify構築（多言語・決済連携）", owner: "Hamaru Strategy", start: "2026-08-20", end: "2026-09-30", cp: false, status: "未着手" },
+      { id: "3.2", cat: "システム", name: "QR認証・真贋証明システム開発", owner: "Hamaru Strategy", start: "2026-09-01", end: "2026-10-10", cp: false, status: "未着手" },
+      { id: "4.1", cat: "行政", name: "消防確認（成田市消防・不燃証明提出）", owner: "Cuebus", start: "2026-08-15", end: "2026-09-30", cp: true, status: "未着手" },
+      { id: "5.1", cat: "空港対応", name: "共通決済端末調達・プロトコル開示", owner: "成田国際空港", start: "2026-08-10", end: "2026-09-15", cp: true, status: "進行中" },
+      { id: "5.2", cat: "空港対応", name: "搬入計画書作成・セキュリティパス申請", owner: "Cuebus", start: "2026-09-15", end: "2026-10-15", cp: true, status: "未着手" },
+      { id: "5.3", cat: "店舗運用", name: "現場接客・補充スタッフ（バイト）採用", owner: "Cuebus", start: "2026-09-15", end: "2026-10-15", cp: false, status: "未着手" },
+      { id: "6.1", cat: "結合テスト", name: "工場内FAT（動作×演出×決済×QR）", owner: "Cuebus", start: "2026-10-21", end: "2026-10-25", cp: true, status: "未着手" },
+      { id: "6.2", cat: "現地施工", name: "成田空港 T2現場 夜間搬入・設置工事", owner: "Cuebus", start: "2026-10-28", end: "2026-11-02", cp: true, status: "未着手" },
+      { id: "6.3", cat: "リハーサル", name: "現地夜間総合リハーサル・消防検査", owner: "全社合同", start: "2026-11-03", end: "2026-11-05", cp: true, status: "未着手" },
+      { id: "6.4", cat: "運用準備", name: "プレオープン（関係者内覧・運用テスト）", owner: "全社合同", start: "2026-11-06", end: "2026-11-09", cp: true, status: "未着手" },
+      { id: "6.5", cat: "オープン", name: "★グランドオープン（9:00〜21:00）", owner: "全社合同", start: "2026-11-10", end: "2026-11-10", cp: true, status: "未着手" },
+      { id: "7.1", cat: "初期運用", name: "初期稼働モニタリング & 商品追加手配", owner: "Cuebus", start: "2026-11-11", end: "2026-12-31", cp: false, status: "未着手" },
+      { id: "7.2", cat: "Phase2", name: "第2弾IP企画 & 他グッズ展開検討", owner: "Hamaru Strategy", start: "2027-01-05", end: "2027-03-31", cp: false, status: "未着手" }
     ];
 
-    // ブラウザのローカルストレージからデータ復元
-    let tasks = JSON.parse(localStorage.getItem('narita_tasks')) || defaultTasks;
+    let tasks = JSON.parse(localStorage.getItem('narita_gantt_tasks')) || defaultTasks;
+    let daysArray = [];
+
+    // 日付計算ユーティリティ
+    function initDays() {
+      daysArray = [];
+      let cur = new Date(START_DATE);
+      while (cur <= END_DATE) {
+        daysArray.push(new Date(cur));
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
 
     function saveTasks() {
-      localStorage.setItem('narita_tasks', JSON.stringify(tasks));
+      localStorage.setItem('narita_gantt_tasks', JSON.stringify(tasks));
+    }
+
+    // 1. カレンダーヘッダー（月・日）のレンダリング
+    function renderGanttHeader() {
+      const headerContainer = document.getElementById("gantt-header");
+      headerContainer.innerHTML = "";
+
+      const monthRow = document.createElement("div");
+      monthRow.className = "month-row";
+
+      const dayRow = document.createElement("div");
+      dayRow.className = "day-row";
+
+      let currentMonth = -1;
+      let monthCell = null;
+      let monthDaysCount = 0;
+
+      daysArray.forEach((d) => {
+        const m = d.getMonth();
+        const dateNum = d.getDate();
+        const dayOfWeek = d.getDay(); // 0:日, 6:土
+
+        if (m !== currentMonth) {
+          if (monthCell) {
+            monthCell.style.width = (monthDaysCount * DAY_WIDTH) + "px";
+          }
+          currentMonth = m;
+          monthDaysCount = 0;
+          monthCell = document.createElement("div");
+          monthCell.className = "month-cell";
+          monthCell.innerText = `${d.getFullYear()}年 ${m + 1}月`;
+          monthRow.appendChild(monthCell);
+        }
+        monthDaysCount++;
+
+        const dayCell = document.createElement("div");
+        let cls = "day-cell";
+        if (dayOfWeek === 6) cls += " sat";
+        if (dayOfWeek === 0) cls += " sun";
+        dayCell.className = cls;
+        dayCell.innerText = dateNum;
+        dayRow.appendChild(dayCell);
+      });
+
+      if (monthCell) {
+        monthCell.style.width = (monthDaysCount * DAY_WIDTH) + "px";
+      }
+
+      headerContainer.appendChild(monthRow);
+      headerContainer.appendChild(dayRow);
+    }
+
+    // 2. メインのタスク＆ガントチャート描画
+    function renderAll() {
+      initDays();
+      renderGanttHeader();
+
+      const ownerVal = document.getElementById("filter-owner").value;
+      const cpVal = document.getElementById("filter-cp").value;
+
+      let filtered = tasks.filter(t => {
+        if (ownerVal !== "ALL" && t.owner !== ownerVal) return false;
+        if (cpVal === "CP" && !t.cp) return false;
+        return true;
+      });
+
+      const tbody = document.getElementById("task-tbody");
+      const ganttBody = document.getElementById("gantt-body");
+
+      tbody.innerHTML = "";
+      ganttBody.innerHTML = "";
+
+      const totalWidth = daysArray.length * DAY_WIDTH;
+
+      filtered.forEach((t) => {
+        const realIdx = tasks.findIndex(item => item.id === t.id);
+
+        // --- 左側：タスクテーブル行 ---
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${t.id}</td>
+          <td><input type="text" value="${t.name}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 130px;"></td>
+          <td>${t.owner}</td>
+          <td><input type="date" value="${t.start}" onchange="updateTask(${realIdx}, 'start', this.value)"></td>
+          <td><input type="date" value="${t.end}" onchange="updateTask(${realIdx}, 'end', this.value)"></td>
+          <td>${t.cp ? '<span class="badge-cp">★CP</span>' : '-'}</td>
+          <td><button class="btn-delete" onclick="deleteTask(${realIdx})">消</button></td>
+        `;
+        tbody.appendChild(tr);
+
+        // --- 右側：ガントチャート行（背景グリッド） ---
+        const gRow = document.createElement("div");
+        gRow.className = "gantt-row";
+        gRow.style.width = totalWidth + "px";
+
+        daysArray.forEach(d => {
+          const bgCell = document.createElement("div");
+          let cls = "gantt-bg-cell";
+          if (d.getDay() === 6) cls += " sat";
+          if (d.getDay() === 0) cls += " sun";
+          bgCell.className = cls;
+          gRow.appendChild(bgCell);
+        });
+
+        // スケジュールバーの計算と配置
+        const tStart = new Date(t.start);
+        const tEnd = new Date(t.end);
+
+        if (tEnd >= START_DATE && tStart <= END_DATE) {
+          const startDiff = Math.max(0, Math.floor((tStart - START_DATE) / (1000 * 60 * 60 * 24)));
+          const duration = Math.max(1, Math.floor((tEnd - tStart) / (1000 * 60 * 60 * 24)) + 1);
+
+          const bar = document.createElement("div");
+          bar.className = "bar" + (t.cp ? " cp" : "");
+          bar.style.left = (startDiff * DAY_WIDTH) + "px";
+          bar.style.width = (duration * DAY_WIDTH - 2) + "px";
+          bar.title = `${t.name} (${t.start} 〜 ${t.end})`;
+
+          gRow.appendChild(bar);
+        }
+
+        ganttBody.appendChild(gRow);
+      });
+
+      updateCountdown();
+    }
+
+    // データ変更処理
+    function updateTask(idx, field, val) {
+      tasks[idx][field] = val;
+      saveTasks();
+      renderAll();
+    }
+
+    function deleteTask(idx) {
+      if (confirm(`タスク「${tasks[idx].name}」を削除しますか？`)) {
+        tasks.splice(idx, 1);
+        saveTasks();
+        renderAll();
+      }
+    }
+
+    function addNewTask() {
+      const newId = "加-" + (tasks.length + 1);
+      tasks.push({
+        id: newId, cat: "追加", name: "新規タスク", owner: "Cuebus", start: "2026-08-01", end: "2026-08-10", cp: false, status: "未着手"
+      });
+      saveTasks();
+      renderAll();
+    }
+
+    function resetData() {
+      if (confirm("初期のタスク・日付状態にリセットしますか？")) {
+        tasks = JSON.parse(JSON.stringify(defaultTasks));
+        saveTasks();
+        renderAll();
+      }
     }
 
     function updateCountdown() {
@@ -307,84 +501,8 @@
       document.getElementById("countdown").innerText = days > 0 ? days + " 日" : "本日オープン！";
     }
 
-    function renderTasks(data) {
-      const tbody = document.getElementById("task-tbody");
-      tbody.innerHTML = "";
-
-      data.forEach((t, index) => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${t.id}</td>
-          <td>${t.cat}</td>
-          <td><input type="text" value="${t.name}" onchange="updateName(${index}, this.value)" style="width: 280px;"></td>
-          <td>${t.owner}</td>
-          <td><input type="date" value="${t.start}" onchange="updateStart(${index}, this.value)"></td>
-          <td><input type="date" value="${t.end}" onchange="updateEnd(${index}, this.value)"></td>
-          <td>${t.cp ? '<span class="badge-cp">★CP</span>' : '-'}</td>
-          <td>
-            <select class="status-select ${getStatusClass(t.status)}" onchange="updateStatus(${index}, this.value)">
-              <option value="未着手" ${t.status === '未着手' ? 'selected' : ''}>未着手</option>
-              <option value="進行中" ${t.status === '進行中' ? 'selected' : ''}>進行中</option>
-              <option value="完了" ${t.status === '完了' ? 'selected' : ''}>完了</option>
-            </select>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function getStatusClass(status) {
-      if (status === '進行中') return 'status-in-progress';
-      if (status === '完了') return 'status-completed';
-      return 'status-not-started';
-    }
-
-    function updateName(index, val) { tasks[index].name = val; saveTasks(); }
-    function updateStart(index, val) { tasks[index].start = val; saveTasks(); }
-    function updateEnd(index, val) { tasks[index].end = val; saveTasks(); }
-    function updateStatus(index, val) { tasks[index].status = val; saveTasks(); filterTasks(); }
-
-    function addNewTask() {
-      const newId = (tasks.length + 1) + ".0";
-      tasks.push({
-        id: newId, cat: "追加タスク", name: "新規タスク名称", owner: "Cuebus", sub: "-", start: "2026-08-01", end: "2026-08-10", cp: false, status: "未着手"
-      });
-      saveTasks();
-      filterTasks();
-    }
-
-    function resetData() {
-      if(confirm("手入力した日付や追加タスクを初期状態にリセットしますか？")) {
-        tasks = JSON.parse(JSON.stringify(defaultTasks));
-        saveTasks();
-        filterTasks();
-      }
-    }
-
-    function filterTasks() {
-      const ownerVal = document.getElementById("filter-owner").value;
-      const cpVal = document.getElementById("filter-cp").value;
-
-      let filtered = tasks;
-
-      if (ownerVal !== "ALL") {
-        filtered = filtered.filter(t => t.owner === ownerVal);
-      }
-      if (cpVal === "CP") {
-        filtered = filtered.filter(t => t.cp === true);
-      }
-
-      renderTasks(filtered);
-    }
-
-    function resetFilters() {
-      document.getElementById("filter-owner").value = "ALL";
-      document.getElementById("filter-cp").value = "ALL";
-      renderTasks(tasks);
-    }
-
-    updateCountdown();
-    renderTasks(tasks);
+    // 初期起動
+    renderAll();
   </script>
 </body>
 </html>
