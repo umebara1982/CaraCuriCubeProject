@@ -88,8 +88,8 @@
     button:hover { opacity: 0.9; }
 
     .btn-add { background-color: #27ae60; }
-    .btn-delete { background-color: #e74c3c; padding: 2px 4px; font-size: 0.72rem; }
-    .btn-insert { background-color: #34495e; padding: 2px 4px; font-size: 0.7rem; }
+    .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
+    .btn-move { background-color: #34495e; padding: 2px 4px; font-size: 0.72rem; }
 
     .gantt-wrapper {
       display: flex;
@@ -143,7 +143,6 @@
       text-overflow: ellipsis;
     }
 
-    /* ドラッグ＆ドロップスタイル */
     tr.draggable-row {
       cursor: grab;
     }
@@ -302,10 +301,11 @@
       <option value="CP">★クリティカルパス（CP）のみ</option>
     </select>
 
-    <button onclick="addNewTask('end')" class="btn-add">＋ 一番下に追加</button>
+    <!-- ★「＋ 新規タスク追加」に名称変更 -->
+    <button onclick="addNewTask()" class="btn-add">＋ 新規タスク追加</button>
     <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
 
-    <span style="font-size: 0.75rem; color: #666;">💡 行をドラッグ＆ドロップで並び替えできます</span>
+    <span style="font-size: 0.75rem; color: #666;">💡 行をドラッグ＆ドロップ、または「↑」「↓」で上下移動できます</span>
 
     <div class="legend">
       <span><span class="legend-box" style="background:#C00000;"></span> 赤：最重要パス(CP)</span>
@@ -326,7 +326,7 @@
             <th style="width: 85px;">完了期限</th>
             <th style="width: 65px;">進捗</th>
             <th style="width: 20px;">CP</th>
-            <th style="width: 80px;">操作・追加</th>
+            <th style="width: 80px;">順序・操作</th>
           </tr>
         </thead>
         <tbody id="task-tbody">
@@ -458,13 +458,11 @@
       filtered.forEach((t) => {
         const realIdx = tasks.findIndex(item => item.id === t.id);
 
-        // ★ドラッグ対応行（draggable="true"）
         const tr = document.createElement("tr");
         tr.className = "draggable-row";
         tr.draggable = true;
         tr.dataset.index = realIdx;
 
-        // ドラッグイベントリスナー
         tr.addEventListener("dragstart", handleDragStart);
         tr.addEventListener("dragover", handleDragOver);
         tr.addEventListener("drop", handleDrop);
@@ -493,8 +491,8 @@
           </td>
           <td style="text-align:center;">${t.cp ? '<span class="badge-cp">★</span>' : '-'}</td>
           <td style="text-align:center;">
-            <button class="btn-insert" title="直上に追加" onclick="addNewTask('above', ${realIdx})">↑</button>
-            <button class="btn-insert" title="直下に追加" onclick="addNewTask('below', ${realIdx})">↓</button>
+            <button class="btn-move" title="1行上に移動" onclick="moveTask('up', ${realIdx})">↑</button>
+            <button class="btn-move" title="1行下に移動" onclick="moveTask('down', ${realIdx})">↓</button>
             <button class="btn-delete" title="削除" onclick="deleteTask(${realIdx})">消</button>
           </td>
         `;
@@ -538,7 +536,6 @@
       document.getElementById("gantt-side").scrollLeft = 0;
     }
 
-    /* ★ドラッグ＆ドロップ処理ロジック */
     function handleDragStart(e) {
       draggedIndex = parseInt(this.dataset.index);
       this.classList.add("dragging");
@@ -554,7 +551,6 @@
       e.preventDefault();
       const targetIndex = parseInt(this.dataset.index);
       if (draggedIndex !== null && draggedIndex !== targetIndex) {
-        // 並び替え処理
         const item = tasks.splice(draggedIndex, 1)[0];
         tasks.splice(targetIndex, 0, item);
         saveTasks();
@@ -565,6 +561,20 @@
     function handleDragEnd() {
       this.classList.remove("dragging");
       draggedIndex = null;
+    }
+
+    function moveTask(direction, idx) {
+      if (direction === 'up' && idx > 0) {
+        const item = tasks.splice(idx, 1)[0];
+        tasks.splice(idx - 1, 0, item);
+        saveTasks();
+        renderAll();
+      } else if (direction === 'down' && idx < tasks.length - 1) {
+        const item = tasks.splice(idx, 1)[0];
+        tasks.splice(idx + 1, 0, item);
+        saveTasks();
+        renderAll();
+      }
     }
 
     let isSyncing = false;
@@ -596,27 +606,11 @@
       }
     }
 
-    /* ★タスク追加機能（位置指定：'end'末尾, 'above'直上, 'below'直下） */
-    function addNewTask(position = 'end', targetIdx = null) {
-      const newObj = {
-        id: "加-" + (tasks.length + 1),
-        cat: "追加",
-        name: "新規追加タスク",
-        owner: "Cuebus",
-        start: "",
-        end: "",
-        status: "未着手",
-        cp: false
-      };
-
-      if (position === 'above' && targetIdx !== null) {
-        tasks.splice(targetIdx, 0, newObj);
-      } else if (position === 'below' && targetIdx !== null) {
-        tasks.splice(targetIdx + 1, 0, newObj);
-      } else {
-        tasks.push(newObj);
-      }
-
+    function addNewTask() {
+      const nextNum = tasks.length + 1;
+      tasks.push({
+        id: "8." + nextNum, cat: "追加", name: "新規追加タスク", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false
+      });
       saveTasks();
       renderAll();
     }
