@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>成田空港 IPエンタメ什器導入 プロジェクト管理ダッシュボード</title>
+  <style>
+    :root {
+      --primary-color: #1B365D;
+      --accent-color: #C00000;
+      --bg-color: #F4F6F9;
+      --card-bg: #FFFFFF;
+      --text-color: #333333;
+      --border-color: #E0E0E0;
+    }
+    
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+    }
+
+    header {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 20px 30px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.5rem;
+    }
+
+    header p {
+      margin: 5px 0 0 0;
+      font-size: 0.9rem;
+      opacity: 0.8;
+    }
+
+    .countdown {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 10px 20px;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .countdown-num {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #FFD700;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      border-left: 5px solid var(--primary-color);
+    }
+
+    .card.critical {
+      border-left-color: var(--accent-color);
+    }
+
+    .card h3 {
+      margin-top: 0;
+      font-size: 1rem;
+      color: #666;
+    }
+
+    .card .val {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: var(--primary-color);
+    }
+
+    .controls {
+      background: var(--card-bg);
+      padding: 15px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .controls label {
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+
+    select, button {
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 0.9rem;
+    }
+
+    button {
+      background-color: var(--primary-color);
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background-color: #122440;
+    }
+
+    .table-container {
+      background: var(--card-bg);
+      border-radius: 8px;
+      overflow-x: auto;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    th {
+      background-color: var(--primary-color);
+      color: white;
+      padding: 12px 15px;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: 12px 15px;
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+    }
+
+    tr:hover {
+      background-color: #F0F4F8;
+    }
+
+    .badge-cp {
+      background-color: #FCE4D6;
+      color: var(--accent-color);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      font-size: 0.8rem;
+    }
+
+    .status-select {
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+    }
+
+    .status-not-started { background-color: #E0E0E0; color: #555; }
+    .status-in-progress { background-color: #FFF2CC; color: #7F6000; }
+    .status-completed { background-color: #E2EFDA; color: #375623; }
+
+    footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #888;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div>
+      <h1>✈️ 成田空港 IPエンタメ什器「CaraCuriCube」統合管理システム</h1>
+      <p>グランドオープン：2026年11月10日（火） | 主管：Cuebus × Hamaru Strategy × 成田国際空港</p>
+    </div>
+    <div class="countdown">
+      オープンまであと
+      <div class="countdown-num" id="countdown">-- 日</div>
+    </div>
+  </header>
+
+  <div class="dashboard-grid">
+    <div class="card">
+      <h3>次回最重要マイルストーン</h3>
+      <div class="val">8/20：第1弾IP許諾獲得</div>
+    </div>
+    <div class="card critical">
+      <h3>最優先デッドライン（量産発注）</h3>
+      <div class="val">9/25：Tシャツ製造開始</div>
+    </div>
+    <div class="card">
+      <h3>現場インフラ与件</h3>
+      <div class="val">1,500W × 3口（4.5kW）確保済</div>
+    </div>
+    <div class="card">
+      <h3>店舗運用形態</h3>
+      <div class="val">9:00〜21:00（スタッフ常駐）</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <label for="filter-owner">担当会社で絞り込み:</label>
+    <select id="filter-owner" onchange="filterTasks()">
+      <option value="ALL">すべて表示</option>
+      <option value="Cuebus">Cuebus</option>
+      <option value="Hamaru Strategy">Hamaru Strategy</option>
+      <option value="成田国際空港">成田国際空港</option>
+      <option value="全社合同">全社合同</option>
+    </select>
+
+    <label for="filter-cp">表示フィルター:</label>
+    <select id="filter-cp" onchange="filterTasks()">
+      <option value="ALL">全タスク</option>
+      <option value="CP">クリティカルパス（★CP）のみ</option>
+    </select>
+
+    <button onclick="resetFilters()">フィルター解除</button>
+  </div>
+
+  <div class="table-container">
+    <table id="task-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>カテゴリ</th>
+          <th>タスク名称</th>
+          <th>主担当</th>
+          <th>関係会社</th>
+          <th>開始日</th>
+          <th>完了期限</th>
+          <th>CP</th>
+          <th>進捗ステータス</th>
+        </tr>
+      </thead>
+      <tbody id="task-tbody">
+      </tbody>
+    </table>
+  </div>
+
+  <footer>
+    <p>成田空港 IPエンタメ什器導入プロジェクト統括マネジメントシステム | Powered by Professional PM Office</p>
+  </footer>
+
+  <script>
+    const tasks = [
+      { id: "1.1", cat: "開発", name: "CUEBUS詳細設計（7列×5段・100V 4.5kW電源適応）", owner: "Cuebus", sub: "成田空港", start: "2026/08/01", end: "2026/08/10", cp: true, status: "進行中" },
+      { id: "1.2", cat: "空港対応", name: "T2現地与件最終確認（床荷重・搬入ルート・電源位置）", owner: "Cuebus", sub: "成田空港", start: "2026/08/01", end: "2026/08/15", cp: true, status: "進行中" },
+      { id: "1.3", cat: "開発", name: "昇降リフト・メカ機構詳細設計", owner: "Cuebus", sub: "-", start: "2026/08/11", end: "2026/08/31", cp: true, status: "未着手" },
+      { id: "1.4", cat: "開発", name: "制御開発（昇降・カプセル排出ロジック）", owner: "Cuebus", sub: "-", start: "2026/08/20", end: "2026/09/20", cp: true, status: "未着手" },
+      { id: "1.5", cat: "開発", name: "演出設計（光・音演出・正面ハンガー展示連動）", owner: "Cuebus", sub: "Hamaru Strategy", start: "2026/08/20", end: "2026/09/20", cp: false, status: "未着手" },
+      { id: "2.1", cat: "商品/IP", name: "第1弾IP交渉・契約締結・デザイン許諾", owner: "Hamaru Strategy", sub: "-", start: "2026/08/01", end: "2026/08/20", cp: true, status: "進行中" },
+      { id: "2.2", cat: "商品/IP", name: "Tシャツ仕様決定・証紙タグデザイン作成", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026/08/15", end: "2026/08/25", cp: false, status: "未着手" },
+      { id: "2.3", cat: "商品/IP", name: "Tシャツ量産発注 & 証紙アタッチ・BOXアセンブリ", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026/08/26", end: "2026/09/25", cp: true, status: "未着手" },
+      { id: "2.4", cat: "商品/IP", name: "Tシャツ納品・現地倉庫/支給管理", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026/09/26", end: "2026/10/20", cp: true, status: "未着手" },
+      { id: "3.1", cat: "システム", name: "Shopify構築（多言語・決済連携ベース）", owner: "Hamaru Strategy", sub: "-", start: "2026/08/20", end: "2026/09/30", cp: false, status: "未着手" },
+      { id: "3.2", cat: "システム", name: "QR認証・真贋証明システム開発", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026/09/01", end: "2026/10/10", cp: false, status: "未着手" },
+      { id: "3.3", cat: "法務", name: "商標登録（CaraCuriCube）・ドメイン手配", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026/08/01", end: "2026/08/31", cp: false, status: "進行中" },
+      { id: "4.1", cat: "行政", name: "消防確認（成田市消防・防炎不燃証明書類提出）", owner: "Cuebus", sub: "成田空港", start: "2026/08/15", end: "2026/09/30", cp: true, status: "未着手" },
+      { id: "5.1", cat: "空港対応", name: "共通決済端末の手配・通信プロトコル開示", owner: "成田国際空港", sub: "Cuebus", start: "2026/08/10", end: "2026/09/15", cp: true, status: "進行中" },
+      { id: "5.2", cat: "空港対応", name: "搬入計画書作成・養生計画・入館パス申請", owner: "Cuebus", sub: "成田空港", start: "2026/09/15", end: "2026/10/15", cp: true, status: "未着手" },
+      { id: "5.3", cat: "店舗運用", name: "現場接客・補充スタッフ（アルバイト）手配", owner: "Cuebus", sub: "-", start: "2026/09/15", end: "2026/10/15", cp: false, status: "未着手" },
+      { id: "6.1", cat: "結合テスト", name: "工場内FAT（実機動作×演出×決済×QR 結合テスト）", owner: "Cuebus", sub: "Hamaru Strategy", start: "2026/10/21", end: "2026/10/25", cp: true, status: "未着手" },
+      { id: "6.2", cat: "現地施工", name: "成田空港 T2現場 夜間搬入・設置・一次電源結線", owner: "Cuebus", sub: "成田空港", start: "2026/10/28", end: "2026/11/02", cp: true, status: "未着手" },
+      { id: "6.3", cat: "リハーサル", name: "現地夜間総合リハーサル・消防最終実地検査", owner: "全社合同", sub: "成田空港", start: "2026/11/03", end: "2026/11/05", cp: true, status: "未着手" },
+      { id: "6.4", cat: "運用準備", name: "プレオープン（関係者内覧・スタッフ運用テスト）", owner: "全社合同", sub: "成田空港", start: "2026/11/06", end: "2026/11/09", cp: true, status: "未着手" },
+      { id: "6.5", cat: "オープン", name: "★グランドオープン（9:00〜21:00 スタッフ常駐）", owner: "全社合同", sub: "成田空港", start: "2026/11/10", end: "2026/11/10", cp: true, status: "未着手" }
+    ];
+
+    function updateCountdown() {
+      const target = new Date("2026-11-10T00:00:00").getTime();
+      const now = new Date().getTime();
+      const diff = target - now;
+      const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+      document.getElementById("countdown").innerText = days > 0 ? days + " 日" : "本日オープン！";
+    }
+
+    function renderTasks(data) {
+      const tbody = document.getElementById("task-tbody");
+      tbody.innerHTML = "";
+
+      data.forEach((t, index) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${t.id}</td>
+          <td>${t.cat}</td>
+          <td><strong>${t.name}</strong></td>
+          <td>${t.owner}</td>
+          <td>${t.sub}</td>
+          <td>${t.start}</td>
+          <td>${t.end}</td>
+          <td>${t.cp ? '<span class="badge-cp">★CP</span>' : '-'}</td>
+          <td>
+            <select class="status-select ${getStatusClass(t.status)}" onchange="updateStatus(${index}, this.value)">
+              <option value="未着手" ${t.status === '未着手' ? 'selected' : ''}>未着手</option>
+              <option value="進行中" ${t.status === '進行中' ? 'selected' : ''}>進行中</option>
+              <option value="完了" ${t.status === '完了' ? 'selected' : ''}>完了</option>
+            </select>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function getStatusClass(status) {
+      if (status === '進行中') return 'status-in-progress';
+      if (status === '完了') return 'status-completed';
+      return 'status-not-started';
+    }
+
+    function updateStatus(index, newStatus) {
+      tasks[index].status = newStatus;
+      filterTasks();
+    }
+
+    function filterTasks() {
+      const ownerVal = document.getElementById("filter-owner").value;
+      const cpVal = document.getElementById("filter-cp").value;
+
+      let filtered = tasks;
+
+      if (ownerVal !== "ALL") {
+        filtered = filtered.filter(t => t.owner === ownerVal);
+      }
+      if (cpVal === "CP") {
+        filtered = filtered.filter(t => t.cp === true);
+      }
+
+      renderTasks(filtered);
+    }
+
+    function resetFilters() {
+      document.getElementById("filter-owner").value = "ALL";
+      document.getElementById("filter-cp").value = "ALL";
+      renderTasks(tasks);
+    }
+
+    updateCountdown();
+    renderTasks(tasks);
+  </script>
+</body>
+</html>
