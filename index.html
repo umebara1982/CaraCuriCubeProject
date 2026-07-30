@@ -82,6 +82,7 @@
     button:hover { opacity: 0.9; }
 
     .btn-add { background-color: #27ae60; }
+    .btn-csv { background-color: #8e44ad; } /* CSV用パープル */
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
     .btn-move { background-color: #34495e; padding: 2px 4px; font-size: 0.72rem; }
 
@@ -96,6 +97,13 @@
       align-items: center;
       gap: 4px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+
+    .last-update {
+      font-size: 0.72rem;
+      color: #ddd;
+      margin-top: 3px;
+      text-align: right;
     }
 
     .gantt-wrapper {
@@ -169,6 +177,14 @@
       text-overflow: ellipsis;
     }
 
+    /* 遅延アラートスタイル */
+    .is-delayed {
+      background-color: #fce4e4 !important;
+      border-color: #e74c3c !important;
+      color: #c00000 !important;
+      font-weight: bold;
+    }
+
     tr.draggable-row { cursor: grab; }
     tr.draggable-row:active { cursor: grabbing; }
     tr.dragging { opacity: 0.4; background-color: #e0e0e0; }
@@ -217,6 +233,7 @@
 
     .day-cell.sat { background-color: #F0F6FF; color: #0055AA; }
     .day-cell.sun { background-color: #FFF0F0; color: #CC0000; }
+    .day-cell.today { background-color: #ff3333; color: #ffffff; font-weight: bold; }
 
     .gantt-body { position: relative; background-color: #FFFFFF; }
 
@@ -240,6 +257,17 @@
 
     .gantt-bg-cell.sat { background-color: #F0F6FF; }
     .gantt-bg-cell.sun { background-color: #FFF0F0; }
+
+    /* 本日線（赤点線） */
+    .today-line {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: #ff0000;
+      z-index: 5;
+      pointer-events: none;
+    }
 
     .bar {
       position: absolute;
@@ -293,7 +321,10 @@
       <p>期間: 2026年8月1日 〜 2027年3月31日 | オープン目標: 2026年11月10日（火）</p>
     </div>
     <div style="display: flex; gap: 15px; align-items: center;">
-      <div class="sync-badge">⚡ リアルタイム全社同期中</div>
+      <div>
+        <div class="sync-badge">⚡ リアルタイム全社同期中</div>
+        <div class="last-update" id="last-update">最終同期: --:--</div>
+      </div>
       <div class="countdown">
         オープンまで
         <div class="countdown-num" id="countdown">-- 日</div>
@@ -318,11 +349,13 @@
     </select>
 
     <button onclick="addNewTask()" class="btn-add">＋ 新規タスク追加</button>
+    <button onclick="exportCSV()" class="btn-csv">📥 CSV出力</button>
     <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
 
     <div class="legend">
       <span><span class="legend-box" style="background:#C00000;"></span> 赤：最重要パス(CP)</span>
       <span><span class="legend-box" style="background:#3498db;"></span> 青：通常タスク</span>
+      <span><span class="legend-box" style="background:#fce4e4; border:1px solid #e74c3c;"></span> 赤セル：期限超過(遅延)</span>
     </div>
   </div>
 
@@ -369,10 +402,12 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     const tasksRef = db.ref('narita_gantt_tasks');
+    const updateRef = db.ref('narita_gantt_last_update');
 
     const START_DATE = new Date("2026-08-01");
     const END_DATE = new Date("2027-03-31");
     const DAY_WIDTH = 24;
+    const TODAY = new Date(); // 本日の日付
 
     const defaultTasks = [
       { id: "1.1", cat: "開発", name: "CUEBUS詳細設計（100V 4.5kW電源対応）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
@@ -403,7 +438,7 @@
     let daysArray = [];
     let draggedIndex = null;
 
-    // ⚡ クラウドDB（Firebase）の自動リアルタイム同期リスナー
+    // ⚡ リアルタイム同期リスナー
     tasksRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -415,8 +450,19 @@
       renderAll();
     });
 
+    // ⚡ 最終更新日時の受信
+    updateRef.on('value', (snapshot) => {
+      const timeStr = snapshot.val();
+      if (timeStr) {
+        document.getElementById("last-update").innerText = "最終同期: " + timeStr;
+      }
+    });
+
     function saveTasks() {
       tasksRef.set(tasks);
+      const now = new Date();
+      const timeString = `${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      updateRef.set(timeString);
     }
 
     function initDays() {
@@ -448,6 +494,10 @@
         let cls = "day-cell";
         if (d.getDay() === 6) cls += " sat";
         if (d.getDay() === 0) cls += " sun";
+        
+        // 本日セルの強調
+        if (d.toDateString() === TODAY.toDateString()) cls += " today";
+
         dayCell.className = cls;
         dayCell.innerText = d.getDate();
         dayRow.appendChild(dayCell);
@@ -503,6 +553,13 @@
       filtered.forEach((t) => {
         const realIdx = tasks.findIndex(item => item.id === t.id);
 
+        // ⚠️ 遅延判定（期限が今日を過ぎていて未完了の場合）
+        let isDelayed = false;
+        if (t.end && t.status !== '完了') {
+          const endDate = new Date(t.end);
+          if (endDate < TODAY) isDelayed = true;
+        }
+
         const tr = document.createElement("tr");
         tr.className = "draggable-row";
         tr.draggable = true;
@@ -524,8 +581,8 @@
               <option value="全社合同" class="owner-joint" ${t.owner === '全社合同' ? 'selected' : ''}>全社合同</option>
             </select>
           </td>
-          <td><input type="date" value="${t.start || ''}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
-          <td><input type="date" value="${t.end || ''}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
+          <td><input type="date" value="${t.start || ''}" class="${isDelayed ? 'is-delayed' : ''}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
+          <td><input type="date" value="${t.end || ''}" class="${isDelayed ? 'is-delayed' : ''}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
           <td style="text-align:center;">
             <select class="status-select ${getStatusClass(t.status)}" onchange="updateTask(${realIdx}, 'status', this.value)">
               <option value="未着手" ${t.status === '未着手' ? 'selected' : ''}>未着手</option>
@@ -581,6 +638,15 @@
 
         ganttBody.appendChild(gRow);
       });
+
+      // 📍 本日線（赤の縦ライン）を描画
+      if (TODAY >= START_DATE && TODAY <= END_DATE) {
+        const todayDiff = Math.floor((TODAY - START_DATE) / (1000 * 60 * 60 * 24));
+        const todayLine = document.createElement("div");
+        todayLine.className = "today-line";
+        todayLine.style.left = (todayDiff * DAY_WIDTH + DAY_WIDTH / 2) + "px";
+        ganttBody.appendChild(todayLine);
+      }
 
       updateCountdown();
     }
@@ -668,6 +734,26 @@
         tasks = JSON.parse(JSON.stringify(defaultTasks));
         saveTasks();
       }
+    }
+
+    /* 📥 CSV出力機能 */
+    function exportCSV() {
+      let csvContent = "\uFEFF"; // UTF-8 BOM（文字化け防止）
+      csvContent += "ID,タスク名称,担当,開始日,完了期限,進捗,CP(クリティカルパス)\n";
+
+      tasks.forEach(t => {
+        const cpStr = t.cp ? "★" : "-";
+        csvContent += `"${t.id}","${t.name}","${t.owner}","${t.start}","${t.end}","${t.status}","${cpStr}"\n`;
+      });
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `成田空港プロジェクト工程表_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     function updateCountdown() {
