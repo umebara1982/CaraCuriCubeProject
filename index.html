@@ -39,7 +39,14 @@
     }
 
     header h1 { margin: 0; font-size: 1.2rem; }
-    header p { margin: 3px 0 0 0; font-size: 0.8rem; opacity: 0.8; }
+    header p { margin: 3px 0 0 0; font-size: 0.8rem; opacity: 0.9; line-height: 1.4; }
+
+    /* オープン目標の太字・強調スタイル */
+    .open-target {
+      font-weight: bold;
+      color: #FFD700;
+      font-size: 0.85rem;
+    }
 
     .countdown {
       background: rgba(255, 255, 255, 0.15);
@@ -68,7 +75,7 @@
       border-radius: 4px;
       font-size: 0.78rem;
       box-sizing: border-box;
-      user-select: text; /* テキスト入力エリアでは文字選択を可能に */
+      user-select: text;
     }
 
     button {
@@ -191,7 +198,6 @@
       text-overflow: ellipsis;
     }
 
-    /* 遅延アラートスタイル */
     .is-delayed {
       background-color: #fce4e4 !important;
       border-color: #e74c3c !important;
@@ -270,7 +276,6 @@
     .gantt-bg-cell.sat { background-color: #F0F6FF; }
     .gantt-bg-cell.sun { background-color: #FFF0F0; }
 
-    /* 本日線（赤点線） */
     .today-line {
       position: absolute;
       top: 0;
@@ -330,7 +335,10 @@
   <header>
     <div>
       <h1>✈️ 【NAA × Cuebus × Hamaru Strategy】統合管理工程表</h1>
-      <p>期間: 2026年8月1日 〜 2027年3月31日 | オープン目標: 2026年11月10日（火）</p>
+      <p>
+        期間: 2026年8月1日 〜 2027年3月31日<br>
+        <span class="open-target">オープン目標: 2026年11月10日（火）</span>
+      </p>
     </div>
     <div style="display: flex; gap: 15px; align-items: center;">
       <div>
@@ -376,7 +384,7 @@
       <table class="task-table">
         <thead>
           <tr>
-            <th style="width: 25px;"></th> <!-- 移動ハンドル用 -->
+            <th style="width: 25px;"></th>
             <th style="width: 40px;">ID</th>
             <th style="width: 150px;">タスク名称</th>
             <th style="width: 95px;">担当</th>
@@ -609,7 +617,6 @@
           </td>
         `;
 
-        // ≡ アイコンに対してのみドラッグイベントを設定
         const handle = tr.querySelector('.drag-handle');
         handle.addEventListener("dragstart", (e) => handleDragStart(e, realIdx, tr));
         handle.addEventListener("dragend", (e) => handleDragEnd(tr));
