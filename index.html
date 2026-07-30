@@ -89,12 +89,11 @@
 
     .btn-add { background-color: #27ae60; }
     .btn-csv { background-color: #8e44ad; }
-    .btn-copy-full { background-color: #6c5ce7; } /* 全コピー機能用パープル */
-    .btn-admin { background-color: #d35400; } /* 管理者ボタン用オレンジ */
+    .btn-copy-full { background-color: #6c5ce7; }
+    .btn-admin { background-color: #d35400; }
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
     .btn-move { background-color: #34495e; padding: 2px 4px; font-size: 0.72rem; }
 
-    /* 裏メニューエリアの初期状態（非表示） */
     .admin-menu {
       display: none;
       gap: 10px;
@@ -208,6 +207,25 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .phase-header-row td {
+      background-color: #E6ECF2;
+      color: var(--primary-color);
+      font-weight: bold;
+      font-size: 0.82rem;
+      padding: 4px 10px;
+      border-top: 2px solid #B0C4DE;
+      border-bottom: 2px solid #B0C4DE;
+      height: 28px;
+    }
+
+    .gantt-phase-row {
+      background-color: #F4F6F9;
+      height: 28px;
+      border-top: 2px solid #B0C4DE;
+      border-bottom: 2px solid #B0C4DE;
+      box-sizing: border-box;
     }
 
     .is-delayed {
@@ -388,10 +406,8 @@
     <button onclick="addNewTask()" class="btn-add">＋ 新規タスク追加</button>
     <button onclick="exportCSV()" class="btn-csv">📥 CSV出力</button>
 
-    <!-- 🔑 裏メニュー解放用ボタン -->
     <button onclick="toggleAdminMenu()" class="btn-admin">🔑 管理者</button>
 
-    <!-- 🔒 秘密の裏メニューエリア（パスワード入力時のみ表示） -->
     <div id="admin-menu" class="admin-menu">
       <span style="font-size:0.75rem; font-weight:bold; color:#d35400;">【裏メニュー】</span>
       <button onclick="reorderAllIDs()" style="background: #2980b9;">🔢 ID一括振り直し</button>
@@ -456,8 +472,17 @@
     const DAY_WIDTH = 24;
     const TODAY = new Date();
 
-    // 🔒 管理者用パスワード（※必要に応じて変更してください）
     const ADMIN_PASSWORD = "1234";
+
+    const phaseNames = {
+      "1": "📌 フェーズ 1：什器開発・現地仕様確定",
+      "2": "📌 フェーズ 2：商品・IPデザイン・量産手配",
+      "3": "📌 フェーズ 3：ECシステム・認証開発",
+      "4": "📌 フェーズ 4：行政・消防・事前申請",
+      "5": "📌 フェーズ 5：空港運用・搬入準備",
+      "6": "📌 フェーズ 6：テスト・現地施工・オープン",
+      "7": "📌 フェーズ 7：初期運用・次章展開準備"
+    };
 
     const defaultTasks = [
       { id: "1.1", cat: "開発", name: "CUEBUS詳細設計", owner: "Cuebus", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true },
@@ -482,7 +507,7 @@
       { id: "6.4", cat: "運用準備", name: "プレオープン（関係者内覧・運用テスト）", owner: "全社合同", start: "2026-11-09", end: "2026-11-09", status: "未着手", cp: true },
       { id: "6.5", cat: "オープン", name: "★グランドオープン（9:00〜）", owner: "全社合同", start: "2026-11-10", end: "2026-11-10", status: "未着手", cp: true },
       { id: "7.1", cat: "初期運用", name: "初期稼働モニタリング", owner: "Cuebus", start: "2026-11-10", end: "2026-11-30", status: "未着手", cp: false },
-      { id: "7.2", cat: "Phase2", name: "第2弾IP企画 & 他グッズ展開検討", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false }
+      { id: "7.2", cat: "次章展開", name: "第2弾IP企画 & 他グッズ展開検討", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false }
     ];
 
     let tasks = [];
@@ -515,7 +540,6 @@
       updateRef.set(timeString);
     }
 
-    /* 🔑 管理者裏メニューの表示・非表示切替 */
     function toggleAdminMenu() {
       const menu = document.getElementById("admin-menu");
       if (isAdminUnlocked) {
@@ -532,7 +556,6 @@
       }
     }
 
-    /* 📋 【改善点】一番上から一番下までの完全なHTMLソースコードを自動生成して一括コピー */
     function copyFullHTML() {
       let defaultTasksCode = "    const defaultTasks = [\n";
       tasks.forEach((t, index) => {
@@ -541,11 +564,9 @@
       });
       defaultTasksCode += "    ];";
 
-      // 現在のドキュメントのHTML全体を取得し、defaultTasks部分だけ最新版に置換
       let fullDoc = document.documentElement.outerHTML;
       let newHTML = "<!DOCTYPE html>\n<html lang=\"ja\">\n" + fullDoc;
 
-      // HTML内の defaultTasks 部分を入れ替える
       const reg = /const defaultTasks = \[[\s\S]*?\];/;
       newHTML = newHTML.replace(reg, defaultTasksCode);
 
@@ -692,8 +713,26 @@
 
       const totalWidth = daysArray.length * DAY_WIDTH;
 
+      let currentPhaseGroup = null;
+
       filtered.forEach((t) => {
         const realIdx = tasks.findIndex(item => item.id === t.id);
+
+        const mainGroup = t.id ? String(t.id).split('.')[0] : "1";
+        if (mainGroup !== currentPhaseGroup) {
+          currentPhaseGroup = mainGroup;
+          const pName = phaseNames[mainGroup] || `📌 フェーズ ${mainGroup}`;
+
+          const phaseTr = document.createElement("tr");
+          phaseTr.className = "phase-header-row";
+          phaseTr.innerHTML = `<td colspan="9">${pName}</td>`;
+          tbody.appendChild(phaseTr);
+
+          const gPhaseRow = document.createElement("div");
+          gPhaseRow.className = "gantt-phase-row";
+          gPhaseRow.style.width = totalWidth + "px";
+          ganttBody.appendChild(gPhaseRow);
+        }
 
         let isDelayed = false;
         if (t.end && t.status !== '完了') {
@@ -853,6 +892,9 @@
 
     function updateTask(idx, field, val) {
       tasks[idx][field] = val;
+      if (field === 'id') {
+        renderAll();
+      }
       saveTasks();
     }
 
