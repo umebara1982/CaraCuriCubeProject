@@ -91,6 +91,7 @@
 
     .btn-add { background-color: #27ae60; }
     .btn-csv { background-color: #8e44ad; }
+    .btn-manual { background-color: #16a085; } /* マニュアルボタン用ティールグリーン */
     .btn-copy-full { background-color: #6c5ce7; }
     .btn-admin { background-color: #d35400; }
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
@@ -380,7 +381,7 @@
 
   <header>
     <div>
-      <h1>✈️ 【NAA × Cuebus × Hamaru Strategy】CaraCuriCube 統合管理工程表</h1>
+      <h1>✈️ 【NAA × Cuebus × Hamaru Strategy】統合管理工程表（フェーズ1）</h1>
       <p>
         期間: 2026年8月1日 〜 2027年3月31日<br>
         <span class="open-target">オープン目標: 2026年11月10日（火）</span>
@@ -421,6 +422,7 @@
 
     <button onclick="addNewTask()" class="btn-add">＋ 新規タスク追加</button>
     <button onclick="exportCSV()" class="btn-csv">📥 CSV出力</button>
+    <button onclick="downloadManual()" class="btn-manual">📖 マニュアル</button>
 
     <button onclick="toggleAdminMenu()" class="btn-admin">🔑 管理者</button>
 
@@ -963,6 +965,77 @@
       const link = document.createElement("a");
       link.setAttribute("href", url);
       link.setAttribute("download", `成田空港プロジェクト工程表_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    /* 📖 マニュアル（.txt）ダウンロード処理 */
+    function downloadManual() {
+      const manualText = `==================================================
+【工程表】成田空港IP什器導入プロジェクト 取扱マニュアル
+==================================================
+
+本システムは【NAA × Cuebus × Hamaru Strategy】3社間における
+リアルタイム工程管理を目的としたオンラインガントチャートシステムです。
+
+--------------------------------------------------
+1. 基本機能と画面構成
+--------------------------------------------------
+・リアルタイム自動同期: 
+  誰かがタスクや日付を編集すると、クラウドを介して全ユーザーの画面へ即座に自動反映されます（特別な保存ボタンを押す必要はありません）。
+  画面右上の「最終同期」時刻で更新状況を確認できます。
+
+・オープンカウントダウン:
+  ヘッダー右側に、オープン目標日（2026年11月10日）までの残り日数が自動表示されます。
+
+・赤枠ハイライト（遅延アラート）:
+  「完了」以外で完了期限が今日を過ぎているタスクは、日付セルが赤くハイライトされます。
+
+--------------------------------------------------
+2. 操作方法
+--------------------------------------------------
+【タスクの直接編集】
+  表内の各項目（ID、タスク名称、担当会社、開始日、完了期限、進捗ステータス、CP判定）は直接書き換えることができます。
+  編集内容は即座に全社へ反映されます。
+
+【タスクの追加・削除】
+  ・「＋ 新規タスク追加」ボタンを押すと、一番下に新しいタスク行が作成されます。
+  ・行の右端にある「消」ボタンを押すと、該当タスクが削除されます。
+
+【タスクの順序入れ替え（ドラッグ & 上下移動）】
+  ・行の左端にある「≡」マークをドラッグ＆ドロップするか、右端の「↑」「↓」ボタンを押すことで、行の上下移動が可能です。
+  ・移動後、自動的にカテゴリグループ（1.x, 2.xなど）に沿ったIDナンバリングに整頓されます。
+
+--------------------------------------------------
+3. 絞り込み（フィルター）機能
+--------------------------------------------------
+・絞り込み（会社別）:
+  「全社表示」「成田国際空港」「Cuebus」「Hamaru Strategy」「全社合同」を選択し、自社・特定の担当タスクのみに表示を絞り込めます。
+
+・表示条件（ステータス別）:
+  「全タスク表示」「★ クリティカルパス（CP）のみ」「未完了タスクのみ」「各ステータス別（未着手・進行中・保留中・完了）」を選択し、重点確認したいタスクのみを表示できます。
+
+--------------------------------------------------
+4. データ出力（CSV）
+--------------------------------------------------
+・「📥 CSV出力」ボタンを押すと、現在表示中のタスク一覧をExcel等で開けるCSVファイル形式でダウンロードできます。
+
+--------------------------------------------------
+5. 表示域の調整
+--------------------------------------------------
+・タスク表（左）とガントチャート（右）の間にある青い縦バーをドラッグすると、表とカレンダーの幅比率を自由に変更可能です。
+
+==================================================
+発行日: 2026年7月
+【NAA × Cuebus × Hamaru Strategy】統合プロジェクト事務局
+==================================================`;
+
+      const blob = new Blob([manualText], { type: 'text/plain;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "成田空港プロジェクト工程表_取扱マニュアル.txt");
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
