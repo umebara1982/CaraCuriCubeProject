@@ -250,12 +250,12 @@
 
     .bar.cp { background-color: var(--accent-color); }
 
-    .badge-cp {
-      color: var(--accent-color);
+    .cp-select {
       font-weight: bold;
-      font-size: 0.9rem;
+      color: var(--accent-color);
     }
 
+    /* 進捗状況プルダウンの色分け */
     .status-select {
       padding: 2px 4px;
       border-radius: 3px;
@@ -267,6 +267,19 @@
     .status-in-progress { background-color: #fff3cd; color: #856404; }
     .status-pending { background-color: #ffe8d6; color: #d9534f; }
     .status-completed { background-color: #d4edda; color: #155724; }
+
+    /* ★担当会社プルダウンの色分けスタイル */
+    .owner-select {
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-weight: bold;
+      font-size: 0.72rem;
+      border: 1px solid #ccc;
+    }
+    .owner-naa { background-color: #D0E1F9; color: #003366; }      /* NAA：ブルー系 */
+    .owner-cuebus { background-color: #FFF2CC; color: #7F6000; }   /* Cuebus：イエロー系 */
+    .owner-hamaru { background-color: #FCE4D6; color: #C00000; }   /* Hamaru：ピンク系 */
+    .owner-joint { background-color: #E2EFDA; color: #375623; }    /* 全社合同：グリーン系 */
 
     .legend { display: flex; gap: 10px; font-size: 0.75rem; align-items: center; margin-left: auto; }
     .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
@@ -301,7 +314,6 @@
       <option value="CP">★クリティカルパス（CP）のみ</option>
     </select>
 
-    <!-- ★「＋ 新規タスク追加」に名称変更 -->
     <button onclick="addNewTask()" class="btn-add">＋ 新規タスク追加</button>
     <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
 
@@ -325,7 +337,7 @@
             <th style="width: 85px;">開始日</th>
             <th style="width: 85px;">完了期限</th>
             <th style="width: 65px;">進捗</th>
-            <th style="width: 20px;">CP</th>
+            <th style="width: 35px;">CP</th>
             <th style="width: 80px;">順序・操作</th>
           </tr>
         </thead>
@@ -434,6 +446,14 @@
       return 'status-not-started';
     }
 
+    /* ★担当会社カラー取得 */
+    function getOwnerClass(owner) {
+      if (owner === '成田国際空港') return 'owner-naa';
+      if (owner === 'Cuebus') return 'owner-cuebus';
+      if (owner === 'Hamaru Strategy') return 'owner-hamaru';
+      return 'owner-joint';
+    }
+
     function renderAll() {
       initDays();
       renderGanttHeader();
@@ -471,12 +491,13 @@
         tr.innerHTML = `
           <td><input type="text" value="${t.id}" onchange="updateTask(${realIdx}, 'id', this.value)" style="width: 100%; text-align: center;"></td>
           <td><input type="text" value="${t.name}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
+          <!-- ★カラー対応担当プルダウン -->
           <td style="text-align:center;">
-            <select onchange="updateTask(${realIdx}, 'owner', this.value)" style="width: 100%;">
-              <option value="Cuebus" ${t.owner === 'Cuebus' ? 'selected' : ''}>Cuebus</option>
-              <option value="Hamaru Strategy" ${t.owner === 'Hamaru Strategy' ? 'selected' : ''}>Hamaru Strategy</option>
-              <option value="成田国際空港" ${t.owner === '成田国際空港' ? 'selected' : ''}>成田国際空港</option>
-              <option value="全社合同" ${t.owner === '全社合同' ? 'selected' : ''}>全社合同</option>
+            <select class="owner-select ${getOwnerClass(t.owner)}" onchange="updateTask(${realIdx}, 'owner', this.value)" style="width: 100%;">
+              <option value="Cuebus" class="owner-cuebus" ${t.owner === 'Cuebus' ? 'selected' : ''}>Cuebus</option>
+              <option value="Hamaru Strategy" class="owner-hamaru" ${t.owner === 'Hamaru Strategy' ? 'selected' : ''}>Hamaru Strategy</option>
+              <option value="成田国際空港" class="owner-naa" ${t.owner === '成田国際空港' ? 'selected' : ''}>成田国際空港</option>
+              <option value="全社合同" class="owner-joint" ${t.owner === '全社合同' ? 'selected' : ''}>全社合同</option>
             </select>
           </td>
           <td><input type="date" value="${t.start}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
@@ -489,7 +510,12 @@
               <option value="完了" ${t.status === '完了' ? 'selected' : ''}>完了</option>
             </select>
           </td>
-          <td style="text-align:center;">${t.cp ? '<span class="badge-cp">★</span>' : '-'}</td>
+          <td style="text-align:center;">
+            <select class="cp-select" onchange="updateTaskBool(${realIdx}, 'cp', this.value)" style="width: 100%; padding: 2px 0;">
+              <option value="true" ${t.cp ? 'selected' : ''}>★</option>
+              <option value="false" ${!t.cp ? 'selected' : ''}>-</option>
+            </select>
+          </td>
           <td style="text-align:center;">
             <button class="btn-move" title="1行上に移動" onclick="moveTask('up', ${realIdx})">↑</button>
             <button class="btn-move" title="1行下に移動" onclick="moveTask('down', ${realIdx})">↓</button>
@@ -594,6 +620,12 @@
 
     function updateTask(idx, field, val) {
       tasks[idx][field] = val;
+      saveTasks();
+      renderAll();
+    }
+
+    function updateTaskBool(idx, field, val) {
+      tasks[idx][field] = (val === 'true');
       saveTasks();
       renderAll();
     }
