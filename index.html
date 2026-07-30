@@ -11,7 +11,7 @@
       --bg-color: #F4F6F9;
       --card-bg: #FFFFFF;
       --border-color: #D0D7DE;
-      --day-width: 28px; /* 日別セルの幅 */
+      --day-width: 24px; /* 1日あたりのセル幅 */
     }
     
     body {
@@ -25,35 +25,34 @@
     header {
       background-color: var(--primary-color);
       color: white;
-      padding: 15px 20px;
+      padding: 12px 20px;
       border-radius: 6px;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      flex-wrap: wrap;
     }
 
     header h1 {
       margin: 0;
-      font-size: 1.3rem;
+      font-size: 1.2rem;
     }
 
     header p {
-      margin: 5px 0 0 0;
-      font-size: 0.85rem;
+      margin: 3px 0 0 0;
+      font-size: 0.8rem;
       opacity: 0.8;
     }
 
     .countdown {
       background: rgba(255, 255, 255, 0.15);
-      padding: 8px 15px;
+      padding: 6px 15px;
       border-radius: 6px;
       text-align: center;
     }
 
     .countdown-num {
-      font-size: 1.5rem;
+      font-size: 1.3rem;
       font-weight: bold;
       color: #FFD700;
     }
@@ -62,19 +61,19 @@
       background: var(--card-bg);
       padding: 10px 15px;
       border-radius: 6px;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       display: flex;
       gap: 10px;
       align-items: center;
       flex-wrap: wrap;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
     select, button, input[type="date"], input[type="text"] {
-      padding: 6px 10px;
+      padding: 5px 8px;
       border: 1px solid var(--border-color);
       border-radius: 4px;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
     }
 
     button {
@@ -88,11 +87,12 @@
     button:hover { opacity: 0.9; }
 
     .btn-add { background-color: #27ae60; }
-    .btn-delete { background-color: #e74c3c; padding: 2px 6px; font-size: 0.75rem; }
+    .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.75rem; }
 
-    /* スプリットレイアウト構造（左固定テーブル＋右横スクロールガント） */
+    /* ★画面半分（50%：50%）に分割するコンテナ */
     .gantt-wrapper {
       display: flex;
+      width: 100%;
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: 6px;
@@ -100,13 +100,13 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
-    /* 左側：固定タスクテーブル */
+    /* ★左側：タスク表（画面幅の50%） */
     .task-side {
-      width: 520px;
+      width: 50%;
       flex-shrink: 0;
       border-right: 2px solid var(--primary-color);
       background: #FFF;
-      z-index: 10;
+      overflow-x: auto;
     }
 
     .task-table {
@@ -118,26 +118,29 @@
     .task-table th {
       background: var(--primary-color);
       color: white;
-      padding: 8px;
-      text-align: left;
-      height: 48px;
-      box-sizing: border-box;
-    }
-
-    .task-table td {
-      padding: 6px 8px;
-      border-bottom: 1px solid var(--border-color);
-      height: 38px;
+      padding: 8px 4px;
+      text-align: center;
+      height: 46px;
       box-sizing: border-box;
       white-space: nowrap;
     }
 
-    /* 右側：横スクロールタイムライン */
+    .task-table td {
+      padding: 4px 6px;
+      border-bottom: 1px solid var(--border-color);
+      height: 36px;
+      box-sizing: border-box;
+      white-space: nowrap;
+    }
+
+    /* ★右側：カレンダーガント（画面幅の50%・横スクロールエリア） */
     .gantt-side {
+      width: 50%;
       flex-grow: 1;
       overflow-x: auto;
       background: #FAFAFA;
       position: relative;
+      scroll-behavior: smooth;
     }
 
     .gantt-header-container {
@@ -159,10 +162,11 @@
       border-bottom: 1px solid var(--border-color);
       text-align: center;
       font-weight: bold;
-      font-size: 0.8rem;
-      padding: 4px 0;
+      font-size: 0.75rem;
+      padding: 3px 0;
       background: #E6ECF2;
       color: var(--primary-color);
+      box-sizing: border-box;
     }
 
     .day-cell {
@@ -170,8 +174,8 @@
       min-width: var(--day-width);
       border-right: 1px solid #EAEAEA;
       text-align: center;
-      font-size: 0.7rem;
-      padding: 3px 0;
+      font-size: 0.65rem;
+      padding: 2px 0;
       box-sizing: border-box;
     }
 
@@ -185,7 +189,7 @@
 
     .gantt-row {
       display: flex;
-      height: 38px;
+      height: 36px;
       border-bottom: 1px solid var(--border-color);
       box-sizing: border-box;
       position: relative;
@@ -204,22 +208,20 @@
     /* スケジュールバー */
     .bar {
       position: absolute;
-      top: 7px;
-      height: 22px;
-      background-color: #2980b9;
-      border-radius: 4px;
-      opacity: 0.85;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      top: 8px;
+      height: 18px;
+      background-color: #3498db;
+      border-radius: 3px;
+      opacity: 0.9;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
       z-index: 2;
       cursor: pointer;
-      transition: transform 0.1s;
     }
 
-    .bar:hover { transform: scaleY(1.1); opacity: 1; }
     .bar.cp { background-color: var(--accent-color); } /* クリティカルパスは赤色 */
 
-    .badge-cp { background: #FCE4D6; color: var(--accent-color); padding: 2px 4px; border-radius: 3px; font-weight: bold; }
-    .status-select { padding: 2px 4px; border-radius: 3px; font-weight: bold; font-size: 0.75rem; }
+    .badge-cp { background: #FCE4D6; color: var(--accent-color); padding: 1px 3px; border-radius: 3px; font-weight: bold; font-size: 0.7rem; }
+    .status-select { padding: 1px 3px; border-radius: 3px; font-weight: bold; font-size: 0.75rem; }
   </style>
 </head>
 <body>
@@ -230,7 +232,7 @@
       <p>期間: 2026年8月1日 〜 2027年3月31日 | オープン目標: 2026年11月10日（火）</p>
     </div>
     <div class="countdown">
-      グランドオープンまで
+      オープンまで
       <div class="countdown-num" id="countdown">-- 日</div>
     </div>
   </header>
@@ -253,22 +255,22 @@
 
     <button onclick="addNewTask()" class="btn-add">＋ タスク追加</button>
     <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
-    <span style="font-size: 0.8rem; color: #666; margin-left: auto;">👉 右側のカレンダー領域は横スクロールできます（2027年3月まで）</span>
+    <span style="font-size: 0.8rem; color: #666; margin-left: auto;">👉 右側半分がカレンダー領域です（横スクロール可能）</span>
   </div>
 
   <div class="gantt-wrapper">
-    <!-- 左側：タスク固定テーブル -->
+    <!-- ★左側：画面幅半分（50%）固定タスク表 -->
     <div class="task-side">
       <table class="task-table">
         <thead>
           <tr>
-            <th style="width: 35px;">ID</th>
-            <th style="width: 140px;">タスク名称</th>
+            <th style="width: 30px;">ID</th>
+            <th>タスク名称</th>
             <th style="width: 80px;">担当</th>
-            <th style="width: 90px;">開始日</th>
-            <th style="width: 90px;">完了期限</th>
-            <th style="width: 35px;">CP</th>
-            <th style="width: 40px;">操作</th>
+            <th style="width: 85px;">開始日</th>
+            <th style="width: 85px;">完了期限</th>
+            <th style="width: 30px;">CP</th>
+            <th style="width: 30px;">操作</th>
           </tr>
         </thead>
         <tbody id="task-tbody">
@@ -276,24 +278,20 @@
       </table>
     </div>
 
-    <!-- 右側：日別カレンダー・ガントチャートバー（横スクロール領域） -->
+    <!-- ★右側：画面幅半分（50%）横スクロールガントチャート -->
     <div class="gantt-side" id="gantt-side">
       <div class="gantt-header-container" id="gantt-header">
-        <!-- JSで月・日ヘッダーを動的生成 -->
       </div>
       <div class="gantt-body" id="gantt-body">
-        <!-- JSで背景セルおよびスケジュールバーを動的生成 -->
       </div>
     </div>
   </div>
 
   <script>
-    // 期間設定：2026年8月1日 〜 2027年3月31日
     const START_DATE = new Date("2026-08-01");
     const END_DATE = new Date("2027-03-31");
-    const DAY_WIDTH = 28; // 1日あたりのピクセル幅
+    const DAY_WIDTH = 24; // 1日のセルピクセル幅
 
-    // 初期タスクリスト
     const defaultTasks = [
       { id: "1.1", cat: "開発", name: "CUEBUS詳細設計（100V 4.5kW電源対応）", owner: "Cuebus", start: "2026-08-01", end: "2026-08-10", cp: true, status: "進行中" },
       { id: "1.2", cat: "空港対応", name: "T2現地与件確認（床荷重・電源位置）", owner: "Cuebus", start: "2026-08-01", end: "2026-08-15", cp: true, status: "進行中" },
@@ -322,7 +320,6 @@
     let tasks = JSON.parse(localStorage.getItem('narita_gantt_tasks')) || defaultTasks;
     let daysArray = [];
 
-    // 日付計算ユーティリティ
     function initDays() {
       daysArray = [];
       let cur = new Date(START_DATE);
@@ -336,7 +333,6 @@
       localStorage.setItem('narita_gantt_tasks', JSON.stringify(tasks));
     }
 
-    // 1. カレンダーヘッダー（月・日）のレンダリング
     function renderGanttHeader() {
       const headerContainer = document.getElementById("gantt-header");
       headerContainer.innerHTML = "";
@@ -354,7 +350,7 @@
       daysArray.forEach((d) => {
         const m = d.getMonth();
         const dateNum = d.getDate();
-        const dayOfWeek = d.getDay(); // 0:日, 6:土
+        const dayOfWeek = d.getDay();
 
         if (m !== currentMonth) {
           if (monthCell) {
@@ -386,7 +382,6 @@
       headerContainer.appendChild(dayRow);
     }
 
-    // 2. メインのタスク＆ガントチャート描画
     function renderAll() {
       initDays();
       renderGanttHeader();
@@ -411,11 +406,10 @@
       filtered.forEach((t) => {
         const realIdx = tasks.findIndex(item => item.id === t.id);
 
-        // --- 左側：タスクテーブル行 ---
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${t.id}</td>
-          <td><input type="text" value="${t.name}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 130px;"></td>
+          <td><input type="text" value="${t.name}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
           <td>${t.owner}</td>
           <td><input type="date" value="${t.start}" onchange="updateTask(${realIdx}, 'start', this.value)"></td>
           <td><input type="date" value="${t.end}" onchange="updateTask(${realIdx}, 'end', this.value)"></td>
@@ -424,7 +418,6 @@
         `;
         tbody.appendChild(tr);
 
-        // --- 右側：ガントチャート行（背景グリッド） ---
         const gRow = document.createElement("div");
         gRow.className = "gantt-row";
         gRow.style.width = totalWidth + "px";
@@ -438,7 +431,6 @@
           gRow.appendChild(bgCell);
         });
 
-        // スケジュールバーの計算と配置
         const tStart = new Date(t.start);
         const tEnd = new Date(t.end);
 
@@ -449,7 +441,7 @@
           const bar = document.createElement("div");
           bar.className = "bar" + (t.cp ? " cp" : "");
           bar.style.left = (startDiff * DAY_WIDTH) + "px";
-          bar.style.width = (duration * DAY_WIDTH - 2) + "px";
+          bar.style.width = (duration * DAY_WIDTH - 1) + "px";
           bar.title = `${t.name} (${t.start} 〜 ${t.end})`;
 
           gRow.appendChild(bar);
@@ -459,9 +451,11 @@
       });
 
       updateCountdown();
+      
+      // ★開いた瞬間にカレンダーの一番左（8月1日）へ自動スクロール固定
+      document.getElementById("gantt-side").scrollLeft = 0;
     }
 
-    // データ変更処理
     function updateTask(idx, field, val) {
       tasks[idx][field] = val;
       saveTasks();
@@ -501,7 +495,6 @@
       document.getElementById("countdown").innerText = days > 0 ? days + " 日" : "本日オープン！";
     }
 
-    // 初期起動
     renderAll();
   </script>
 </body>
