@@ -41,7 +41,6 @@
     header h1 { margin: 0; font-size: 1.2rem; }
     header p { margin: 3px 0 0 0; font-size: 0.8rem; opacity: 0.9; line-height: 1.4; }
 
-    /* オープン目標の太字・強調スタイル */
     .open-target {
       font-weight: bold;
       color: #FFD700;
@@ -740,10 +739,36 @@
       }
     }
 
+    // 💡 文脈に合わせて自動でIDを推測・計算するロジック
+    function generateSmartID() {
+      if (tasks.length === 0) return "1.1";
+
+      const lastTask = tasks[tasks.length - 1];
+      const lastId = lastTask ? String(lastTask.id || '') : '';
+
+      // IDが「1.2」のような小数形式の場合
+      if (lastId.includes('.')) {
+        const parts = lastId.split('.');
+        const main = parts[0];
+        const sub = parseInt(parts[1], 10);
+        if (!isNaN(sub)) {
+          return `${main}.${sub + 1}`;
+        }
+      }
+      
+      // IDが単一の数字（「1」「2」など）の場合
+      const num = parseInt(lastId, 10);
+      if (!isNaN(num)) {
+        return `${num + 1}.1`;
+      }
+
+      return `${tasks.length + 1}.1`;
+    }
+
     function addNewTask() {
-      const nextNum = tasks.length + 1;
+      const newID = generateSmartID();
       tasks.push({
-        id: "8." + nextNum, cat: "追加", name: "新規追加タスク", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false
+        id: newID, cat: "追加", name: "新規追加タスク", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false
       });
       saveTasks();
     }
