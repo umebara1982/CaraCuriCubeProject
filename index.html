@@ -363,8 +363,13 @@
 
     <label>表示条件:</label>
     <select id="filter-cp" onchange="renderAll()">
-      <option value="ALL">全タスク</option>
-      <option value="CP">★クリティカルパス（CP）のみ</option>
+      <option value="ALL">全タスク表示</option>
+      <option value="CP">★ クリティカルパス（CP）のみ</option>
+      <option value="STATUS_UNCOMPLETED">⏳ 未完了タスクのみ（未着手・進行中・保留中）</option>
+      <option value="STATUS_未着手">⚪ 未着手のみ</option>
+      <option value="STATUS_進行中">🟡 進行中のみ</option>
+      <option value="STATUS_保留中">🟠 保留中のみ</option>
+      <option value="STATUS_完了">🟢 完了のみ</option>
     </select>
 
     <button onclick="addNewTask()" class="btn-add">＋ 新規タスク追加</button>
@@ -483,7 +488,6 @@
       updateRef.set(timeString);
     }
 
-    /* 🔢 並び順（親番号）を保持したまま自動でIDを順にナンバリングし直す処理 */
     function autoRenumberIDs() {
       let currentMainGroup = "1";
       let subIndex = 1;
@@ -506,13 +510,11 @@
       });
     }
 
-    /* ボタンを押した時に1.1から順に全体を一括再ナンバリングする機能 */
     function reorderAllIDs() {
       let currentGroup = 1;
       let subGroup = 1;
 
       tasks.forEach((t, i) => {
-        // 親番号が切り替わっている場合の自動グループ判別
         if (i > 0) {
           const prevMain = tasks[i-1].id ? tasks[i-1].id.split('.')[0] : "1";
           const currMain = t.id ? t.id.split('.')[0] : "1";
@@ -602,8 +604,17 @@
       const cpVal = document.getElementById("filter-cp").value;
 
       let filtered = tasks.filter(t => {
+        // 担当者絞り込み
         if (ownerVal !== "ALL" && t.owner !== ownerVal) return false;
+
+        // 表示条件（CPおよび進捗ステータス）絞り込み
         if (cpVal === "CP" && !t.cp) return false;
+        if (cpVal === "STATUS_UNCOMPLETED" && t.status === "完了") return false;
+        if (cpVal.startsWith("STATUS_")) {
+          const targetStatus = cpVal.replace("STATUS_", "");
+          if (targetStatus !== "UNCOMPLETED" && t.status !== targetStatus) return false;
+        }
+
         return true;
       });
 
@@ -735,7 +746,7 @@
       if (draggedIndex !== null && draggedIndex !== targetIndex) {
         const item = tasks.splice(draggedIndex, 1)[0];
         tasks.splice(targetIndex, 0, item);
-        autoRenumberIDs(); // ⚡ ドラッグ移動後に自動でIDを綺麗に繰り上げて再割り振る
+        autoRenumberIDs();
         saveTasks();
       }
     }
@@ -749,12 +760,12 @@
       if (direction === 'up' && idx > 0) {
         const item = tasks.splice(idx, 1)[0];
         tasks.splice(idx - 1, 0, item);
-        autoRenumberIDs(); // ⚡ 移動後に自動でIDを再ナンバリング
+        autoRenumberIDs();
         saveTasks();
       } else if (direction === 'down' && idx < tasks.length - 1) {
         const item = tasks.splice(idx, 1)[0];
         tasks.splice(idx + 1, 0, item);
-        autoRenumberIDs(); // ⚡ 移動後に自動でIDを再ナンバリング
+        autoRenumberIDs();
         saveTasks();
       }
     }
@@ -787,7 +798,7 @@
     function deleteTask(idx) {
       if (confirm(`タスク「${tasks[idx].name}」を削除しますか？`)) {
         tasks.splice(idx, 1);
-        autoRenumberIDs(); // ⚡ 削除後も綺麗に詰め直す
+        autoRenumberIDs();
         saveTasks();
       }
     }
