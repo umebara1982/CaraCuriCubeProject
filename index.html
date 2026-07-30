@@ -760,7 +760,7 @@
       }).join("\n");
     }
 
-    /* ✨ Gemini API 呼び出し確定版 (gemini-2.5-flash / gemini-2.0-flash / gemini-1.5-flash エンドポイント最適化) */
+    /* ✨ Gemini API 呼び出し決定版 (2.0-flash / 1.5-flash 正式モデルID) */
     async function callGeminiAPI(promptText) {
       const apiKey = localStorage.getItem("GEMINI_API_KEY");
       if (!apiKey) {
@@ -768,7 +768,7 @@
         throw new Error("APIキー未設定");
       }
 
-      const models = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+      const models = ["gemini-2.0-flash", "gemini-1.5-flash"];
       let lastErrorMessage = "";
 
       for (const model of models) {
