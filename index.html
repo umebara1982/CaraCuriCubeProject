@@ -105,7 +105,7 @@
       font-size: 0.9rem;
     }
 
-    select, button {
+    select, button, input[type="date"], input[type="text"] {
       padding: 8px 12px;
       border: 1px solid var(--border-color);
       border-radius: 4px;
@@ -122,6 +122,14 @@
 
     button:hover {
       background-color: #122440;
+    }
+
+    .btn-add {
+      background-color: #27ae60;
+    }
+
+    .btn-add:hover {
+      background-color: #219150;
     }
 
     .table-container {
@@ -146,7 +154,7 @@
     }
 
     td {
-      padding: 12px 15px;
+      padding: 10px 12px;
       border-bottom: 1px solid var(--border-color);
       white-space: nowrap;
     }
@@ -231,6 +239,8 @@
     </select>
 
     <button onclick="resetFilters()">フィルター解除</button>
+    <button class="btn-add" onclick="addNewTask()">＋ タスク追加</button>
+    <button onclick="resetData()" style="background-color: #7f8c8d;">初期日付にリセット</button>
   </div>
 
   <div class="table-container">
@@ -239,11 +249,10 @@
         <tr>
           <th>ID</th>
           <th>カテゴリ</th>
-          <th>タスク名称</th>
+          <th>タスク名称（編集可）</th>
           <th>主担当</th>
-          <th>関係会社</th>
-          <th>開始日</th>
-          <th>完了期限</th>
+          <th>開始日（手入力可）</th>
+          <th>完了期限（手入力可）</th>
           <th>CP</th>
           <th>進捗ステータス</th>
         </tr>
@@ -258,29 +267,37 @@
   </footer>
 
   <script>
-    const tasks = [
-      { id: "1.1", cat: "開発", name: "CUEBUS詳細設計（7列×5段・100V 4.5kW電源適応）", owner: "Cuebus", sub: "成田空港", start: "2026/08/01", end: "2026/08/10", cp: true, status: "進行中" },
-      { id: "1.2", cat: "空港対応", name: "T2現地与件最終確認（床荷重・搬入ルート・電源位置）", owner: "Cuebus", sub: "成田空港", start: "2026/08/01", end: "2026/08/15", cp: true, status: "進行中" },
-      { id: "1.3", cat: "開発", name: "昇降リフト・メカ機構詳細設計", owner: "Cuebus", sub: "-", start: "2026/08/11", end: "2026/08/31", cp: true, status: "未着手" },
-      { id: "1.4", cat: "開発", name: "制御開発（昇降・カプセル排出ロジック）", owner: "Cuebus", sub: "-", start: "2026/08/20", end: "2026/09/20", cp: true, status: "未着手" },
-      { id: "1.5", cat: "開発", name: "演出設計（光・音演出・正面ハンガー展示連動）", owner: "Cuebus", sub: "Hamaru Strategy", start: "2026/08/20", end: "2026/09/20", cp: false, status: "未着手" },
-      { id: "2.1", cat: "商品/IP", name: "第1弾IP交渉・契約締結・デザイン許諾", owner: "Hamaru Strategy", sub: "-", start: "2026/08/01", end: "2026/08/20", cp: true, status: "進行中" },
-      { id: "2.2", cat: "商品/IP", name: "Tシャツ仕様決定・証紙タグデザイン作成", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026/08/15", end: "2026/08/25", cp: false, status: "未着手" },
-      { id: "2.3", cat: "商品/IP", name: "Tシャツ量産発注 & 証紙アタッチ・BOXアセンブリ", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026/08/26", end: "2026/09/25", cp: true, status: "未着手" },
-      { id: "2.4", cat: "商品/IP", name: "Tシャツ納品・現地倉庫/支給管理", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026/09/26", end: "2026/10/20", cp: true, status: "未着手" },
-      { id: "3.1", cat: "システム", name: "Shopify構築（多言語・決済連携ベース）", owner: "Hamaru Strategy", sub: "-", start: "2026/08/20", end: "2026/09/30", cp: false, status: "未着手" },
-      { id: "3.2", cat: "システム", name: "QR認証・真贋証明システム開発", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026/09/01", end: "2026/10/10", cp: false, status: "未着手" },
-      { id: "3.3", cat: "法務", name: "商標登録（CaraCuriCube）・ドメイン手配", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026/08/01", end: "2026/08/31", cp: false, status: "進行中" },
-      { id: "4.1", cat: "行政", name: "消防確認（成田市消防・防炎不燃証明書類提出）", owner: "Cuebus", sub: "成田空港", start: "2026/08/15", end: "2026/09/30", cp: true, status: "未着手" },
-      { id: "5.1", cat: "空港対応", name: "共通決済端末の手配・通信プロトコル開示", owner: "成田国際空港", sub: "Cuebus", start: "2026/08/10", end: "2026/09/15", cp: true, status: "進行中" },
-      { id: "5.2", cat: "空港対応", name: "搬入計画書作成・養生計画・入館パス申請", owner: "Cuebus", sub: "成田空港", start: "2026/09/15", end: "2026/10/15", cp: true, status: "未着手" },
-      { id: "5.3", cat: "店舗運用", name: "現場接客・補充スタッフ（アルバイト）手配", owner: "Cuebus", sub: "-", start: "2026/09/15", end: "2026/10/15", cp: false, status: "未着手" },
-      { id: "6.1", cat: "結合テスト", name: "工場内FAT（実機動作×演出×決済×QR 結合テスト）", owner: "Cuebus", sub: "Hamaru Strategy", start: "2026/10/21", end: "2026/10/25", cp: true, status: "未着手" },
-      { id: "6.2", cat: "現地施工", name: "成田空港 T2現場 夜間搬入・設置・一次電源結線", owner: "Cuebus", sub: "成田空港", start: "2026/10/28", end: "2026/11/02", cp: true, status: "未着手" },
-      { id: "6.3", cat: "リハーサル", name: "現地夜間総合リハーサル・消防最終実地検査", owner: "全社合同", sub: "成田空港", start: "2026/11/03", end: "2026/11/05", cp: true, status: "未着手" },
-      { id: "6.4", cat: "運用準備", name: "プレオープン（関係者内覧・スタッフ運用テスト）", owner: "全社合同", sub: "成田空港", start: "2026/11/06", end: "2026/11/09", cp: true, status: "未着手" },
-      { id: "6.5", cat: "オープン", name: "★グランドオープン（9:00〜21:00 スタッフ常駐）", owner: "全社合同", sub: "成田空港", start: "2026/11/10", end: "2026/11/10", cp: true, status: "未着手" }
+    // デフォルトのタスク一覧
+    const defaultTasks = [
+      { id: "1.1", cat: "開発", name: "CUEBUS詳細設計（7列×5段・100V 4.5kW電源適応）", owner: "Cuebus", sub: "成田空港", start: "2026-08-01", end: "2026-08-10", cp: true, status: "進行中" },
+      { id: "1.2", cat: "空港対応", name: "T2現地与件最終確認（床荷重・搬入ルート・電源位置）", owner: "Cuebus", sub: "成田空港", start: "2026-08-01", end: "2026-08-15", cp: true, status: "進行中" },
+      { id: "1.3", cat: "開発", name: "昇降リフト・メカ機構詳細設計", owner: "Cuebus", sub: "-", start: "2026-08-11", end: "2026-08-31", cp: true, status: "未着手" },
+      { id: "1.4", cat: "開発", name: "制御開発（昇降・カプセル排出ロジック）", owner: "Cuebus", sub: "-", start: "2026-08-20", end: "2026-09-20", cp: true, status: "未着手" },
+      { id: "1.5", cat: "開発", name: "演出設計（光・音演出・正面ハンガー展示連動）", owner: "Cuebus", sub: "Hamaru Strategy", start: "2026-08-20", end: "2026-09-20", cp: false, status: "未着手" },
+      { id: "2.1", cat: "商品/IP", name: "第1弾IP交渉・契約締結・デザイン許諾", owner: "Hamaru Strategy", sub: "-", start: "2026-08-01", end: "2026-08-20", cp: true, status: "進行中" },
+      { id: "2.2", cat: "商品/IP", name: "Tシャツ仕様決定・証紙タグデザイン作成", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026-08-15", end: "2026-08-25", cp: false, status: "未着手" },
+      { id: "2.3", cat: "商品/IP", name: "Tシャツ量産発注 & 証紙アタッチ・BOXアセンブリ", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026-08-26", end: "2026-09-25", cp: true, status: "未着手" },
+      { id: "2.4", cat: "商品/IP", name: "Tシャツ納品・現地倉庫/支給管理", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026-09-26", end: "2026-10-20", cp: true, status: "未着手" },
+      { id: "3.1", cat: "システム", name: "Shopify構築（多言語・決済連携ベース）", owner: "Hamaru Strategy", sub: "-", start: "2026-08-20", end: "2026-09-30", cp: false, status: "未着手" },
+      { id: "3.2", cat: "システム", name: "QR認証・真贋証明システム開発", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026-09-01", end: "2026-10-10", cp: false, status: "未着手" },
+      { id: "3.3", cat: "法務", name: "商標登録（CaraCuriCube）・ドメイン手配", owner: "Hamaru Strategy", sub: "Cuebus", start: "2026-08-01", end: "2026-08-31", cp: false, status: "進行中" },
+      { id: "4.1", cat: "行政", name: "消防確認（成田市消防・防炎不燃証明書類提出）", owner: "Cuebus", sub: "成田空港", start: "2026-08-15", end: "2026-09-30", cp: true, status: "未着手" },
+      { id: "5.1", cat: "空港対応", name: "共通決済端末の手配・通信プロトコル開示", owner: "成田国際空港", sub: "Cuebus", start: "2026-08-10", end: "2026-09-15", cp: true, status: "進行中" },
+      { id: "5.2", cat: "空港対応", name: "搬入計画書作成・養生計画・入館パス申請", owner: "Cuebus", sub: "成田空港", start: "2026-09-15", end: "2026-10-15", cp: true, status: "未着手" },
+      { id: "5.3", cat: "店舗運用", name: "現場接客・補充スタッフ（アルバイト）手配", owner: "Cuebus", sub: "-", start: "2026-09-15", end: "2026-10-15", cp: false, status: "未着手" },
+      { id: "6.1", cat: "結合テスト", name: "工場内FAT（実機動作×演出×決済×QR 結合テスト）", owner: "Cuebus", sub: "Hamaru Strategy", start: "2026-10-21", end: "2026-10-25", cp: true, status: "未着手" },
+      { id: "6.2", cat: "現地施工", name: "成田空港 T2現場 夜間搬入・設置・一次電源結線", owner: "Cuebus", sub: "成田空港", start: "2026-10-28", end: "2026-11-02", cp: true, status: "未着手" },
+      { id: "6.3", cat: "リハーサル", name: "現地夜間総合リハーサル・消防最終実地検査", owner: "全社合同", sub: "成田空港", start: "2026-11-03", end: "2026-11-05", cp: true, status: "未着手" },
+      { id: "6.4", cat: "運用準備", name: "プレオープン（関係者内覧・スタッフ運用テスト）", owner: "全社合同", sub: "成田空港", start: "2026-11-06", end: "2026-11-09", cp: true, status: "未着手" },
+      { id: "6.5", cat: "オープン", name: "★グランドオープン（9:00〜21:00 スタッフ常駐）", owner: "全社合同", sub: "成田空港", start: "2026-11-10", end: "2026-11-10", cp: true, status: "未着手" }
     ];
+
+    // ブラウザのローカルストレージからデータ復元
+    let tasks = JSON.parse(localStorage.getItem('narita_tasks')) || defaultTasks;
+
+    function saveTasks() {
+      localStorage.setItem('narita_tasks', JSON.stringify(tasks));
+    }
 
     function updateCountdown() {
       const target = new Date("2026-11-10T00:00:00").getTime();
@@ -299,11 +316,10 @@
         tr.innerHTML = `
           <td>${t.id}</td>
           <td>${t.cat}</td>
-          <td><strong>${t.name}</strong></td>
+          <td><input type="text" value="${t.name}" onchange="updateName(${index}, this.value)" style="width: 280px;"></td>
           <td>${t.owner}</td>
-          <td>${t.sub}</td>
-          <td>${t.start}</td>
-          <td>${t.end}</td>
+          <td><input type="date" value="${t.start}" onchange="updateStart(${index}, this.value)"></td>
+          <td><input type="date" value="${t.end}" onchange="updateEnd(${index}, this.value)"></td>
           <td>${t.cp ? '<span class="badge-cp">★CP</span>' : '-'}</td>
           <td>
             <select class="status-select ${getStatusClass(t.status)}" onchange="updateStatus(${index}, this.value)">
@@ -323,9 +339,26 @@
       return 'status-not-started';
     }
 
-    function updateStatus(index, newStatus) {
-      tasks[index].status = newStatus;
+    function updateName(index, val) { tasks[index].name = val; saveTasks(); }
+    function updateStart(index, val) { tasks[index].start = val; saveTasks(); }
+    function updateEnd(index, val) { tasks[index].end = val; saveTasks(); }
+    function updateStatus(index, val) { tasks[index].status = val; saveTasks(); filterTasks(); }
+
+    function addNewTask() {
+      const newId = (tasks.length + 1) + ".0";
+      tasks.push({
+        id: newId, cat: "追加タスク", name: "新規タスク名称", owner: "Cuebus", sub: "-", start: "2026-08-01", end: "2026-08-10", cp: false, status: "未着手"
+      });
+      saveTasks();
       filterTasks();
+    }
+
+    function resetData() {
+      if(confirm("手入力した日付や追加タスクを初期状態にリセットしますか？")) {
+        tasks = JSON.parse(JSON.stringify(defaultTasks));
+        saveTasks();
+        filterTasks();
+      }
     }
 
     function filterTasks() {
