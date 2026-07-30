@@ -18,7 +18,7 @@
       --border-color: #D0D7DE;
       --day-width: 24px;
       --row-height: 36px;       /* 通常行の高さ */
-      --phase-height: 28px;     /* フェーズ行の高さ */
+      --phase-height: 28px;     /* カテゴリー行の高さ */
     }
     
     body {
@@ -217,7 +217,7 @@
       vertical-align: middle;
     }
 
-    /* 📌 フェーズ行（左右で高さ・境界線を完全同期） */
+    /* 📂 カテゴリー行 */
     .task-table tr.phase-header-row {
       height: var(--phase-height);
     }
@@ -380,7 +380,7 @@
 
   <header>
     <div>
-      <h1>✈️ 【NAA × Cuebus × Hamaru Strategy】統合管理工程表</h1>
+      <h1>✈️ 【NAA × Cuebus × Hamaru Strategy】統合管理工程表（フェーズ1）</h1>
       <p>
         期間: 2026年8月1日 〜 2027年3月31日<br>
         <span class="open-target">オープン目標: 2026年11月10日（火）</span>
@@ -490,14 +490,15 @@
 
     const ADMIN_PASSWORD = "1234";
 
-    const phaseNames = {
-      "1": "📌 フェーズ 1：什器開発・現地仕様確定",
-      "2": "📌 フェーズ 2：商品・IPデザイン・量産手配",
-      "3": "📌 フェーズ 3：ECシステム・認証開発",
-      "4": "📌 フェーズ 4：行政・消防・事前申請",
-      "5": "📌 フェーズ 5：空港運用・搬入準備",
-      "6": "📌 フェーズ 6：テスト・現地施工・オープン",
-      "7": "📌 フェーズ 7：初期運用・次章展開準備"
+    /* 📂 カテゴリー表示名の設定 */
+    const categoryNames = {
+      "1": "📂 カテゴリー 1：什器開発・現地仕様確定",
+      "2": "📂 カテゴリー 2：商品・IPデザイン・量産手配",
+      "3": "📂 カテゴリー 3：ECシステム・認証開発",
+      "4": "📂 カテゴリー 4：行政・消防・事前申請",
+      "5": "📂 カテゴリー 5：空港運用・搬入準備",
+      "6": "📂 カテゴリー 6：テスト・現地施工・オープン",
+      "7": "📂 カテゴリー 7：初期運用・次章展開準備"
     };
 
     const defaultTasks = [
@@ -729,19 +730,19 @@
 
       const totalWidth = daysArray.length * DAY_WIDTH;
 
-      let currentPhaseGroup = null;
+      let currentCategoryGroup = null;
 
       filtered.forEach((t) => {
         const realIdx = tasks.findIndex(item => item.id === t.id);
 
         const mainGroup = t.id ? String(t.id).split('.')[0] : "1";
-        if (mainGroup !== currentPhaseGroup) {
-          currentPhaseGroup = mainGroup;
-          const pName = phaseNames[mainGroup] || `📌 フェーズ ${mainGroup}`;
+        if (mainGroup !== currentCategoryGroup) {
+          currentCategoryGroup = mainGroup;
+          const cName = categoryNames[mainGroup] || `📂 カテゴリー ${mainGroup}`;
 
           const phaseTr = document.createElement("tr");
           phaseTr.className = "phase-header-row";
-          phaseTr.innerHTML = `<td colspan="9">${pName}</td>`;
+          phaseTr.innerHTML = `<td colspan="9">${cName}</td>`;
           tbody.appendChild(phaseTr);
 
           const gPhaseRow = document.createElement("div");
@@ -959,14 +960,12 @@
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
-      const link = document.append ? document.createElement("a") : null;
-      if (link) {
-        link.setAttribute("href", url);
-        link.setAttribute("download", `成田空港プロジェクト工程表_${new Date().toISOString().slice(0,10)}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `成田空港プロジェクト工程表_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
 
     function updateCountdown() {
