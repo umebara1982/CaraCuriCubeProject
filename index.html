@@ -88,7 +88,8 @@
     button:hover { opacity: 0.9; }
 
     .btn-add { background-color: #27ae60; }
-    .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
+    .btn-delete { background-color: #e74c3c; padding: 2px 4px; font-size: 0.72rem; }
+    .btn-insert { background-color: #34495e; padding: 2px 4px; font-size: 0.7rem; }
 
     .gantt-wrapper {
       display: flex;
@@ -102,7 +103,7 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
-    /* 左側：タスク表（幅60%） */
+    /* 左側：タスク表 */
     .task-side {
       width: 60%;
       flex-shrink: 0;
@@ -125,7 +126,7 @@
       z-index: 10;
       background: var(--primary-color);
       color: white;
-      padding: 6px 4px;
+      padding: 6px 2px;
       text-align: center;
       height: 46px;
       box-sizing: border-box;
@@ -133,7 +134,7 @@
     }
 
     .task-table td {
-      padding: 4px 4px;
+      padding: 3px 2px;
       border-bottom: 1px solid var(--border-color);
       height: 36px;
       box-sizing: border-box;
@@ -142,12 +143,24 @@
       text-overflow: ellipsis;
     }
 
-    /* 右側：カレンダーガント（幅40%） */
+    /* ドラッグ＆ドロップスタイル */
+    tr.draggable-row {
+      cursor: grab;
+    }
+    tr.draggable-row:active {
+      cursor: grabbing;
+    }
+    tr.dragging {
+      opacity: 0.4;
+      background-color: #e0e0e0;
+    }
+
+    /* 右側：カレンダーガント */
     .gantt-side {
       width: 40%;
       flex-grow: 1;
       overflow: auto;
-      background: #FAFAFA;
+      background: #FFFFFF;
       position: relative;
     }
 
@@ -192,13 +205,15 @@
       box-sizing: border-box;
       height: 24px;
       flex-shrink: 0;
+      background-color: #FFFFFF;
     }
 
-    .day-cell.sat { background-color: #EBF3FB; color: #0055AA; }
-    .day-cell.sun { background-color: #FDE8E8; color: #CC0000; }
+    .day-cell.sat { background-color: #F0F6FF; color: #0055AA; }
+    .day-cell.sun { background-color: #FFF0F0; color: #CC0000; }
 
     .gantt-body {
       position: relative;
+      background-color: #FFFFFF;
     }
 
     .gantt-row {
@@ -216,10 +231,11 @@
       border-right: 1px solid #F0F0F0;
       box-sizing: border-box;
       flex-shrink: 0;
+      background-color: #FFFFFF;
     }
 
-    .gantt-bg-cell.sat { background-color: #F7FAFC; }
-    .gantt-bg-cell.sun { background-color: #FFF5F5; }
+    .gantt-bg-cell.sat { background-color: #F0F6FF; }
+    .gantt-bg-cell.sun { background-color: #FFF0F0; }
 
     .bar {
       position: absolute;
@@ -286,8 +302,10 @@
       <option value="CP">★クリティカルパス（CP）のみ</option>
     </select>
 
-    <button onclick="addNewTask()" class="btn-add">＋ タスク追加</button>
+    <button onclick="addNewTask('end')" class="btn-add">＋ 一番下に追加</button>
     <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
+
+    <span style="font-size: 0.75rem; color: #666;">💡 行をドラッグ＆ドロップで並び替えできます</span>
 
     <div class="legend">
       <span><span class="legend-box" style="background:#C00000;"></span> 赤：最重要パス(CP)</span>
@@ -301,14 +319,14 @@
       <table class="task-table">
         <thead>
           <tr>
-            <th style="width: 45px;">ID</th>
+            <th style="width: 40px;">ID</th>
             <th style="width: 150px;">タスク名称</th>
-            <th style="width: 100px;">担当</th>
+            <th style="width: 95px;">担当</th>
             <th style="width: 85px;">開始日</th>
             <th style="width: 85px;">完了期限</th>
-            <th style="width: 65px;">進捗状況</th>
-            <th style="width: 25px;">CP</th>
-            <th style="width: 28px;">操作</th>
+            <th style="width: 65px;">進捗</th>
+            <th style="width: 20px;">CP</th>
+            <th style="width: 80px;">操作・追加</th>
           </tr>
         </thead>
         <tbody id="task-tbody">
@@ -357,6 +375,7 @@
 
     let tasks = JSON.parse(localStorage.getItem('narita_gantt_tasks')) || defaultTasks;
     let daysArray = [];
+    let draggedIndex = null;
 
     function initDays() {
       daysArray = [];
@@ -439,12 +458,21 @@
       filtered.forEach((t) => {
         const realIdx = tasks.findIndex(item => item.id === t.id);
 
+        // ★ドラッグ対応行（draggable="true"）
         const tr = document.createElement("tr");
+        tr.className = "draggable-row";
+        tr.draggable = true;
+        tr.dataset.index = realIdx;
+
+        // ドラッグイベントリスナー
+        tr.addEventListener("dragstart", handleDragStart);
+        tr.addEventListener("dragover", handleDragOver);
+        tr.addEventListener("drop", handleDrop);
+        tr.addEventListener("dragend", handleDragEnd);
+
         tr.innerHTML = `
-          <!-- ★ID手入力変更可能 -->
           <td><input type="text" value="${t.id}" onchange="updateTask(${realIdx}, 'id', this.value)" style="width: 100%; text-align: center;"></td>
           <td><input type="text" value="${t.name}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
-          <!-- ★担当3社＋合同プルダウン選択可能 -->
           <td style="text-align:center;">
             <select onchange="updateTask(${realIdx}, 'owner', this.value)" style="width: 100%;">
               <option value="Cuebus" ${t.owner === 'Cuebus' ? 'selected' : ''}>Cuebus</option>
@@ -464,7 +492,11 @@
             </select>
           </td>
           <td style="text-align:center;">${t.cp ? '<span class="badge-cp">★</span>' : '-'}</td>
-          <td style="text-align:center;"><button class="btn-delete" onclick="deleteTask(${realIdx})">消</button></td>
+          <td style="text-align:center;">
+            <button class="btn-insert" title="直上に追加" onclick="addNewTask('above', ${realIdx})">↑</button>
+            <button class="btn-insert" title="直下に追加" onclick="addNewTask('below', ${realIdx})">↓</button>
+            <button class="btn-delete" title="削除" onclick="deleteTask(${realIdx})">消</button>
+          </td>
         `;
         tbody.appendChild(tr);
 
@@ -506,6 +538,35 @@
       document.getElementById("gantt-side").scrollLeft = 0;
     }
 
+    /* ★ドラッグ＆ドロップ処理ロジック */
+    function handleDragStart(e) {
+      draggedIndex = parseInt(this.dataset.index);
+      this.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      const targetIndex = parseInt(this.dataset.index);
+      if (draggedIndex !== null && draggedIndex !== targetIndex) {
+        // 並び替え処理
+        const item = tasks.splice(draggedIndex, 1)[0];
+        tasks.splice(targetIndex, 0, item);
+        saveTasks();
+        renderAll();
+      }
+    }
+
+    function handleDragEnd() {
+      this.classList.remove("dragging");
+      draggedIndex = null;
+    }
+
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
@@ -535,12 +596,27 @@
       }
     }
 
-    /* ★新規タスク追加ロジック：空欄ID・初期担当Cuebusで追加 */
-    function addNewTask() {
-      const nextNum = tasks.length + 1;
-      tasks.push({
-        id: "8." + nextNum, cat: "追加", name: "新規追加タスク", owner: "Cuebus", start: "", end: "", status: "未着手", cp: false
-      });
+    /* ★タスク追加機能（位置指定：'end'末尾, 'above'直上, 'below'直下） */
+    function addNewTask(position = 'end', targetIdx = null) {
+      const newObj = {
+        id: "加-" + (tasks.length + 1),
+        cat: "追加",
+        name: "新規追加タスク",
+        owner: "Cuebus",
+        start: "",
+        end: "",
+        status: "未着手",
+        cp: false
+      };
+
+      if (position === 'above' && targetIdx !== null) {
+        tasks.splice(targetIdx, 0, newObj);
+      } else if (position === 'below' && targetIdx !== null) {
+        tasks.splice(targetIdx + 1, 0, newObj);
+      } else {
+        tasks.push(newObj);
+      }
+
       saveTasks();
       renderAll();
     }
