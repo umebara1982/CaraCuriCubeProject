@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CaraCuriCube 統合管理工程表</title>
+  <title>【工程表】成田空港IP什器導入</title>
 
   <!-- Firebase SDK の読み込み -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -25,7 +25,6 @@
       color: #333;
       margin: 0;
       padding: 15px;
-      user-select: none;
     }
 
     header {
@@ -69,6 +68,7 @@
       border-radius: 4px;
       font-size: 0.78rem;
       box-sizing: border-box;
+      user-select: text; /* テキスト入力エリアでは文字選択を可能に */
     }
 
     button {
@@ -82,9 +82,23 @@
     button:hover { opacity: 0.9; }
 
     .btn-add { background-color: #27ae60; }
-    .btn-csv { background-color: #8e44ad; } /* CSV用パープル */
+    .btn-csv { background-color: #8e44ad; }
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
     .btn-move { background-color: #34495e; padding: 2px 4px; font-size: 0.72rem; }
+
+    .drag-handle {
+      cursor: grab;
+      font-size: 1.1rem;
+      color: #888;
+      display: inline-block;
+      width: 100%;
+      text-align: center;
+      user-select: none;
+    }
+    .drag-handle:active {
+      cursor: grabbing;
+      color: var(--primary-color);
+    }
 
     .sync-badge {
       background-color: #27ae60;
@@ -185,8 +199,6 @@
       font-weight: bold;
     }
 
-    tr.draggable-row { cursor: grab; }
-    tr.draggable-row:active { cursor: grabbing; }
     tr.dragging { opacity: 0.4; background-color: #e0e0e0; }
 
     .gantt-header-container {
@@ -364,6 +376,7 @@
       <table class="task-table">
         <thead>
           <tr>
+            <th style="width: 25px;"></th> <!-- 移動ハンドル用 -->
             <th style="width: 40px;">ID</th>
             <th style="width: 150px;">タスク名称</th>
             <th style="width: 95px;">担当</th>
@@ -388,7 +401,6 @@
   </div>
 
   <script>
-    // ★ CaraCuriCube Firebase設定情報
     const firebaseConfig = {
       apiKey: "AIzaSyCICc75-iLAn2vIWBoxJBLGQQRd7lhiLDs",
       authDomain: "caracuricube.firebaseapp.com",
@@ -407,7 +419,7 @@
     const START_DATE = new Date("2026-08-01");
     const END_DATE = new Date("2027-03-31");
     const DAY_WIDTH = 24;
-    const TODAY = new Date(); // 本日の日付
+    const TODAY = new Date();
 
     const defaultTasks = [
       { id: "1.1", cat: "開発", name: "CUEBUS詳細設計（100V 4.5kW電源対応）", owner: "Cuebus", start: "", end: "", status: "未着手", cp: true },
@@ -438,7 +450,6 @@
     let daysArray = [];
     let draggedIndex = null;
 
-    // ⚡ リアルタイム同期リスナー
     tasksRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -450,7 +461,6 @@
       renderAll();
     });
 
-    // ⚡ 最終更新日時の受信
     updateRef.on('value', (snapshot) => {
       const timeStr = snapshot.val();
       if (timeStr) {
@@ -495,7 +505,6 @@
         if (d.getDay() === 6) cls += " sat";
         if (d.getDay() === 0) cls += " sun";
         
-        // 本日セルの強調
         if (d.toDateString() === TODAY.toDateString()) cls += " today";
 
         dayCell.className = cls;
@@ -553,7 +562,6 @@
       filtered.forEach((t) => {
         const realIdx = tasks.findIndex(item => item.id === t.id);
 
-        // ⚠️ 遅延判定（期限が今日を過ぎていて未完了の場合）
         let isDelayed = false;
         if (t.end && t.status !== '完了') {
           const endDate = new Date(t.end);
@@ -561,16 +569,13 @@
         }
 
         const tr = document.createElement("tr");
-        tr.className = "draggable-row";
-        tr.draggable = true;
         tr.dataset.index = realIdx;
 
-        tr.addEventListener("dragstart", handleDragStart);
         tr.addEventListener("dragover", handleDragOver);
         tr.addEventListener("drop", handleDrop);
-        tr.addEventListener("dragend", handleDragEnd);
 
         tr.innerHTML = `
+          <td style="text-align:center;"><span class="drag-handle" draggable="true">≡</span></td>
           <td><input type="text" value="${t.id || ''}" onchange="updateTask(${realIdx}, 'id', this.value)" style="width: 100%; text-align: center;"></td>
           <td><input type="text" value="${t.name || ''}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
           <td style="text-align:center;">
@@ -603,6 +608,12 @@
             <button class="btn-delete" title="削除" onclick="deleteTask(${realIdx})">消</button>
           </td>
         `;
+
+        // ≡ アイコンに対してのみドラッグイベントを設定
+        const handle = tr.querySelector('.drag-handle');
+        handle.addEventListener("dragstart", (e) => handleDragStart(e, realIdx, tr));
+        handle.addEventListener("dragend", (e) => handleDragEnd(tr));
+
         tbody.appendChild(tr);
 
         const gRow = document.createElement("div");
@@ -639,7 +650,6 @@
         ganttBody.appendChild(gRow);
       });
 
-      // 📍 本日線（赤の縦ライン）を描画
       if (TODAY >= START_DATE && TODAY <= END_DATE) {
         const todayDiff = Math.floor((TODAY - START_DATE) / (1000 * 60 * 60 * 24));
         const todayLine = document.createElement("div");
@@ -651,9 +661,9 @@
       updateCountdown();
     }
 
-    function handleDragStart(e) {
-      draggedIndex = parseInt(this.dataset.index);
-      this.classList.add("dragging");
+    function handleDragStart(e, index, tr) {
+      draggedIndex = index;
+      tr.classList.add("dragging");
       e.dataTransfer.effectAllowed = "move";
     }
 
@@ -664,7 +674,9 @@
 
     function handleDrop(e) {
       e.preventDefault();
-      const targetIndex = parseInt(this.dataset.index);
+      let targetTr = e.target.closest('tr');
+      if (!targetTr) return;
+      const targetIndex = parseInt(targetTr.dataset.index);
       if (draggedIndex !== null && draggedIndex !== targetIndex) {
         const item = tasks.splice(draggedIndex, 1)[0];
         tasks.splice(targetIndex, 0, item);
@@ -672,8 +684,8 @@
       }
     }
 
-    function handleDragEnd() {
-      this.classList.remove("dragging");
+    function handleDragEnd(tr) {
+      tr.classList.remove("dragging");
       draggedIndex = null;
     }
 
@@ -736,9 +748,8 @@
       }
     }
 
-    /* 📥 CSV出力機能 */
     function exportCSV() {
-      let csvContent = "\uFEFF"; // UTF-8 BOM（文字化け防止）
+      let csvContent = "\uFEFF";
       csvContent += "ID,タスク名称,担当,開始日,完了期限,進捗,CP(クリティカルパス)\n";
 
       tasks.forEach(t => {
