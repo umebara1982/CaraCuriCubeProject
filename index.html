@@ -144,7 +144,6 @@
       text-align: right;
     }
 
-    /* 🤖 メインコンテナとAIパネルのレイアウト調整 */
     .main-container {
       display: flex;
       width: 100%;
@@ -231,13 +230,27 @@
 
     .ai-score-badge {
       display: inline-block;
-      background: #27ae60;
+      background: #34495e;
       color: white;
       font-size: 1.1rem;
       font-weight: bold;
       padding: 2px 10px;
       border-radius: 4px;
     }
+
+    .btn-run-ai {
+      background: linear-gradient(135deg, #8e44ad, #2980b9);
+      color: white;
+      width: 100%;
+      padding: 8px;
+      font-size: 0.8rem;
+      border-radius: 4px;
+      border: none;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+    }
+    .btn-run-ai:hover { opacity: 0.95; }
 
     .task-side {
       width: 60%;
@@ -303,7 +316,6 @@
       vertical-align: middle;
     }
 
-    /* 📂 カテゴリー行 */
     .task-table tr.phase-header-row {
       height: var(--phase-height);
     }
@@ -508,12 +520,13 @@
     <button onclick="addNewTask()" class="btn-add">＋ 新規タスク追加</button>
     <button onclick="exportCSV()" class="btn-csv">📥 CSV出力</button>
     <button onclick="downloadManual()" class="btn-manual">📖 マニュアル</button>
-    <button onclick="toggleAIPanel()" class="btn-ai">🤖 AI診断・相談</button>
+    <button onclick="toggleAIPanel(true)" class="btn-ai">🤖 AI診断・相談</button>
 
     <button onclick="toggleAdminMenu()" class="btn-admin">🔑 管理者</button>
 
     <div id="admin-menu" class="admin-menu">
       <span style="font-size:0.75rem; font-weight:bold; color:#d35400;">【裏メニュー】</span>
+      <button onclick="setApiKey()" style="background: #27ae60;">🔑 OpenAI APIキー設定</button>
       <button onclick="reorderAllIDs()" style="background: #2980b9;">🔢 ID一括振り直し</button>
       <button onclick="copyFullHTML()" class="btn-copy-full">📋 HTML全体をコピー（GitHub用）</button>
       <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
@@ -556,37 +569,39 @@
       </div>
     </div>
 
-    <!-- 🤖 Step 1: AI PM Assistant サイドパネル UI -->
+    <!-- 🤖 Step 1 & 2: AI PM Assistant サイドパネル UI -->
     <div class="ai-panel" id="ai-panel">
       <div class="ai-panel-header">
         <span>🤖 AI PM Assistant</span>
-        <button onclick="toggleAIPanel()" style="background:transparent; border:none; color:white; font-size:1.1rem; cursor:pointer;">✖</button>
+        <button onclick="toggleAIPanel(false)" style="background:transparent; border:none; color:white; font-size:1.1rem; cursor:pointer;">✖</button>
       </div>
       <div class="ai-panel-body">
+        <button onclick="runAIDiagnosis()" class="btn-run-ai" id="btn-run-ai">🔄 最新状態でAI診断を実行</button>
+
         <div class="ai-card" style="text-align: center;">
           <div class="ai-card-title" style="justify-content: center;">プロジェクト健全度</div>
           <div class="ai-score-badge" id="ai-score">--</div>
-          <p style="margin: 6px 0 0 0; color: #666; font-size: 0.72rem;" id="ai-status-summary">AI診断を実行してください</p>
+          <p style="margin: 6px 0 0 0; color: #666; font-size: 0.72rem;" id="ai-status-summary">診断未実行</p>
         </div>
 
         <div class="ai-card">
           <div class="ai-card-title">⚠️ 遅延・最懸念リスク</div>
-          <div id="ai-risks-list" style="color:#c00000; line-height: 1.4;">
-            ・ボタンを押すとAIがFirebase内のタスクを読み込んでリスクを自動解析します。
+          <div id="ai-risks-list" style="color:#2c3e50; line-height: 1.4; white-space: pre-wrap;">
+・「最新状態でAI診断を実行」ボタンを押すと、全タスクをAIが解析します。
           </div>
         </div>
 
         <div class="ai-card">
           <div class="ai-card-title">📋 今週の推進アクション</div>
-          <div id="ai-actions-list" style="color:#2c3e50; line-height: 1.4;">
-            ・解析結果がここに表示されます。
+          <div id="ai-actions-list" style="color:#2c3e50; line-height: 1.4; white-space: pre-wrap;">
+・解析結果がここに自動表示されます。
           </div>
         </div>
 
         <div class="ai-card" style="flex-grow: 1; display: flex; flex-direction: column;">
-          <div class="ai-card-title">💬 AI PMと相談（Step 3で拡張）</div>
+          <div class="ai-card-title">💬 AI PMと相談（Step 3実装準備中）</div>
           <div style="flex-grow: 1; background: #FFF; border: 1px solid #CBD5E1; border-radius: 4px; padding: 6px; overflow-y: auto; margin-bottom: 6px; font-size: 0.72rem; color: #888;" id="ai-chat-history">
-            工程表に関する質問を受け付けるエリアです（Step 3にて実装予定）。
+工程表に関する質問を受け付けるエリアです（Step 3にて対話機能を統合予定）。
           </div>
         </div>
       </div>
@@ -616,7 +631,6 @@
 
     const ADMIN_PASSWORD = "1234";
 
-    /* 📂 カテゴリー表示名の設定 */
     const categoryNames = {
       "1": "📂 カテゴリー 1：什器開発・現地仕様確定",
       "2": "📂 カテゴリー 2：商品・IPデザイン・量産手配",
@@ -683,10 +697,104 @@
       updateRef.set(timeString);
     }
 
-    /* 🤖 AIパネル表示・非表示アニメーション切替 */
-    function toggleAIPanel() {
+    function toggleAIPanel(openState) {
       const panel = document.getElementById("ai-panel");
-      panel.classList.toggle("active");
+      if (openState !== undefined) {
+        if (openState) panel.classList.add("active");
+        else panel.classList.remove("active");
+      } else {
+        panel.classList.toggle("active");
+      }
+    }
+
+    /* 🔒 OpenAI APIキー設定関数 */
+    function setApiKey() {
+      const currentKey = localStorage.getItem("OPENAI_API_KEY") || "";
+      const inputKey = prompt("OpenAI APIキー（sk-...）を入力してください:\n※ブラウザローカルに暗号保持され外部に漏洩しません。", currentKey);
+      if (inputKey !== null) {
+        localStorage.setItem("OPENAI_API_KEY", inputKey.trim());
+        alert("APIキーを保存しました。");
+      }
+    }
+
+    /* 🤖 Step 2: AI診断ロジック（Firebaseタスク解析・OpenAI通信） */
+    async function runAIDiagnosis() {
+      const apiKey = localStorage.getItem("OPENAI_API_KEY");
+      if (!apiKey) {
+        alert("APIキーが設定されていません。\n【🔑 管理者】ボタンを押して裏メニューから「OpenAI APIキー設定」を行ってください。");
+        return;
+      }
+
+      const btn = document.getElementById("btn-run-ai");
+      btn.innerText = "⏳ AI解析中...";
+      btn.disabled = true;
+
+      // タスクリストの要約文字列作成
+      let taskSummaryText = tasks.map(t => {
+        const cpMark = t.cp ? "[最重要CP]" : "";
+        return `- ID:${t.id} タスク:${t.name} (担当:${t.owner}, 期間:${t.start||'未定'}〜${t.end||'未定'}, ステータス:${t.status}) ${cpMark}`;
+      }).join("\n");
+
+      const promptMessage = `
+あなたは【成田空港IP什器導入プロジェクト】の優秀なAI PMアシスタントです。
+目標オープン日は2026年11月10日です。
+
+以下の現在の全社タスク一覧データを分析し、JSON形式でのみ回答してください。
+
+【タスク一覧データ】
+${taskSummaryText}
+
+【回答フォーマット (JSONのみ厳守・マークダウン装飾不可)】
+{
+  "score": "A", 
+  "summary": "進捗は概ね順調です。消防申請の準備を急ぎましょう。",
+  "risks": "・1.2 現地与件確認の完了期限が迫っています\n・4.1 消防確認の未着手リスク",
+  "actions": "・Cuebus: 消防関連書類の提出準備\n・Hamaru: 第1弾IP契約の確定"
+}
+※ scoreは S, A, B, C, D の5段階で厳しく評価してください。
+`;
+
+      try {
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: promptMessage }],
+            temperature: 0.3
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API通信エラー: ${response.status}`);
+        }
+
+        const data = await response.json();
+        let rawContent = data.choices[0].message.content.trim();
+        rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
+
+        const result = JSON.parse(rawContent);
+
+        document.getElementById("ai-score").innerText = result.score || "A";
+        document.getElementById("ai-status-summary").innerText = result.summary || "解析完了";
+        document.getElementById("ai-risks-list").innerText = result.risks || "特に重大なリスクは検出されませんでした。";
+        document.getElementById("ai-actions-list").innerText = result.actions || "予定通りのタスクを進めてください。";
+
+        // スコアに応じたバッジ色変更
+        const scoreBadge = document.getElementById("ai-score");
+        if (result.score === "S" || result.score === "A") scoreBadge.style.background = "#27ae60";
+        else if (result.score === "B") scoreBadge.style.background = "#f39c12";
+        else scoreBadge.style.background = "#c00000";
+
+      } catch (err) {
+        alert("AI診断でエラーが発生しました: " + err.message);
+      } finally {
+        btn.innerText = "🔄 最新状態でAI診断を実行";
+        btn.disabled = false;
+      }
     }
 
     function toggleAdminMenu() {
@@ -1115,7 +1223,7 @@
   誰かがタスクや日付を編集すると、クラウドを介して全ユーザーの画面へ即座に自動反映されます。
 
 ・AI PM Assistant:
-  「🤖 AI診断・相談」ボタンで右側のAIパネルを開閉し、プロジェクトのリスク分析を行えます。
+  「🤖 AI診断・相談」ボタンで右側のAIパネルを開閉し、最新のプロジェクトリスク分析を実行できます。
 
 ==================================================`;
 
