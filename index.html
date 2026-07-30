@@ -760,7 +760,7 @@
       }).join("\n");
     }
 
-    /* ✨ Gemini API 呼び出し汎用関数 (2.0-flash / 1.5-flash 自動フォールバック対応) */
+    /* ✨ Gemini API 呼び出し自動最適化関数 (2.5-flash / 1.5-flash 自動切替) */
     async function callGeminiAPI(promptText) {
       const apiKey = localStorage.getItem("GEMINI_API_KEY");
       if (!apiKey) {
@@ -768,12 +768,15 @@
         throw new Error("APIキー未設定");
       }
 
-      const models = ["gemini-2.0-flash", "gemini-1.5-flash"];
-      let lastError = null;
+      const endpoints = [
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
+      ];
 
-      for (const model of models) {
+      let lastStatus = 0;
+
+      for (const url of endpoints) {
         try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
           const response = await fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -788,13 +791,13 @@
               return data.candidates[0].content.parts[0].text.trim();
             }
           }
-          lastError = new Error(`HTTP ${response.status}`);
+          lastStatus = response.status;
         } catch (e) {
-          lastError = e;
+          console.error(e);
         }
       }
 
-      throw lastError || new Error("Gemini API呼び出し失敗");
+      throw new Error(`HTTP ${lastStatus || 404}`);
     }
 
     /* ✨ Gemini AI診断ロジック */
