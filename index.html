@@ -11,7 +11,7 @@
       --bg-color: #F4F6F9;
       --card-bg: #FFFFFF;
       --border-color: #D0D7DE;
-      --day-width: 24px; /* 1日あたりのセル幅 */
+      --day-width: 24px;
     }
     
     body {
@@ -70,10 +70,11 @@
     }
 
     select, button, input[type="date"], input[type="text"] {
-      padding: 5px 8px;
+      padding: 4px 6px;
       border: 1px solid var(--border-color);
       border-radius: 4px;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
+      box-sizing: border-box;
     }
 
     button {
@@ -87,12 +88,14 @@
     button:hover { opacity: 0.9; }
 
     .btn-add { background-color: #27ae60; }
-    .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.75rem; }
+    .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
 
-    /* ★画面半分（50%：50%）に分割するコンテナ */
+    /* ★画面固定用ラッパー（高さを固定し縦スクロールを内部化） */
     .gantt-wrapper {
       display: flex;
       width: 100%;
+      height: calc(100vh - 180px); /* 画面の高さにフィット */
+      min-height: 500px;
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: 6px;
@@ -100,25 +103,31 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
-    /* ★左側：タスク表（画面幅の50%） */
+    /* 左側：タスク表 */
     .task-side {
       width: 50%;
       flex-shrink: 0;
       border-right: 2px solid var(--primary-color);
       background: #FFF;
+      overflow-y: auto;
       overflow-x: auto;
     }
 
     .task-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 0.8rem;
+      font-size: 0.78rem;
+      table-layout: fixed;
     }
 
+    /* ★ヘッダー固定 (sticky) */
     .task-table th {
+      position: sticky;
+      top: 0;
+      z-index: 10;
       background: var(--primary-color);
       color: white;
-      padding: 8px 4px;
+      padding: 6px 4px;
       text-align: center;
       height: 46px;
       box-sizing: border-box;
@@ -126,23 +135,25 @@
     }
 
     .task-table td {
-      padding: 4px 6px;
+      padding: 4px 4px;
       border-bottom: 1px solid var(--border-color);
       height: 36px;
       box-sizing: border-box;
       white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
-    /* ★右側：カレンダーガント（画面幅の50%・横スクロールエリア） */
+    /* 右側：カレンダーガント */
     .gantt-side {
       width: 50%;
       flex-grow: 1;
-      overflow-x: auto;
+      overflow: auto; /* 縦横両方スクロール可 */
       background: #FAFAFA;
       position: relative;
-      scroll-behavior: smooth;
     }
 
+    /* ★右側カレンダーヘッダー固定 (sticky) */
     .gantt-header-container {
       display: flex;
       flex-direction: column;
@@ -150,7 +161,9 @@
       border-bottom: 1px solid var(--border-color);
       position: sticky;
       top: 0;
-      z-index: 5;
+      z-index: 8;
+      height: 46px;
+      box-sizing: border-box;
     }
 
     .month-row, .day-row {
@@ -163,10 +176,11 @@
       text-align: center;
       font-weight: bold;
       font-size: 0.75rem;
-      padding: 3px 0;
+      padding: 2px 0;
       background: #E6ECF2;
       color: var(--primary-color);
       box-sizing: border-box;
+      height: 22px;
     }
 
     .day-cell {
@@ -175,14 +189,14 @@
       border-right: 1px solid #EAEAEA;
       text-align: center;
       font-size: 0.65rem;
-      padding: 2px 0;
+      padding: 3px 0;
       box-sizing: border-box;
+      height: 24px;
     }
 
     .day-cell.sat { background-color: #EBF3FB; color: #0055AA; }
     .day-cell.sun { background-color: #FDE8E8; color: #CC0000; }
 
-    /* ガントチャート本体の行とバー */
     .gantt-body {
       position: relative;
     }
@@ -205,7 +219,7 @@
     .gantt-bg-cell.sat { background-color: #F7FAFC; }
     .gantt-bg-cell.sun { background-color: #FFF5F5; }
 
-    /* スケジュールバー */
+    /* バーデザイン */
     .bar {
       position: absolute;
       top: 8px;
@@ -218,10 +232,11 @@
       cursor: pointer;
     }
 
-    .bar.cp { background-color: var(--accent-color); } /* クリティカルパスは赤色 */
+    .bar.cp { background-color: var(--accent-color); }
 
     .badge-cp { background: #FCE4D6; color: var(--accent-color); padding: 1px 3px; border-radius: 3px; font-weight: bold; font-size: 0.7rem; }
-    .status-select { padding: 1px 3px; border-radius: 3px; font-weight: bold; font-size: 0.75rem; }
+    .legend { display: flex; gap: 10px; font-size: 0.75rem; align-items: center; margin-left: auto; }
+    .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
   </style>
 </head>
 <body>
@@ -255,22 +270,26 @@
 
     <button onclick="addNewTask()" class="btn-add">＋ タスク追加</button>
     <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
-    <span style="font-size: 0.8rem; color: #666; margin-left: auto;">👉 右側半分がカレンダー領域です（横スクロール可能）</span>
+
+    <div class="legend">
+      <span><span class="legend-box" style="background:#C00000;"></span> 赤：最重要パス(CP)</span>
+      <span><span class="legend-box" style="background:#3498db;"></span> 青：通常タスク</span>
+    </div>
   </div>
 
   <div class="gantt-wrapper">
-    <!-- ★左側：画面幅半分（50%）固定タスク表 -->
-    <div class="task-side">
+    <!-- 左側：タスク表（ヘッダー追従固定） -->
+    <div class="task-side" id="task-side" onscroll="syncScroll('task')">
       <table class="task-table">
         <thead>
           <tr>
-            <th style="width: 30px;">ID</th>
-            <th>タスク名称</th>
-            <th style="width: 80px;">担当</th>
+            <th style="width: 28px;">ID</th>
+            <th style="width: 170px;">タスク名称</th>
+            <th style="width: 85px;">担当</th>
             <th style="width: 85px;">開始日</th>
             <th style="width: 85px;">完了期限</th>
-            <th style="width: 30px;">CP</th>
-            <th style="width: 30px;">操作</th>
+            <th style="width: 32px;">CP</th>
+            <th style="width: 28px;">操作</th>
           </tr>
         </thead>
         <tbody id="task-tbody">
@@ -278,8 +297,8 @@
       </table>
     </div>
 
-    <!-- ★右側：画面幅半分（50%）横スクロールガントチャート -->
-    <div class="gantt-side" id="gantt-side">
+    <!-- 右側：ガントチャート（日付ヘッダー追従固定 ＋ 左右上下連動） -->
+    <div class="gantt-side" id="gantt-side" onscroll="syncScroll('gantt')">
       <div class="gantt-header-container" id="gantt-header">
       </div>
       <div class="gantt-body" id="gantt-body">
@@ -290,7 +309,7 @@
   <script>
     const START_DATE = new Date("2026-08-01");
     const END_DATE = new Date("2027-03-31");
-    const DAY_WIDTH = 24; // 1日のセルピクセル幅
+    const DAY_WIDTH = 24;
 
     const defaultTasks = [
       { id: "1.1", cat: "開発", name: "CUEBUS詳細設計（100V 4.5kW電源対応）", owner: "Cuebus", start: "2026-08-01", end: "2026-08-10", cp: true, status: "進行中" },
@@ -408,13 +427,13 @@
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${t.id}</td>
+          <td style="text-align:center;">${t.id}</td>
           <td><input type="text" value="${t.name}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
-          <td>${t.owner}</td>
-          <td><input type="date" value="${t.start}" onchange="updateTask(${realIdx}, 'start', this.value)"></td>
-          <td><input type="date" value="${t.end}" onchange="updateTask(${realIdx}, 'end', this.value)"></td>
-          <td>${t.cp ? '<span class="badge-cp">★CP</span>' : '-'}</td>
-          <td><button class="btn-delete" onclick="deleteTask(${realIdx})">消</button></td>
+          <td style="text-align:center;">${t.owner}</td>
+          <td><input type="date" value="${t.start}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
+          <td><input type="date" value="${t.end}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
+          <td style="text-align:center;">${t.cp ? '<span class="badge-cp">★CP</span>' : '-'}</td>
+          <td style="text-align:center;"><button class="btn-delete" onclick="deleteTask(${realIdx})">消</button></td>
         `;
         tbody.appendChild(tr);
 
@@ -451,9 +470,23 @@
       });
 
       updateCountdown();
-      
-      // ★開いた瞬間にカレンダーの一番左（8月1日）へ自動スクロール固定
       document.getElementById("gantt-side").scrollLeft = 0;
+    }
+
+    /* 左右の縦スクロール位置を同期させる処理 */
+    let isSyncing = false;
+    function syncScroll(source) {
+      if (isSyncing) return;
+      isSyncing = true;
+      const taskSide = document.getElementById("task-side");
+      const ganttSide = document.getElementById("gantt-side");
+
+      if (source === 'task') {
+        ganttSide.scrollTop = taskSide.scrollTop;
+      } else {
+        taskSide.scrollTop = ganttSide.scrollTop;
+      }
+      isSyncing = false;
     }
 
     function updateTask(idx, field, val) {
