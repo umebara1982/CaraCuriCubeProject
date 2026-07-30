@@ -90,11 +90,10 @@
     .btn-add { background-color: #27ae60; }
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
 
-    /* ★画面固定用ラッパー（高さを固定し縦スクロールを内部化） */
     .gantt-wrapper {
       display: flex;
       width: 100%;
-      height: calc(100vh - 180px); /* 画面の高さにフィット */
+      height: calc(100vh - 180px);
       min-height: 500px;
       background: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -120,7 +119,6 @@
       table-layout: fixed;
     }
 
-    /* ★ヘッダー固定 (sticky) */
     .task-table th {
       position: sticky;
       top: 0;
@@ -148,12 +146,12 @@
     .gantt-side {
       width: 50%;
       flex-grow: 1;
-      overflow: auto; /* 縦横両方スクロール可 */
+      overflow: auto;
       background: #FAFAFA;
       position: relative;
     }
 
-    /* ★右側カレンダーヘッダー固定 (sticky) */
+    /* ヘッダー固定 (sticky) */
     .gantt-header-container {
       display: flex;
       flex-direction: column;
@@ -181,17 +179,20 @@
       color: var(--primary-color);
       box-sizing: border-box;
       height: 22px;
+      flex-shrink: 0; /* ★固定幅を保持 */
     }
 
     .day-cell {
       width: var(--day-width);
       min-width: var(--day-width);
+      max-width: var(--day-width);
       border-right: 1px solid #EAEAEA;
       text-align: center;
       font-size: 0.65rem;
       padding: 3px 0;
       box-sizing: border-box;
       height: 24px;
+      flex-shrink: 0;
     }
 
     .day-cell.sat { background-color: #EBF3FB; color: #0055AA; }
@@ -212,8 +213,10 @@
     .gantt-bg-cell {
       width: var(--day-width);
       min-width: var(--day-width);
+      max-width: var(--day-width);
       border-right: 1px solid #F0F0F0;
       box-sizing: border-box;
+      flex-shrink: 0;
     }
 
     .gantt-bg-cell.sat { background-color: #F7FAFC; }
@@ -278,7 +281,7 @@
   </div>
 
   <div class="gantt-wrapper">
-    <!-- 左側：タスク表（ヘッダー追従固定） -->
+    <!-- 左側：タスク表 -->
     <div class="task-side" id="task-side" onscroll="syncScroll('task')">
       <table class="task-table">
         <thead>
@@ -297,7 +300,7 @@
       </table>
     </div>
 
-    <!-- 右側：ガントチャート（日付ヘッダー追従固定 ＋ 左右上下連動） -->
+    <!-- 右側：ガントチャート -->
     <div class="gantt-side" id="gantt-side" onscroll="syncScroll('gantt')">
       <div class="gantt-header-container" id="gantt-header">
       </div>
@@ -352,6 +355,7 @@
       localStorage.setItem('narita_gantt_tasks', JSON.stringify(tasks));
     }
 
+    /* ★修正版：正確な月幅計算ロジック */
     function renderGanttHeader() {
       const headerContainer = document.getElementById("gantt-header");
       headerContainer.innerHTML = "";
@@ -362,39 +366,27 @@
       const dayRow = document.createElement("div");
       dayRow.className = "day-row";
 
-      let currentMonth = -1;
-      let monthCell = null;
-      let monthDaysCount = 0;
+      let monthCounts = {};
 
       daysArray.forEach((d) => {
-        const m = d.getMonth();
-        const dateNum = d.getDate();
-        const dayOfWeek = d.getDay();
-
-        if (m !== currentMonth) {
-          if (monthCell) {
-            monthCell.style.width = (monthDaysCount * DAY_WIDTH) + "px";
-          }
-          currentMonth = m;
-          monthDaysCount = 0;
-          monthCell = document.createElement("div");
-          monthCell.className = "month-cell";
-          monthCell.innerText = `${d.getFullYear()}年 ${m + 1}月`;
-          monthRow.appendChild(monthCell);
-        }
-        monthDaysCount++;
+        const mKey = `${d.getFullYear()}年 ${d.getMonth() + 1}月`;
+        monthCounts[mKey] = (monthCounts[mKey] || 0) + 1;
 
         const dayCell = document.createElement("div");
         let cls = "day-cell";
-        if (dayOfWeek === 6) cls += " sat";
-        if (dayOfWeek === 0) cls += " sun";
+        if (d.getDay() === 6) cls += " sat";
+        if (d.getDay() === 0) cls += " sun";
         dayCell.className = cls;
-        dayCell.innerText = dateNum;
+        dayCell.innerText = d.getDate();
         dayRow.appendChild(dayCell);
       });
 
-      if (monthCell) {
-        monthCell.style.width = (monthDaysCount * DAY_WIDTH) + "px";
+      for (let mKey in monthCounts) {
+        const monthCell = document.createElement("div");
+        monthCell.className = "month-cell";
+        monthCell.style.width = (monthCounts[mKey] * DAY_WIDTH) + "px";
+        monthCell.innerText = mKey;
+        monthRow.appendChild(monthCell);
       }
 
       headerContainer.appendChild(monthRow);
@@ -473,7 +465,6 @@
       document.getElementById("gantt-side").scrollLeft = 0;
     }
 
-    /* 左右の縦スクロール位置を同期させる処理 */
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
