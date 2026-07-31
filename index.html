@@ -349,6 +349,30 @@
     }
     .clickable-task-item:hover { background: #EBF5FB; border-color: #3498db; }
 
+    /* 💬 伝言板（掲示板）カード専用スタイル */
+    .memo-item {
+      background: #FFF;
+      border: 1px solid #CBD5E1;
+      border-radius: 5px;
+      padding: 6px 8px;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .memo-text {
+      font-size: 0.75rem;
+      color: #2C3E50;
+      word-break: break-word;
+      line-height: 1.35;
+    }
+    .memo-meta {
+      font-size: 0.65rem;
+      color: #888;
+      margin-top: 2px;
+    }
+
     .task-side {
       width: 60%;
       min-width: 300px;
@@ -750,6 +774,20 @@
           </div>
         </div>
 
+        <!-- 💬 伝言板（リアルタイム自由共有掲示板） -->
+        <div class="dash-card" style="border: 2px solid #8e44ad; background: #FAF5FF;">
+          <div class="dash-card-title" style="color: #8e44ad;">💬 プロジェクト伝言板（リアルタイムメモ）</div>
+          
+          <div style="display: flex; gap: 4px; margin-bottom: 8px;">
+            <input type="text" id="memo-input" placeholder="例: XLサイズのTシャツも希望です！" style="flex: 1;" onkeypress="if(event.key==='Enter') submitMemo()">
+            <button onclick="submitMemo()" style="background: #8e44ad; padding: 4px 10px; font-size: 0.75rem;">送信</button>
+          </div>
+
+          <div id="memo-list" style="max-height: 180px; overflow-y: auto;">
+            <!-- JSで動的描画 -->
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
@@ -897,6 +935,7 @@
     const updateRef = db.ref('narita_gantt_last_update');
     const companiesRef = db.ref('narita_gantt_custom_companies');
     const categoriesRef = db.ref('narita_gantt_custom_categories');
+    const memosRef = db.ref('narita_gantt_memos'); // 💬 伝言板リアルタイム同期用
 
     const START_DATE = new Date("2026-08-01");
     const END_DATE = new Date("2027-03-31");
@@ -951,6 +990,7 @@
 
     let tasks = [];
     let daysArray = [];
+    let memoList = []; // 伝言板リスト
     let draggedIndex = null;
     let isAdminUnlocked = false;
 
@@ -990,6 +1030,20 @@
       renderAll();
     });
 
+    // 💬 Firebaseから伝言板メモの監視
+    memosRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        memoList = data;
+      } else {
+        memoList = [
+          { id: '1', text: "TシャツのサイズXLも欲しい人はコメント書いておいてください！", time: "7/31 17:00" }
+        ];
+        memosRef.set(memoList);
+      }
+      renderMemos();
+    });
+
     updateRef.on('value', (snapshot) => {
       const timeStr = snapshot.val();
       if (timeStr) {
@@ -1002,6 +1056,56 @@
       const now = new Date();
       const timeString = `${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
       updateRef.set(timeString);
+    }
+
+    /* 💬 伝言板（メモ）の送信実行 */
+    function submitMemo() {
+      const input = document.getElementById("memo-input");
+      const text = input.value.trim();
+      if (!text) return;
+
+      const now = new Date();
+      const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+      memoList.unshift({
+        id: Date.now().toString(),
+        text: text,
+        time: timeStr
+      });
+
+      memosRef.set(memoList);
+      input.value = "";
+    }
+
+    /* 💬 伝言板（メモ）の削除 */
+    function deleteMemo(memoId) {
+      memoList = memoList.filter(m => m.id !== memoId);
+      memosRef.set(memoList);
+    }
+
+    /* 💬 伝言板リストの描画 */
+    function renderMemos() {
+      const container = document.getElementById("memo-list");
+      if (!container) return;
+
+      container.innerHTML = "";
+      if (memoList.length === 0) {
+        container.innerHTML = `<div style="color:#888; font-size:0.72rem;">伝言メモは現在ありません。</div>`;
+        return;
+      }
+
+      memoList.forEach(m => {
+        const item = document.createElement("div");
+        item.className = "memo-item";
+        item.innerHTML = `
+          <div>
+            <div class="memo-text">${m.text}</div>
+            <div class="memo-meta">🕒 ${m.time}</div>
+          </div>
+          <button onclick="deleteMemo('${m.id}')" style="background:#e74c3c; padding:2px 6px; font-size:0.65rem; border-radius:3px; flex-shrink:0;">削除</button>
+        `;
+        container.appendChild(item);
+      });
     }
 
     /* 🏢 全体で使用するすべての会社リストを取得 */
@@ -1254,7 +1358,8 @@
         label: label,
         tasks: JSON.parse(JSON.stringify(tasks)),
         customOwners: JSON.parse(JSON.stringify(customOwners)),
-        categoryNames: JSON.parse(JSON.stringify(categoryNames))
+        categoryNames: JSON.parse(JSON.stringify(categoryNames)),
+        memoList: JSON.parse(JSON.stringify(memoList))
       };
 
       let backups = JSON.parse(localStorage.getItem("N_GANTT_BACKUPS") || "{}");
@@ -1294,6 +1399,10 @@
             if (backups[chosenKey].categoryNames) {
               categoryNames = JSON.parse(JSON.stringify(backups[chosenKey].categoryNames));
               categoriesRef.set(categoryNames);
+            }
+            if (backups[chosenKey].memoList) {
+              memoList = JSON.parse(JSON.stringify(backups[chosenKey].memoList));
+              memosRef.set(memoList);
             }
             alert("🎉 バックアップデータを読み込み、復元しました！");
           }
@@ -1833,8 +1942,10 @@
         tasks = JSON.parse(JSON.stringify(defaultTasks));
         customOwners = ["Cuebus×Hamaru", "Cuebus×成田空港"];
         categoryNames = JSON.parse(JSON.stringify(defaultCategoryNames));
+        memoList = [{ id: '1', text: "TシャツのサイズXLも欲しい人はコメント書いておいてください！", time: "7/31 17:00" }];
         companiesRef.set(customOwners);
         categoriesRef.set(categoryNames);
+        memosRef.set(memoList);
         saveTasks();
       }
     }
@@ -1870,7 +1981,10 @@
 1. システムの基本仕様
 --------------------------------------------------
 ■ リアルタイム全社同期
-   ブラウザ上でタスク内容、日付、担当会社、進捗ステータス、カテゴリー等を変更すると、クラウドを介して他の閲覧者の画面へ即座に自動反映されます。手動保存は不要です。
+   ブラウザ上でタスク内容、日付、担当会社、進捗ステータス、カテゴリー、伝言メモ等を変更すると、クラウドを介して他の閲覧者の画面へ即座に自動反映されます。手動保存は不要です。
+
+■ 💬 プロジェクト伝言板（リアルタイム自由共有掲示板）
+   ダッシュボード最下部に伝言板が設置されています。「XLサイズのTシャツ希望」等の自由なメモを残したり、不要になったメモを削除・整理できます。全社リアルタイム同期されます。
 
 ■ 🔴 「今日（現在日）」のハイライト表示
    カレンダーヘッダーの当日日付が赤色で強調表示されるほか、ガントチャートの今日にあたる縦1列全体に薄い赤色の背景帯が表示され、現在の進行位置が一目で分かります。
@@ -1908,7 +2022,7 @@
 --------------------------------------------------
 3. データのバックアップ・管理
 --------------------------------------------------
-・「🔑 管理者」メニュー（パスワード: 0705）から「📸 現在のデータバックアップ作成」を実行すると、その時点のタスク状態および会社・カテゴリーリストを日付付きで保存できます。
+・「🔑 管理者」メニュー（パスワード: 0705）から「📸 現在のデータバックアップ作成」を実行すると、その時点のタスク状態および会社・カテゴリーリスト、伝言メモが日付付きで保存できます。
 ・「📂 バックアップから復元」を実行すると、過去の保存データを選択していつでも元の状態に戻すことができます。
 ・不要になった過去のバックアップは「🗑️ バックアップ削除」から個別整理が可能です。
 
