@@ -779,7 +779,7 @@
           <div class="dash-card-title" style="color: #8e44ad;">💬 プロジェクト伝言板（リアルタイムメモ）</div>
           
           <div style="display: flex; gap: 4px; margin-bottom: 8px;">
-            <input type="text" id="memo-input" placeholder="例: XLサイズのTシャツも希望です！" style="flex: 1;" onkeypress="if(event.key==='Enter') submitMemo()">
+            <input type="text" id="memo-input" placeholder="例：〇〇の件、進捗いかがでしょうか？" style="flex: 1;" onkeypress="if(event.key==='Enter') submitMemo()">
             <button onclick="submitMemo()" style="background: #8e44ad; padding: 4px 10px; font-size: 0.75rem;">送信</button>
           </div>
 
@@ -1036,10 +1036,7 @@
       if (data) {
         memoList = data;
       } else {
-        memoList = [
-          { id: '1', text: "TシャツのサイズXLも欲しい人はコメント書いておいてください！", time: "7/31 17:00" }
-        ];
-        memosRef.set(memoList);
+        memoList = [];
       }
       renderMemos();
     });
@@ -1942,7 +1939,7 @@
         tasks = JSON.parse(JSON.stringify(defaultTasks));
         customOwners = ["Cuebus×Hamaru", "Cuebus×成田空港"];
         categoryNames = JSON.parse(JSON.stringify(defaultCategoryNames));
-        memoList = [{ id: '1', text: "TシャツのサイズXLも欲しい人はコメント書いておいてください！", time: "7/31 17:00" }];
+        memoList = [];
         companiesRef.set(customOwners);
         categoriesRef.set(categoryNames);
         memosRef.set(memoList);
@@ -1984,7 +1981,7 @@
    ブラウザ上でタスク内容、日付、担当会社、進捗ステータス、カテゴリー、伝言メモ等を変更すると、クラウドを介して他の閲覧者の画面へ即座に自動反映されます。手動保存は不要です。
 
 ■ 💬 プロジェクト伝言板（リアルタイム自由共有掲示板）
-   ダッシュボード最下部に伝言板が設置されています。「XLサイズのTシャツ希望」等の自由なメモを残したり、不要になったメモを削除・整理できます。全社リアルタイム同期されます。
+   ダッシュボード最下部に伝言板が設置されています。自由なメモを残したり、不要になったメモを削除・整理できます。全社リアルタイム同期されます。
 
 ■ 🔴 「今日（現在日）」のハイライト表示
    カレンダーヘッダーの当日日付が赤色で強調表示されるほか、ガントチャートの今日にあたる縦1列全体に薄い赤色の背景帯が表示され、現在の進行位置が一目で分かります。
