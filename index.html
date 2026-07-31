@@ -577,22 +577,22 @@
     }
     
     /* 基本会社用の個別背景色 */
-    .owner-naa { background-color: #D0E1F9; color: #003366; }
-    .owner-cuebus { background-color: #FFF2CC; color: #7F6000; }
-    .owner-hamaru { background-color: #FCE4D6; color: #C00000; }
-    .owner-joint { background-color: #E2EFDA; color: #375623; }
+    .owner-naa { background-color: #D0E1F9 !important; color: #003366 !important; border-color: #B0C4DE !important; }
+    .owner-cuebus { background-color: #FFF2CC !important; color: #7F6000 !important; border-color: #FFE599 !important; }
+    .owner-hamaru { background-color: #FCE4D6 !important; color: #C00000 !important; border-color: #F8CBAD !important; }
+    .owner-joint { background-color: #E2EFDA !important; color: #375623 !important; border-color: #C6E0B4 !important; }
 
-    /* 🎨 追加会社用の10色カラーパレット（背景＋文字色） */
-    .owner-c0 { background-color: #E8DAEF !important; color: #512E5F !important; } /* ラベンダー */
-    .owner-c1 { background-color: #FDEBD0 !important; color: #7E5109 !important; } /* マロン */
-    .owner-c2 { background-color: #FADBD8 !important; color: #78281F !important; } /* ローズ */
-    .owner-c3 { background-color: #D4EFDF !important; color: #145A32 !important; } /* エメラルド */
-    .owner-c4 { background-color: #E5E8E8 !important; color: #1B2631 !important; } /* スチールグレー */
-    .owner-c5 { background-color: #FCF3CF !important; color: #7D6608 !important; } /* ハニー */
-    .owner-c6 { background-color: #D6EAF8 !important; color: #1B4F72 !important; } /* スカイブルー */
-    .owner-c7 { background-color: #F5EEF8 !important; color: #4A235A !important; } /* パープル */
-    .owner-c8 { background-color: #E8F8F5 !important; color: #0E6251 !important; } /* ターコイズ */
-    .owner-c9 { background-color: #FBEEE6 !important; color: #6E2C00 !important; } /* テラコッタ */
+    /* 🎨 追加会社用の10色・高発色くっきりカラーパレット */
+    .owner-c0 { background-color: #E1BEE7 !important; color: #4A148C !important; border-color: #CE93D8 !important; } /* パープル */
+    .owner-c1 { background-color: #FFE0B2 !important; color: #E65100 !important; border-color: #FFCC80 !important; } /* オレンジ */
+    .owner-c2 { background-color: #F8BBD0 !important; color: #880E4F !important; border-color: #F48FB1 !important; } /* マゼンタピンク */
+    .owner-c3 { background-color: #C8E6C9 !important; color: #1B5E20 !important; border-color: #A5D6A7 !important; } /* エメラルド */
+    .owner-c4 { background-color: #B2EBF2 !important; color: #006064 !important; border-color: #80DEEA !important; } /* シアン */
+    .owner-c5 { background-color: #FFCCBC !important; color: #BF360C !important; border-color: #FFAB91 !important; } /* テラコッタ */
+    .owner-c6 { background-color: #F0F4C3 !important; color: #827717 !important; border-color: #E6EE9C !important; } /* ライム */
+    .owner-c7 { background-color: #D1C4E9 !important; color: #311B92 !important; border-color: #B39DDB !important; } /* バイオレット */
+    .owner-c8 { background-color: #B2DFDB !important; color: #004D40 !important; border-color: #80CBC4 !important; } /* ミントグリーン */
+    .owner-c9 { background-color: #F48FB1 !important; color: #880E4F !important; border-color: #F06292 !important; } /* ディープローズ */
 
     .legend { display: flex; gap: 10px; font-size: 0.75rem; align-items: center; margin-left: auto; }
     .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
@@ -910,7 +910,7 @@
     const defaultOwners = ["Cuebus", "Hamaru Strategy", "成田国際空港", "全社合同"];
     let customOwners = ["Cuebus×Hamaru", "Cuebus×成田空港"];
 
-    /* 初期（デフォルト）のカテゴリー一覧（最新データ反映） */
+    /* 初期（デフォルト）のカテゴリー一覧 */
     const defaultCategoryNames = {
       "1": "CUEBUS開発・現地仕様確定",
       "2": "商品・IP選定・IPデザイン・量産手配",
