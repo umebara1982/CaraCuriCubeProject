@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>【工程表】成田空港 CaraCuriCubeProject</title>
+  <title>【工程表】成田空港IP什器導入</title>
 
   <!-- Firebase SDK の読み込み -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -493,7 +493,7 @@
 
   <header>
     <div>
-      <h1>✈️ 【NAA × Cuebus × Hamaru Strategy】統合管理工程表</h1>
+      <h1>✈️ 【NAA × Cuebus × Hamaru Strategy】統合管理工程表（フェーズ1）</h1>
       <p>
         期間: 2026年8月1日 〜 2027年3月31日<br>
         <span class="open-target">オープン目標: 2026年11月10日（火）</span>
@@ -619,7 +619,7 @@
         <div class="dash-card">
           <div class="dash-card-title" style="color:#C00000;">🔴 期限超過 (遅延タスク)</div>
           <div id="dash-delay-list">
-            <div style="color:#888; font-size:0.72rem;">遅延タスクはありません。</div>
+            <div style="color:#27ae60; font-size:0.75rem; font-weight:bold;">🟢 遅延タスクはありません。順調です！</div>
           </div>
         </div>
 
@@ -874,7 +874,7 @@
       let newHTML = "<!DOCTYPE html>\n<html lang=\"ja\">\n" + fullDoc;
 
       const reg = /const defaultTasks = \[[\s\S]*?\];/;
-      newHTML = newHTML.replace(reg, defaultTasksCode);
+      newHTML = newHTML.replace(replace, defaultTasksCode);
 
       navigator.clipboard.writeText(newHTML).then(() => {
         alert("🎉 最新のHTMLコード一式（最初から最後まで）をコピーしました！\n\nGitHubの `index.html` 編集画面で 全選択（Cmd+A または Ctrl+A）して、そのまま貼り付け（Cmd+V または Ctrl+V）してください！");
@@ -1258,6 +1258,7 @@
       document.body.removeChild(link);
     }
 
+    /* 📖 マニュアルテキスト（更新版） */
     function downloadManual() {
       const manualText = `==================================================
 【工程表】成田空港IP什器導入プロジェクト 取扱マニュアル
@@ -1270,10 +1271,22 @@
 1. 基本機能と画面構成
 --------------------------------------------------
 ・リアルタイム自動同期: 
-  誰かがタスクや日付を編集すると、クラウドを介して全ユーザーの画面へ即座に自動反映されます。
+  誰かがタスクや日付、ステータスを編集すると、クラウドを介して全ユーザーの画面へ即座に自動反映されます。
 
-・📊 プロジェクト分析ダッシュボード:
-  画面右側に「全体進捗率」「最重要CP状況」「遅延タスク一覧」「各社タスク負荷」が完全自動でリアルタイム集計表示されます。
+・📊 プロジェクト分析ダッシュボード（右側パネル）:
+  工程表の編集内容に応じて以下の指標がリアルタイムで完全自動計算されます。
+  1. 全体進捗率: プロジェクト全体のタスク完了率をプログレスバーで表示
+  2. 最重要CP進行状況: クリティカルパス（CP）指定された最重要タスクの消化率
+  3. 🔴 期限超過(遅延タスク): 期限を過ぎて未完了のタスクを検出しリスト化（クリックで該当行へスワイプ）
+  4. 🏢 担当会社別の残タスク負荷: NAA/Cuebus/Hamaru各社の未完了タスク件数と負荷割合
+  5. 🟠 保留・要協議タスク: 朝会やミーティングで議題に挙げるべき課題タスクの一覧
+
+--------------------------------------------------
+2. 編集・操作方法
+--------------------------------------------------
+・新規タスク追加: 画面上部の「＋ 新規タスク追加」ボタンを押します。
+・順序の並び替え: 左端の「≡」アイコンをドラッグ＆ドロップするか、「↑」「↓」ボタンを押します。
+・管理者メニュー: 「🔑 管理者」ボタン（PW: 1234）からID一括振り直しやGitHub貼り付け用コードの取得が可能です。
 
 ==================================================`;
 
