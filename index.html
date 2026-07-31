@@ -179,6 +179,17 @@
       gap: 8px;
     }
 
+    .company-list-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      background: #F1F5F9;
+      border: 1px solid #E2E8F0;
+      border-radius: 4px;
+      margin-bottom: 4px;
+    }
+
     .drag-handle {
       cursor: grab;
       font-size: 1.1rem;
@@ -479,7 +490,6 @@
     .day-cell.sat { background-color: #F0F6FF; color: #0055AA; }
     .day-cell.sun { background-color: #FFF0F0; color: #CC0000; }
     
-    /* 🔴 今日のヘッダーセルハイライト強め表現 */
     .day-cell.today { 
       background: linear-gradient(135deg, #e74c3c, #c00000) !important; 
       color: #ffffff !important; 
@@ -513,7 +523,6 @@
     .gantt-bg-cell.sat { background-color: #F0F6FF; }
     .gantt-bg-cell.sun { background-color: #FFF0F0; }
     
-    /* 🔴 チャート本体の今日列ハイライト（薄赤の背景帯） */
     .gantt-bg-cell.today { 
       background-color: #FFEAEA !important; 
       border-right: 1px dashed #E74C3C !important;
@@ -614,7 +623,7 @@
     </select>
 
     <button onclick="openAddTaskModal()" class="btn-add">＋ 新規タスク追加</button>
-    <button onclick="openAddCompanyModal()" class="btn-company">🏢 担当会社追加</button>
+    <button onclick="openAddCompanyModal()" class="btn-company">🏢 担当会社管理</button>
     <button onclick="exportCSV()" class="btn-csv">📥 CSV出力</button>
     <button onclick="downloadManual()" class="btn-manual">📖 マニュアル</button>
     <button onclick="toggleDashPanel(true)" class="btn-dash">📊 分析ダッシュボード</button>
@@ -799,25 +808,33 @@
     </div>
   </div>
 
-  <!-- 🏢 担当会社追加ポップアップ（モーダル） -->
+  <!-- 🏢 担当会社管理（追加・削除）ポップアップ（モーダル） -->
   <div class="modal-overlay" id="add-company-modal">
-    <div class="modal-card" style="width:380px;">
+    <div class="modal-card" style="width:400px;">
       <div class="modal-header" style="background:#d35400;">
-        <span>🏢 新しい担当会社・外注先の登録</span>
+        <span>🏢 担当会社・外注先の管理</span>
         <button onclick="closeAddCompanyModal()" style="background:transparent; border:none; color:white; font-size:1.2rem; cursor:pointer;">✖</button>
       </div>
       <div class="modal-body">
         <div class="modal-field">
-          <label>会社名・外注先名称</label>
-          <input type="text" id="modal-company-name" placeholder="例：演出外注A社、照明施工B社">
+          <label>新しい会社名・外注先名称の追加</label>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="modal-company-name" placeholder="例：演出外注A社" style="flex:1;">
+            <button onclick="submitNewCompany()" style="background:#d35400; padding:4px 12px;">追加</button>
+          </div>
         </div>
-        <p style="font-size:0.72rem; color:#666; margin:0; line-height:1.4;">
-          ※登録すると即座に全ユーザーの担当選択枠およびダッシュボードの負荷グラフへ自動反映されます。
-        </p>
+
+        <hr style="border:0; border-top:1px solid #E2E8F0; margin:8px 0;">
+
+        <div>
+          <label style="font-weight:bold; color:#444; display:block; margin-bottom:6px;">登録済みの追加会社一覧（削除可能）</label>
+          <div id="custom-company-list">
+            <!-- JSで動的生成 -->
+          </div>
+        </div>
       </div>
       <div class="modal-footer">
-        <button onclick="closeAddCompanyModal()" style="background:#7f8c8d; padding:6px 12px;">キャンセル</button>
-        <button onclick="submitNewCompany()" style="background:#d35400; padding:6px 16px;">🏢 登録する</button>
+        <button onclick="closeAddCompanyModal()" style="background:#7f8c8d; padding:6px 16px;">閉じる</button>
       </div>
     </div>
   </div>
@@ -935,7 +952,7 @@
       return [...defaultOwners, ...customOwners];
     }
 
-    /* 🏢 各ドロップダウンの選択肢を自動更新 */
+    /* 🏢 ドロップダウンおよび会社管理ポップアップリストの自動更新 */
     function updateCompanyDropdowns() {
       const allList = getAllOwners();
       
@@ -958,6 +975,23 @@
         opt.innerText = o;
         modalSelect.appendChild(opt);
       });
+
+      // 会社管理ポップアップ内のカスタム会社一覧リスト作成
+      const customListContainer = document.getElementById("custom-company-list");
+      customListContainer.innerHTML = "";
+      if (customOwners.length === 0) {
+        customListContainer.innerHTML = `<div style="color:#888; font-size:0.75rem;">追加されたカスタム会社はありません。</div>`;
+      } else {
+        customOwners.forEach((company, idx) => {
+          const item = document.createElement("div");
+          item.className = "company-list-item";
+          item.innerHTML = `
+            <span style="font-weight:bold; color:#0277BD;">${company}</span>
+            <button onclick="removeCompany(${idx})" style="background:#e74c3c; padding:2px 8px; font-size:0.72rem;">削除</button>
+          `;
+          customListContainer.appendChild(item);
+        });
+      }
     }
 
     function toggleDashPanel(openState) {
@@ -988,6 +1022,7 @@
 
     /* 🏢 会社追加ポップアップ（モーダル）制御関数 */
     function openAddCompanyModal() {
+      updateCompanyDropdowns();
       document.getElementById("add-company-modal").classList.add("active");
       document.getElementById("modal-company-name").value = "";
       document.getElementById("modal-company-name").focus();
@@ -1012,8 +1047,18 @@
 
       customOwners.push(name);
       companiesRef.set(customOwners);
-      closeAddCompanyModal();
-      alert(`🎉 新しい担当会社「${name}」を登録しました！\n（全社の担当欄およびダッシュボードに追加されました）`);
+      document.getElementById("modal-company-name").value = "";
+      alert(`🎉 担当会社「${name}」を登録しました！`);
+    }
+
+    /* 🏢 登録済みカスタム会社の削除実行 */
+    function removeCompany(idx) {
+      const targetCompany = customOwners[idx];
+      if (confirm(`担当会社「${targetCompany}」を削除しますか？\n（※既存タスクの担当表示にも影響します）`)) {
+        customOwners.splice(idx, 1);
+        companiesRef.set(customOwners);
+        alert(`🗑️ 担当会社「${targetCompany}」を削除しました。`);
+      }
     }
 
     function autoFillEndDate(startDateStr) {
@@ -1350,7 +1395,6 @@
       }
     }
 
-    /* 🔴 今日のヘッダーセル＆背景ハイライト生成 */
     function renderGanttHeader() {
       const headerContainer = document.getElementById("gantt-header");
       headerContainer.innerHTML = "";
@@ -1372,7 +1416,6 @@
         if (d.getDay() === 6) cls += " sat";
         if (d.getDay() === 0) cls += " sun";
         
-        // 🔴 今日ハイライト判定
         if (d.toDateString() === TODAY.toDateString()) {
           cls += " today";
           dayCell.title = "今日（現在日）";
@@ -1520,7 +1563,6 @@
         gRow.className = "gantt-row";
         gRow.style.width = totalWidth + "px";
 
-        /* 🔴 チャートセル生成（今日背景帯の付与） */
         daysArray.forEach(d => {
           const bgCell = document.createElement("div");
           let cls = "gantt-bg-cell";
@@ -1709,9 +1751,9 @@
   2. タスク名称、担当会社（外注先を含む）、開始日・完了期限、進捗状況、CP設定を行います。
   3. 「＋ 登録する」を押すと、指定したカテゴリーの最下部へ自動的に移動・追加・採番されます。
 
-【🏢 担当会社・外注先の新規登録】
-  外注先や新しい協力会社が増えた場合、上部の「🏢 担当会社追加」ボタンから新しい会社名を登録できます。
-  登録した会社名は全ユーザーのドロップダウン選択肢およびダッシュボードの負荷グラフへ即座に追加されます。
+【🏢 担当会社・外注先の登録および削除】
+  ・追加: 上部の「🏢 担当会社管理」ボタンを押して新しい会社名を登録できます。全画面・ダッシュボードへ連動追加されます。
+  ・削除: 「🏢 担当会社管理」画面の下部リストにある不要な会社の「削除」ボタンを押すことで、リストから整理・削除が可能です。
 
 【直接編集】
   テーブル内のセルをクリックすることで、タスク名、担当会社、日付、進捗状況をいつでも直接変更可能です。
