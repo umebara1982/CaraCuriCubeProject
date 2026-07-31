@@ -575,11 +575,24 @@
       font-size: 0.72rem;
       border: 1px solid #ccc;
     }
+    
+    /* 基本会社用の個別背景色 */
     .owner-naa { background-color: #D0E1F9; color: #003366; }
     .owner-cuebus { background-color: #FFF2CC; color: #7F6000; }
     .owner-hamaru { background-color: #FCE4D6; color: #C00000; }
     .owner-joint { background-color: #E2EFDA; color: #375623; }
-    .owner-custom { background-color: #E1F5FE; color: #0277BD; }
+
+    /* 🎨 追加会社用の10色カラーパレット（背景＋文字色） */
+    .owner-c0 { background-color: #E8DAEF !important; color: #512E5F !important; } /* ラベンダー */
+    .owner-c1 { background-color: #FDEBD0 !important; color: #7E5109 !important; } /* マロン */
+    .owner-c2 { background-color: #FADBD8 !important; color: #78281F !important; } /* ローズ */
+    .owner-c3 { background-color: #D4EFDF !important; color: #145A32 !important; } /* エメラルド */
+    .owner-c4 { background-color: #E5E8E8 !important; color: #1B2631 !important; } /* スチールグレー */
+    .owner-c5 { background-color: #FCF3CF !important; color: #7D6608 !important; } /* ハニー */
+    .owner-c6 { background-color: #D6EAF8 !important; color: #1B4F72 !important; } /* スカイブルー */
+    .owner-c7 { background-color: #F5EEF8 !important; color: #4A235A !important; } /* パープル */
+    .owner-c8 { background-color: #E8F8F5 !important; color: #0E6251 !important; } /* ターコイズ */
+    .owner-c9 { background-color: #FBEEE6 !important; color: #6E2C00 !important; } /* テラコッタ */
 
     .legend { display: flex; gap: 10px; font-size: 0.75rem; align-items: center; margin-left: auto; }
     .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
@@ -883,7 +896,7 @@
     const tasksRef = db.ref('narita_gantt_tasks');
     const updateRef = db.ref('narita_gantt_last_update');
     const companiesRef = db.ref('narita_gantt_custom_companies');
-    const categoriesRef = db.ref('narita_gantt_custom_categories'); // 📂 カテゴリーリアルタイム同期用
+    const categoriesRef = db.ref('narita_gantt_custom_categories');
 
     const START_DATE = new Date("2026-08-01");
     const END_DATE = new Date("2027-03-31");
@@ -895,13 +908,13 @@
 
     /* 初期（デフォルト）の担当会社一覧 */
     const defaultOwners = ["Cuebus", "Hamaru Strategy", "成田国際空港", "全社合同"];
-    let customOwners = [];
+    let customOwners = ["Cuebus×Hamaru", "Cuebus×成田空港"];
 
-    /* 初期（デフォルト）のカテゴリー一覧 */
+    /* 初期（デフォルト）のカテゴリー一覧（最新データ反映） */
     const defaultCategoryNames = {
-      "1": "什器開発・現地仕様確定",
-      "2": "商品・IPデザイン・量産手配",
-      "3": "ECシステム・認証開発",
+      "1": "CUEBUS開発・現地仕様確定",
+      "2": "商品・IP選定・IPデザイン・量産手配",
+      "3": "ECシステム・認証方法開発",
       "4": "行政・消防・事前申請",
       "5": "空港運用・搬入準備",
       "6": "テスト・現地施工・オープン",
@@ -911,9 +924,9 @@
 
     const defaultTasks = [
       { id: "1.1", cat: "開発", name: "CUEBUS詳細設計", owner: "Cuebus", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true },
-      { id: "1.2", cat: "空港対応", name: "現地与件確認（電源位置）", owner: "Cuebus", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true },
+      { id: "1.2", cat: "空港対応", name: "現地確認（電源位置）", owner: "Cuebus", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true },
       { id: "1.3", cat: "追加", name: "電源確認（用意可能A数）", owner: "成田国際空港", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true },
-      { id: "1.4", cat: "開発", name: "昇降リフト・メカ機構詳細設計", owner: "Cuebus", start: "2026-09-01", end: "2026-10-30", status: "進行中", cp: true },
+      { id: "1.4", cat: "開発", name: "昇降リフト・詳細設計", owner: "Cuebus", start: "2026-09-01", end: "2026-10-30", status: "進行中", cp: true },
       { id: "1.5", cat: "開発", name: "制御開発（昇降・動きのロジック）", owner: "Cuebus", start: "2026-09-01", end: "2026-10-30", status: "未着手", cp: true },
       { id: "1.6", cat: "開発", name: "演出設計（光・音演出・連動）", owner: "Cuebus", start: "2026-09-01", end: "2026-09-30", status: "未着手", cp: false },
       { id: "2.1", cat: "商品/IP", name: "第1弾IP交渉・契約締結・デザイン許諾", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: true },
@@ -921,8 +934,9 @@
       { id: "2.3", cat: "商品/IP", name: "Tシャツ量産発注 & BOXアセンブリ", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: true },
       { id: "2.4", cat: "商品/IP", name: "Tシャツ納品・現地支給手配", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: true },
       { id: "3.1", cat: "システム", name: "Shopify構築（多言語・決済連携）", owner: "Cuebus", start: "2026-08-28", end: "2026-08-28", status: "未着手", cp: false },
-      { id: "3.2", cat: "システム", name: "QR認証・真贋証明システム確定", owner: "Cuebus", start: "2026-10-30", end: "2026-10-30", status: "未着手", cp: false },
+      { id: "3.2", cat: "システム", name: "QR認証・真贋証明システム確定", owner: "Cuebus×Hamaru", start: "2026-10-30", end: "2026-10-30", status: "未着手", cp: false },
       { id: "4.1", cat: "行政", name: "消防確認（成田市消防・不燃証明提出）", owner: "Cuebus", start: "2026-09-01", end: "2026-09-30", status: "未着手", cp: true },
+      { id: "4.2", cat: "追加", name: "助成金・補助金等の申請準備（可能であれば）", owner: "Cuebus", start: "2026-08-01", end: "2026-08-31", status: "未着手", cp: false },
       { id: "5.1", cat: "空港対応", name: "共通決済端末調達・プロトコル開示", owner: "成田国際空港", start: "", end: "", status: "未着手", cp: true },
       { id: "5.2", cat: "空港対応", name: "搬入計画書作成", owner: "Cuebus", start: "2026-10-01", end: "2026-10-30", status: "未着手", cp: true },
       { id: "5.3", cat: "店舗運用", name: "現場接客・補充スタッフ（バイト）採用", owner: "Cuebus", start: "2026-10-01", end: "2026-10-30", status: "未着手", cp: false },
@@ -932,7 +946,7 @@
       { id: "6.4", cat: "運用準備", name: "プレオープン（関係者内覧・運用テスト）", owner: "全社合同", start: "2026-11-09", end: "2026-11-09", status: "未着手", cp: true },
       { id: "6.5", cat: "オープン", name: "★グランドオープン（9:00〜）", owner: "全社合同", start: "2026-11-10", end: "2026-11-10", status: "未着手", cp: true },
       { id: "7.1", cat: "初期運用", name: "初期稼働モニタリング", owner: "Cuebus", start: "2026-11-10", end: "2026-11-30", status: "未着手", cp: false },
-      { id: "7.2", cat: "次章展開", name: "第2弾IP企画 & 他グッズ展開検討", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false }
+      { id: "7.2", cat: "Phase2", name: "第2弾IP企画 & 他グッズ展開検討", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false }
     ];
 
     let tasks = [];
@@ -958,7 +972,7 @@
       if (data) {
         customOwners = data;
       } else {
-        customOwners = [];
+        customOwners = ["Cuebus×Hamaru", "Cuebus×成田空港"];
       }
       updateCompanyDropdowns();
       renderAll();
@@ -1564,11 +1578,17 @@
       return 'status-not-started';
     }
 
+    /* 🎨 追加会社ごとの10色固有カラー判定 */
     function getOwnerClass(owner) {
       if (owner === '成田国際空港') return 'owner-naa';
       if (owner === 'Cuebus') return 'owner-cuebus';
       if (owner === 'Hamaru Strategy') return 'owner-hamaru';
       if (owner === '全社合同') return 'owner-joint';
+
+      const customIdx = customOwners.indexOf(owner);
+      if (customIdx !== -1) {
+        return `owner-c${customIdx % 10}`;
+      }
       return 'owner-custom';
     }
 
@@ -1811,9 +1831,9 @@
     function resetData() {
       if (confirm("初期のタスク・日付状態にリセットしますか？（全社のデータが初期化されます）")) {
         tasks = JSON.parse(JSON.stringify(defaultTasks));
-        customOwners = [];
+        customOwners = ["Cuebus×Hamaru", "Cuebus×成田空港"];
         categoryNames = JSON.parse(JSON.stringify(defaultCategoryNames));
-        companiesRef.set([]);
+        companiesRef.set(customOwners);
         categoriesRef.set(categoryNames);
         saveTasks();
       }
@@ -1876,7 +1896,7 @@
   上部の「📂 カテゴリー管理」ボタンから、フェーズ区分の新規作成、名称の修正（書き換え）、不要なカテゴリーの削除がいつでも可能です。全画面へリアルタイム反映されます。
 
 【🏢 担当会社・外注先の登録および削除】
-  ・追加: 上部の「🏢 担当会社管理」ボタンを押して新しい会社名を登録できます。全画面・ダッシュボードへ連動追加されます。
+  ・追加: 上部の「🏢 担当会社管理」ボタンを押して新しい会社名を登録できます。登録順に10色のカラーパレットから重複しにくい見やすい背景色が自動割り当てされます。
   ・削除: 「🏢 担当会社管理」画面の下部リストにある不要な会社の「削除」ボタンを押すことで、リストから整理・削除が可能です。
 
 【直接編集】
