@@ -105,9 +105,10 @@
       gap: 10px;
       align-items: center;
       background: #f1f2f6;
-      padding: 4px 10px;
+      padding: 6px 12px;
       border-radius: 4px;
       border: 1px dashed #d35400;
+      flex-wrap: wrap;
     }
 
     .drag-handle {
@@ -541,6 +542,8 @@
 
     <div id="admin-menu" class="admin-menu">
       <span style="font-size:0.75rem; font-weight:bold; color:#d35400;">【裏メニュー】</span>
+      <button onclick="createBackup()" style="background: #27ae60;">📸 現在のデータバックアップ作成</button>
+      <button onclick="restoreBackup()" style="background: #8e44ad;">📂 バックアップから復元</button>
       <button onclick="reorderAllIDs()" style="background: #2980b9;">🔢 ID一括振り直し</button>
       <button onclick="copyFullHTML()" class="btn-copy-full">📋 HTML全体をコピー（GitHub用）</button>
       <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
@@ -664,7 +667,7 @@
     const DAY_WIDTH = 24;
     const TODAY = new Date();
 
-    const ADMIN_PASSWORD = "0705";
+    const ADMIN_PASSWORD = "1234";
 
     const categoryNames = {
       "1": "📂 カテゴリー 1：什器開発・現地仕様確定",
@@ -739,6 +742,55 @@
         else panel.classList.remove("active");
       } else {
         panel.classList.toggle("active");
+      }
+    }
+
+    /* 📸 バックアップ作成機能 */
+    function createBackup() {
+      const now = new Date();
+      const key = `BACKUP_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+      const label = `${now.getFullYear()}/${now.getMonth()+1}/${now.getDate()} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} のバックアップ`;
+      
+      const backupData = {
+        label: label,
+        tasks: JSON.parse(JSON.stringify(tasks))
+      };
+
+      let backups = JSON.parse(localStorage.getItem("N_GANTT_BACKUPS") || "{}");
+      backups[key] = backupData;
+      localStorage.setItem("N_GANTT_BACKUPS", JSON.stringify(backups));
+
+      alert(`✅ 現在の状態をバックアップ保存しました！\n（保存名: ${label}）`);
+    }
+
+    /* 📂 バックアップ復元機能 */
+    function restoreBackup() {
+      let backups = JSON.parse(localStorage.getItem("N_GANTT_BACKUPS") || "{}");
+      const keys = Object.keys(backups);
+
+      if (keys.length === 0) {
+        alert("保存されているバックアップデータがありません。");
+        return;
+      }
+
+      let msg = "復元したいバックアップの番号を入力してください:\n\n";
+      keys.forEach((k, idx) => {
+        msg += `[${idx + 1}] ${backups[k].label}\n`;
+      });
+
+      const selected = prompt(msg);
+      if (selected !== null) {
+        const num = parseInt(selected) - 1;
+        if (num >= 0 && num < keys.length) {
+          const chosenKey = keys[num];
+          if (confirm(`「${backups[chosenKey].label}」の状態に全社データを復元しますか？\n（現在のデータは置き換わります）`)) {
+            tasks = JSON.parse(JSON.stringify(backups[chosenKey].tasks));
+            saveTasks();
+            alert("🎉 バックアップデータを読み込み、復元しました！");
+          }
+        } else {
+          alert("正しい番号を入力してください。");
+        }
       }
     }
 
@@ -1258,7 +1310,7 @@
       document.body.removeChild(link);
     }
 
-    /* 📖 実用取扱マニュアル（大人・初めて使う方向け丁寧版） */
+    /* 📖 実用取扱マニュアル */
     function downloadManual() {
       const manualText = `==================================================
 【工程表 CaraCuriCube】運用取扱マニュアル
@@ -1300,9 +1352,10 @@
   完了期限を過ぎて未完了（完了以外）のタスクは、日付セルが自動的に【赤背景】で強調されます。
 
 --------------------------------------------------
-3. データの出力
+3. データのバックアップと復元
 --------------------------------------------------
-・「📥 CSV出力」ボタンをクリックすると、現在のタスク一覧データをExcel等で開けるCSVファイルとして保存できます。
+・「🔑 管理者」メニューから「📸 現在のデータバックアップ作成」を実行すると、その時点のタスク状態を日付付きで保存できます。
+・「📂 バックアップから復元」を実行すると、過去の保存データを選択していつでも元の状態に戻すことができます。
 
 ==================================================`;
 
