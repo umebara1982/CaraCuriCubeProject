@@ -9,15 +9,6 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
-  <!-- ✨ Google Generative AI 安定版SDK の読み込み -->
-  <script type="importmap">
-    {
-      "imports": {
-        "@google/generative-ai": "https://esm.run/@google/generative-ai"
-      }
-    }
-  </script>
-
   <style>
     :root {
       --primary-color: #1B365D;
@@ -28,7 +19,7 @@
       --day-width: 24px;
       --row-height: 36px;       /* 通常行の高さ */
       --phase-height: 28px;     /* カテゴリー行の高さ */
-      --ai-panel-width: 340px;  /* AIパネルの幅 */
+      --ai-panel-width: 360px;  /* ダッシュボードパネルの幅 */
     }
     
     body {
@@ -103,7 +94,7 @@
     .btn-add { background-color: #27ae60; }
     .btn-csv { background-color: #8e44ad; }
     .btn-manual { background-color: #16a085; }
-    .btn-ai { background-color: #8e44ad; border: 1px solid #9b59b6; box-shadow: 0 0 5px rgba(142, 68, 173, 0.4); }
+    .btn-dash { background-color: #2980b9; box-shadow: 0 0 5px rgba(41, 128, 185, 0.4); }
     .btn-copy-full { background-color: #6c5ce7; }
     .btn-admin { background-color: #d35400; }
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
@@ -173,7 +164,7 @@
       position: relative;
     }
 
-    .ai-panel {
+    .dash-panel {
       width: 0;
       opacity: 0;
       pointer-events: none;
@@ -190,7 +181,7 @@
       overflow: hidden;
     }
 
-    .ai-panel.active {
+    .dash-panel.active {
       width: var(--ai-panel-width);
       min-width: var(--ai-panel-width);
       opacity: 1;
@@ -198,8 +189,8 @@
       margin-left: 12px;
     }
 
-    .ai-panel-header {
-      background: linear-gradient(135deg, #4285F4, #34A853);
+    .dash-panel-header {
+      background: linear-gradient(135deg, #1B365D, #2980b9);
       color: white;
       padding: 10px 14px;
       display: flex;
@@ -209,7 +200,7 @@
       font-size: 0.88rem;
     }
 
-    .ai-panel-body {
+    .dash-panel-body {
       padding: 12px;
       overflow-y: auto;
       flex-grow: 1;
@@ -219,14 +210,14 @@
       gap: 10px;
     }
 
-    .ai-card {
+    .dash-card {
       background: #F8FAFC;
       border: 1px solid #E2E8F0;
       border-radius: 6px;
       padding: 10px;
     }
 
-    .ai-card-title {
+    .dash-card-title {
       font-weight: bold;
       color: var(--primary-color);
       margin-bottom: 6px;
@@ -236,63 +227,45 @@
       font-size: 0.8rem;
     }
 
-    .ai-score-badge {
-      display: inline-block;
-      background: #34495e;
-      color: white;
-      font-size: 1.1rem;
-      font-weight: bold;
-      padding: 2px 10px;
-      border-radius: 4px;
-    }
-
-    .btn-run-ai {
-      background: linear-gradient(135deg, #4285F4, #8E44AD);
-      color: white;
-      width: 100%;
-      padding: 8px;
-      font-size: 0.78rem;
-      border-radius: 4px;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-    }
-
-    .btn-report-ai {
-      background: #16a085;
-      color: white;
-      width: 100%;
-      padding: 6px;
-      font-size: 0.75rem;
-      border-radius: 4px;
-      border: none;
-      font-weight: bold;
-      cursor: pointer;
+    .progress-bar-bg {
+      background: #E2E8F0;
+      border-radius: 10px;
+      height: 12px;
+      overflow: hidden;
       margin-top: 4px;
     }
 
-    .chat-msg {
-      margin-bottom: 8px;
-      padding: 6px 8px;
-      border-radius: 6px;
-      line-height: 1.4;
-      white-space: pre-wrap;
+    .progress-bar-fill {
+      background: linear-gradient(90deg, #3498db, #2ecc71);
+      height: 100%;
+      width: 0%;
+      transition: width 0.4s ease;
     }
 
-    .chat-msg.user {
-      background: #E2E8F0;
-      color: #1E293B;
-      margin-left: 20px;
-      text-align: right;
+    .load-bar-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      font-size: 0.72rem;
     }
+    .load-bar-label { width: 85px; font-weight: bold; }
+    .load-bar-bg { flex-grow: 1; background: #E2E8F0; height: 8px; border-radius: 4px; overflow: hidden; }
+    .load-bar-fill { height: 100%; background: #3498db; }
 
-    .chat-msg.ai {
-      background: #E8F0FE;
-      color: #1967D2;
-      border: 1px solid #D2E3FC;
-      margin-right: 10px;
+    .clickable-task-item {
+      padding: 4px 6px;
+      border-radius: 4px;
+      background: #FFF;
+      border: 1px solid #CBD5E1;
+      margin-bottom: 4px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
     }
+    .clickable-task-item:hover { background: #EBF5FB; border-color: #3498db; }
 
     .task-side {
       width: 60%;
@@ -562,13 +535,12 @@
     <button onclick="addNewTask()" class="btn-add">＋ 新規タスク追加</button>
     <button onclick="exportCSV()" class="btn-csv">📥 CSV出力</button>
     <button onclick="downloadManual()" class="btn-manual">📖 マニュアル</button>
-    <button onclick="toggleAIPanel(true)" class="btn-ai">✨ Gemini AI診断</button>
+    <button onclick="toggleDashPanel(true)" class="btn-dash">📊 分析ダッシュボード</button>
 
     <button onclick="toggleAdminMenu()" class="btn-admin">🔑 管理者</button>
 
     <div id="admin-menu" class="admin-menu">
       <span style="font-size:0.75rem; font-weight:bold; color:#d35400;">【裏メニュー】</span>
-      <button onclick="setApiKey()" style="background: #27ae60;">🔑 Gemini APIキー設定(無料)</button>
       <button onclick="reorderAllIDs()" style="background: #2980b9;">🔢 ID一括振り直し</button>
       <button onclick="copyFullHTML()" class="btn-copy-full">📋 HTML全体をコピー（GitHub用）</button>
       <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
@@ -611,52 +583,67 @@
       </div>
     </div>
 
-    <div class="ai-panel" id="ai-panel">
-      <div class="ai-panel-header">
-        <span>✨ Gemini PM Assistant (無料)</span>
-        <button onclick="toggleAIPanel(false)" style="background:transparent; border:none; color:white; font-size:1.1rem; cursor:pointer;">✖</button>
+    <!-- 📊 リアルタイム自動集計ダッシュボード -->
+    <div class="dash-panel active" id="dash-panel">
+      <div class="dash-panel-header">
+        <span>📊 プロジェクト分析ダッシュボード</span>
+        <button onclick="toggleDashPanel(false)" style="background:transparent; border:none; color:white; font-size:1.1rem; cursor:pointer;">✖</button>
       </div>
-      <div class="ai-panel-body">
-        <button onclick="runAIDiagnosis()" class="btn-run-ai" id="btn-run-ai">🔄 最新状態でGemini診断を実行</button>
-        <button onclick="generateMorningReport()" class="btn-report-ai" id="btn-report-ai">📊 朝会用レポート生成</button>
-
-        <div class="ai-card" style="text-align: center;">
-          <div class="ai-card-title" style="justify-content: center;">プロジェクト健全度</div>
-          <div class="ai-score-badge" id="ai-score">--</div>
-          <p style="margin: 6px 0 0 0; color: #666; font-size: 0.72rem;" id="ai-status-summary">診断未実行</p>
-        </div>
-
-        <div class="ai-card">
-          <div class="ai-card-title">⚠️ 遅延・最懸念リスク</div>
-          <div id="ai-risks-list" style="color:#2c3e50; line-height: 1.4; white-space: pre-wrap;">
-・Gemini診断を実行するとリスクが抽出されます。
+      <div class="dash-panel-body">
+        
+        <!-- 全体進捗率 -->
+        <div class="dash-card">
+          <div class="dash-card-title">📈 全体進捗率</div>
+          <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:1.1rem; color:var(--primary-color);">
+            <span id="dash-progress-text">0%</span>
+            <span style="font-size:0.75rem; color:#666; font-weight:normal;" id="dash-progress-count">完了 0 / 0 件</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="dash-progress-bar"></div>
           </div>
         </div>
 
-        <div class="ai-card">
-          <div class="ai-card-title">📋 今週の推進アクション</div>
-          <div id="ai-actions-list" style="color:#2c3e50; line-height: 1.4; white-space: pre-wrap;">
-・解析結果がここに自動表示されます。
+        <!-- クリティカルパス（CP）進行状況 -->
+        <div class="dash-card">
+          <div class="dash-card-title">🚩 最重要CPタスク進行状況</div>
+          <div style="display:flex; justify-content:space-between; font-weight:bold; color:#C00000;">
+            <span id="dash-cp-text">0%</span>
+            <span style="font-size:0.75rem; color:#666; font-weight:normal;" id="dash-cp-count">CP完了 0 / 0 件</span>
+          </div>
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="dash-cp-bar" style="background:#C00000;"></div>
           </div>
         </div>
 
-        <div class="ai-card" style="flex-grow: 1; display: flex; flex-direction: column;">
-          <div class="ai-card-title">💬 Geminiと自由対話</div>
-          <div style="flex-grow: 1; min-height: 120px; background: #FFF; border: 1px solid #CBD5E1; border-radius: 4px; padding: 6px; overflow-y: auto; margin-bottom: 6px; font-size: 0.72rem;" id="ai-chat-history">
-            <div class="chat-msg ai">こんにちは！Geminiです。工程表について気になることや「〇〇社の注意タスクは？」など、何でも質問してください。</div>
-          </div>
-          <div style="display: flex; gap: 4px;">
-            <input type="text" id="ai-chat-input" placeholder="質問を入力 (Enterで送信)" style="flex-grow: 1; font-size: 0.75rem;" onkeypress="if(event.key==='Enter') sendAIChat();">
-            <button onclick="sendAIChat()" style="background: var(--primary-color); padding: 4px 8px;">送信</button>
+        <!-- 遅延アラート -->
+        <div class="dash-card">
+          <div class="dash-card-title" style="color:#C00000;">🔴 期限超過 (遅延タスク)</div>
+          <div id="dash-delay-list">
+            <div style="color:#888; font-size:0.72rem;">遅延タスクはありません。</div>
           </div>
         </div>
+
+        <!-- 担当会社別のタスク負荷状況 -->
+        <div class="dash-card">
+          <div class="dash-card-title">🏢 担当会社別の残タスク負荷</div>
+          <div id="dash-load-bars">
+            <!-- JSで動的生成 -->
+          </div>
+        </div>
+
+        <!-- 保留・要協議タスク -->
+        <div class="dash-card">
+          <div class="dash-card-title" style="color:#d35400;">🟠 保留・要協議タスク</div>
+          <div id="dash-pending-list">
+            <div style="color:#888; font-size:0.72rem;">現在、保留中のタスクはありません。</div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
 
-  <script type="module">
-    import { GoogleGenerativeAI } from "@google/generative-ai";
-
+  <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCICc75-iLAn2vIWBoxJBLGQQRd7lhiLDs",
       authDomain: "caracuricube.firebaseapp.com",
@@ -745,8 +732,8 @@
       updateRef.set(timeString);
     }
 
-    window.toggleAIPanel = function(openState) {
-      const panel = document.getElementById("ai-panel");
+    function toggleDashPanel(openState) {
+      const panel = document.getElementById("dash-panel");
       if (openState !== undefined) {
         if (openState) panel.classList.add("active");
         else panel.classList.remove("active");
@@ -755,162 +742,111 @@
       }
     }
 
-    window.setApiKey = function() {
-      const currentKey = localStorage.getItem("GEMINI_API_KEY") || "";
-      const inputKey = prompt("Google Gemini APIキー（AIzaSy...）を入力してください:\n※無料枠で永久利用可能です。ブラウザ内に安全保持されます。", currentKey);
-      if (inputKey !== null) {
-        localStorage.setItem("GEMINI_API_KEY", inputKey.trim());
-        alert("Gemini APIキーを保存しました。");
+    /* 📊 リアルタイムダッシュボード自動計算ロジック */
+    function updateDashboard() {
+      const totalCount = tasks.length;
+      if (totalCount === 0) return;
+
+      // 1. 全体進捗率
+      const completedCount = tasks.filter(t => t.status === "完了").length;
+      const progressPercent = Math.round((completedCount / totalCount) * 100);
+      document.getElementById("dash-progress-text").innerText = `${progressPercent}%`;
+      document.getElementById("dash-progress-count").innerText = `完了 ${completedCount} / ${totalCount} 件`;
+      document.getElementById("dash-progress-bar").style.width = `${progressPercent}%`;
+
+      // 2. CP進行状況
+      const cpTasks = tasks.filter(t => t.cp);
+      const cpTotal = cpTasks.length;
+      const cpCompleted = cpTasks.filter(t => t.status === "完了").length;
+      const cpPercent = cpTotal > 0 ? Math.round((cpCompleted / cpTotal) * 100) : 0;
+      document.getElementById("dash-cp-text").innerText = `${cpPercent}%`;
+      document.getElementById("dash-cp-count").innerText = `CP完了 ${cpCompleted} / ${cpTotal} 件`;
+      document.getElementById("dash-cp-bar").style.width = `${cpPercent}%`;
+
+      // 3. 遅延タスクの自動検出＆リスト化
+      const delayContainer = document.getElementById("dash-delay-list");
+      delayContainer.innerHTML = "";
+      const delayedTasks = tasks.filter(t => t.end && t.status !== '完了' && new Date(t.end) < TODAY);
+
+      if (delayedTasks.length === 0) {
+        delayContainer.innerHTML = `<div style="color:#27ae60; font-size:0.75rem; font-weight:bold;">🟢 遅延タスクはありません。順調です！</div>`;
+      } else {
+        delayedTasks.forEach(t => {
+          const item = document.createElement("div");
+          item.className = "clickable-task-item";
+          item.onclick = () => scrollToTask(t.id);
+          item.innerHTML = `
+            <div>
+              <span style="font-weight:bold; color:#c00000;">[${t.id}]</span> ${t.name}
+              <div style="font-size:0.68rem; color:#666;">担当: ${t.owner} | 期限: ${t.end}</div>
+            </div>
+            <span style="color:#c00000; font-weight:bold; font-size:0.7rem;">要対応</span>
+          `;
+          delayContainer.appendChild(item);
+        });
+      }
+
+      // 4. 担当会社別の負荷分析（未完了タスク件数）
+      const loadBarsContainer = document.getElementById("dash-load-bars");
+      loadBarsContainer.innerHTML = "";
+      const owners = ["Cuebus", "Hamaru Strategy", "成田国際空港", "全社合同"];
+
+      owners.forEach(owner => {
+        const ownerUncompleted = tasks.filter(t => t.owner === owner && t.status !== "完了").length;
+        const ownerTotal = tasks.filter(t => t.owner === owner).length;
+        const loadPercent = ownerTotal > 0 ? Math.round((ownerUncompleted / ownerTotal) * 100) : 0;
+
+        const row = document.createElement("div");
+        row.className = "load-bar-row";
+        row.innerHTML = `
+          <div class="load-bar-label">${owner}</div>
+          <div class="load-bar-bg">
+            <div class="load-bar-fill" style="width: ${loadPercent}%;"></div>
+          </div>
+          <div style="width: 50px; text-align: right; font-weight: bold; color: #555;">残 ${ownerUncompleted}件</div>
+        `;
+        loadBarsContainer.appendChild(row);
+      });
+
+      // 5. 保留・協議中タスク
+      const pendingContainer = document.getElementById("dash-pending-list");
+      pendingContainer.innerHTML = "";
+      const pendingTasks = tasks.filter(t => t.status === "保留中");
+
+      if (pendingTasks.length === 0) {
+        pendingContainer.innerHTML = `<div style="color:#888; font-size:0.72rem;">現在、保留中のタスクはありません。</div>`;
+      } else {
+        pendingTasks.forEach(t => {
+          const item = document.createElement("div");
+          item.className = "clickable-task-item";
+          item.onclick = () => scrollToTask(t.id);
+          item.innerHTML = `
+            <div>
+              <span style="font-weight:bold; color:#d35400;">[${t.id}]</span> ${t.name}
+              <div style="font-size:0.68rem; color:#666;">担当: ${t.owner}</div>
+            </div>
+            <span style="color:#d35400; font-weight:bold; font-size:0.7rem;">保留中</span>
+          `;
+          pendingContainer.appendChild(item);
+        });
       }
     }
 
-    function getTaskSummaryText() {
-      return tasks.map(t => {
-        const cpMark = t.cp ? "[最重要CP]" : "";
-        return `- ID:${t.id} タスク:${t.name} (担当:${t.owner}, 期間:${t.start||'未定'}〜${t.end||'未定'}, ステータス:${t.status}) ${cpMark}`;
-      }).join("\n");
-    }
-
-    /* ✨ GoogleGenerativeAI 正式版SDKによる通信関数 */
-    async function callGeminiAPI(promptText) {
-      const apiKey = localStorage.getItem("GEMINI_API_KEY");
-      if (!apiKey) {
-        alert("Gemini APIキーが設定されていません。\n【🔑 管理者】ボタンを押して裏メニューから「🔑 Gemini APIキー設定(無料)」を行ってください。");
-        throw new Error("APIキー未設定");
-      }
-
-      try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const result = await model.generateContent(promptText);
-        const response = await result.response;
-        return response.text().trim();
-      } catch (e) {
-        console.error("Gemini Error:", e);
-        throw new Error(e.message || "Gemini API通信エラー");
-      }
-    }
-
-    /* ✨ Gemini AI診断ロジック */
-    window.runAIDiagnosis = async function() {
-      const btn = document.getElementById("btn-run-ai");
-      btn.innerText = "⏳ Gemini解析中...";
-      btn.disabled = true;
-
-      const promptMessage = `
-あなたは【成田空港IP什器導入プロジェクト】の優秀なAI PMアシスタントです。
-目標オープン日は2026年11月10日です。
-
-以下の現在の全社タスク一覧データを分析し、JSON形式でのみ回答してください。
-
-【タスク一覧データ】
-${getTaskSummaryText()}
-
-【回答フォーマット (JSONのみ厳守・コードブロックや記号装飾不可)】
-{
-  "score": "A", 
-  "summary": "進捗は概ね順調です。消防申請の準備を急ぎましょう。",
-  "risks": "・1.2 現地与件確認の完了期限が迫っています\\n・4.1 消防確認の未着手リスク",
-  "actions": "・Cuebus: 消防関連書類の提出準備\\n・Hamaru: 第1弾IP契約の確定"
-}
-※ scoreは S, A, B, C, D の5段階で評価してください。
-`;
-
-      try {
-        let rawContent = await callGeminiAPI(promptMessage);
-        rawContent = rawContent.replace(/```json/g, "").replace(/```/g, "").trim();
-
-        const result = JSON.parse(rawContent);
-
-        document.getElementById("ai-score").innerText = result.score || "A";
-        document.getElementById("ai-status-summary").innerText = result.summary || "解析完了";
-        document.getElementById("ai-risks-list").innerText = result.risks || "特に重大なリスクは検出されませんでした。";
-        document.getElementById("ai-actions-list").innerText = result.actions || "予定通りのタスクを進めてください。";
-
-        const scoreBadge = document.getElementById("ai-score");
-        if (result.score === "S" || result.score === "A") scoreBadge.style.background = "#27ae60";
-        else if (result.score === "B") scoreBadge.style.background = "#f39c12";
-        else scoreBadge.style.background = "#c00000";
-
-      } catch (err) {
-        if (err.message !== "APIキー未設定") {
-          alert("Gemini診断エラー: " + err.message);
+    /* 🎯 クリックで該当タスク行にスムーズスクロール */
+    function scrollToTask(taskId) {
+      const tbody = document.getElementById("task-tbody");
+      const rows = tbody.querySelectorAll("tr");
+      rows.forEach(tr => {
+        const input = tr.querySelector("input[type='text']");
+        if (input && input.value === taskId) {
+          tr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          tr.style.backgroundColor = '#FFF9C4';
+          setTimeout(() => tr.style.backgroundColor = '', 2000);
         }
-      } finally {
-        btn.innerText = "🔄 最新状態でGemini診断を実行";
-        btn.disabled = false;
-      }
+      });
     }
 
-    /* 📊 朝会用レポート自動生成 */
-    window.generateMorningReport = async function() {
-      appendChatMessage("user", "📊 今朝の進捗会用サマリーレポートを作成して");
-
-      const promptMessage = `
-以下のプロジェクトタスクデータを元に、毎朝の3社合同進捗会議（朝会）でそのまま1分間でスピーチ・報告できる「朝会用サマリーレポート」を作成してください。
-
-【データ】
-${getTaskSummaryText()}
-
-【報告構成】
-1. 現在の全体進捗ステータス
-2. 今週最優先で動くべきCPタスク（会社別）
-3. 遅延・注意点
-簡潔かつ実用的に記述してください。
-`;
-
-      try {
-        const reply = await callGeminiAPI(promptMessage);
-        appendChatMessage("ai", reply);
-      } catch (err) {
-        if (err.message !== "APIキー未設定") {
-          appendChatMessage("ai", "エラー: " + err.message);
-        }
-      }
-    }
-
-    /* 💬 Geminiチャット自由対話処理 */
-    window.sendAIChat = async function() {
-      const inputEl = document.getElementById("ai-chat-input");
-      const userMsg = inputEl.value.trim();
-      if (!userMsg) return;
-
-      appendChatMessage("user", userMsg);
-      inputEl.value = "";
-
-      const promptMessage = `
-あなたは【成田空港IP什器導入プロジェクト】の優秀なPMアシスタント「Gemini」です。
-目標オープン日は2026年11月10日です。
-
-以下の最新タスクデータを背景知識として持った上で、ユーザーからの質問にわかりやすく親切に答えてください。
-
-【最新タスクデータ】
-${getTaskSummaryText()}
-
-【ユーザーの質問】
-${userMsg}
-`;
-
-      try {
-        const reply = await callGeminiAPI(promptMessage);
-        appendChatMessage("ai", reply);
-      } catch (err) {
-        if (err.message !== "APIキー未設定") {
-          appendChatMessage("ai", "エラー: " + err.message);
-        }
-      }
-    }
-
-    function appendChatMessage(role, text) {
-      const history = document.getElementById("ai-chat-history");
-      const msgDiv = document.createElement("div");
-      msgDiv.className = `chat-msg ${role}`;
-      msgDiv.innerText = text;
-      history.appendChild(msgDiv);
-      history.scrollTop = history.scrollHeight;
-    }
-
-    window.toggleAdminMenu = function() {
+    function toggleAdminMenu() {
       const menu = document.getElementById("admin-menu");
       if (isAdminUnlocked) {
         menu.style.display = menu.style.display === "flex" ? "none" : "flex";
@@ -926,7 +862,7 @@ ${userMsg}
       }
     }
 
-    window.copyFullHTML = function() {
+    function copyFullHTML() {
       let defaultTasksCode = "    const defaultTasks = [\n";
       tasks.forEach((t, index) => {
         const isLast = index === tasks.length - 1;
@@ -947,7 +883,7 @@ ${userMsg}
       });
     }
 
-    window.autoRenumberIDs = function() {
+    function autoRenumberIDs() {
       let currentMainGroup = "1";
       let subIndex = 1;
 
@@ -969,7 +905,7 @@ ${userMsg}
       });
     }
 
-    window.reorderAllIDs = function() {
+    function reorderAllIDs() {
       let currentGroup = 1;
       let subGroup = 1;
 
@@ -1055,7 +991,7 @@ ${userMsg}
       return 'owner-joint';
     }
 
-    window.renderAll = function() {
+    function renderAll() {
       initDays();
       renderGanttHeader();
 
@@ -1200,6 +1136,7 @@ ${userMsg}
       }
 
       updateCountdown();
+      updateDashboard();
     }
 
     function handleDragStart(e, index, tr) {
@@ -1231,7 +1168,7 @@ ${userMsg}
       draggedIndex = null;
     }
 
-    window.moveTask = function(direction, idx) {
+    function moveTask(direction, idx) {
       if (direction === 'up' && idx > 0) {
         const item = tasks.splice(idx, 1)[0];
         tasks.splice(idx - 1, 0, item);
@@ -1246,7 +1183,7 @@ ${userMsg}
     }
 
     let isSyncing = false;
-    window.syncScroll = function(source) {
+    function syncScroll(source) {
       if (isSyncing) return;
       isSyncing = true;
       const taskSide = document.getElementById("task-side");
@@ -1260,7 +1197,7 @@ ${userMsg}
       isSyncing = false;
     }
 
-    window.updateTask = function(idx, field, val) {
+    function updateTask(idx, field, val) {
       tasks[idx][field] = val;
       if (field === 'id') {
         renderAll();
@@ -1268,12 +1205,12 @@ ${userMsg}
       saveTasks();
     }
 
-    window.updateTaskBool = function(idx, field, val) {
+    function updateTaskBool(idx, field, val) {
       tasks[idx][field] = (val === 'true');
       saveTasks();
     }
 
-    window.deleteTask = function(idx) {
+    function deleteTask(idx) {
       if (confirm(`タスク「${tasks[idx].name}」を削除しますか？`)) {
         tasks.splice(idx, 1);
         autoRenumberIDs();
@@ -1281,7 +1218,7 @@ ${userMsg}
       }
     }
 
-    window.addNewTask = function() {
+    function addNewTask() {
       const lastTask = tasks[tasks.length - 1];
       let newID = "1.1";
       if (lastTask && lastTask.id) {
@@ -1295,14 +1232,14 @@ ${userMsg}
       saveTasks();
     }
 
-    window.resetData = function() {
+    function resetData() {
       if (confirm("初期のタスク・日付状態にリセットしますか？（全社のデータが初期化されます）")) {
         tasks = JSON.parse(JSON.stringify(defaultTasks));
         saveTasks();
       }
     }
 
-    window.exportCSV = function() {
+    function exportCSV() {
       let csvContent = "\uFEFF";
       csvContent += "ID,タスク名称,担当,開始日,完了期限,進捗,CP(クリティカルパス)\n";
 
@@ -1321,7 +1258,7 @@ ${userMsg}
       document.body.removeChild(link);
     }
 
-    window.downloadManual = function() {
+    function downloadManual() {
       const manualText = `==================================================
 【工程表】成田空港IP什器導入プロジェクト 取扱マニュアル
 ==================================================
@@ -1335,8 +1272,8 @@ ${userMsg}
 ・リアルタイム自動同期: 
   誰かがタスクや日付を編集すると、クラウドを介して全ユーザーの画面へ即座に自動反映されます。
 
-・✨ Gemini AI Assistant:
-  Google AI Studioで無料発行できる「Gemini APIキー」を設定することで、0円で完全無料のAI分析・診断・相談が利用できます。
+・📊 プロジェクト分析ダッシュボード:
+  画面右側に「全体進捗率」「最重要CP状況」「遅延タスク一覧」「各社タスク負荷」が完全自動でリアルタイム集計表示されます。
 
 ==================================================`;
 
