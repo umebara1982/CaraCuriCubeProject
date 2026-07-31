@@ -497,7 +497,7 @@
       <h1>✈️ 【NAA × Cuebus × Hamaru Strategy】統合管理工程表</h1>
       <p>
         期間: 2026年8月1日 〜 2027年3月31日<br>
-        <span class="open-target">オープン目標: 2026年11月10日（火）</span>
+        <span class="open-target">オープン目標: 2026年11月20日（金）</span>
       </p>
     </div>
     <div style="display: flex; gap: 15px; align-items: center;">
@@ -544,6 +544,7 @@
       <span style="font-size:0.75rem; font-weight:bold; color:#d35400;">【裏メニュー】</span>
       <button onclick="createBackup()" style="background: #27ae60;">📸 現在のデータバックアップ作成</button>
       <button onclick="restoreBackup()" style="background: #8e44ad;">📂 バックアップから復元</button>
+      <button onclick="deleteBackup()" style="background: #c00000;">🗑️ バックアップ削除</button>
       <button onclick="reorderAllIDs()" style="background: #2980b9;">🔢 ID一括振り直し</button>
       <button onclick="copyFullHTML()" class="btn-copy-full">📋 HTML全体をコピー（GitHub用）</button>
       <button onclick="resetData()" style="background: #7f8c8d;">初期設定に戻す</button>
@@ -667,7 +668,7 @@
     const DAY_WIDTH = 24;
     const TODAY = new Date();
 
-    const ADMIN_PASSWORD = "1234";
+    const ADMIN_PASSWORD = "0705";
 
     const categoryNames = {
       "1": "📂 カテゴリー 1：什器開発・現地仕様確定",
@@ -787,6 +788,37 @@
             tasks = JSON.parse(JSON.stringify(backups[chosenKey].tasks));
             saveTasks();
             alert("🎉 バックアップデータを読み込み、復元しました！");
+          }
+        } else {
+          alert("正しい番号を入力してください。");
+        }
+      }
+    }
+
+    /* 🗑️ バックアップ削除機能 */
+    function deleteBackup() {
+      let backups = JSON.parse(localStorage.getItem("N_GANTT_BACKUPS") || "{}");
+      const keys = Object.keys(backups);
+
+      if (keys.length === 0) {
+        alert("消去できるバックアップデータがありません。");
+        return;
+      }
+
+      let msg = "削除したいバックアップの番号を入力してください:\n\n";
+      keys.forEach((k, idx) => {
+        msg += `[${idx + 1}] ${backups[k].label}\n`;
+      });
+
+      const selected = prompt(msg);
+      if (selected !== null) {
+        const num = parseInt(selected) - 1;
+        if (num >= 0 && num < keys.length) {
+          const chosenKey = keys[num];
+          if (confirm(`「${backups[chosenKey].label}」を本当に削除しますか？`)) {
+            delete backups[chosenKey];
+            localStorage.setItem("N_GANTT_BACKUPS", JSON.stringify(backups));
+            alert("🗑️ 選択したバックアップデータを削除しました。");
           }
         } else {
           alert("正しい番号を入力してください。");
@@ -1352,10 +1384,11 @@
   完了期限を過ぎて未完了（完了以外）のタスクは、日付セルが自動的に【赤背景】で強調されます。
 
 --------------------------------------------------
-3. データのバックアップと復元
+3. データのバックアップ・管理
 --------------------------------------------------
 ・「🔑 管理者」メニューから「📸 現在のデータバックアップ作成」を実行すると、その時点のタスク状態を日付付きで保存できます。
 ・「📂 バックアップから復元」を実行すると、過去の保存データを選択していつでも元の状態に戻すことができます。
+・不要になった過去のバックアップは「🗑️ バックアップ削除」から個別整理が可能です。
 
 ==================================================`;
 
@@ -1370,7 +1403,7 @@
     }
 
     function updateCountdown() {
-      const target = new Date("2026-11-10T00:00:00").getTime();
+      const target = new Date("2026-11-20T00:00:00").getTime();
       const now = new Date().getTime();
       const diff = target - now;
       const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
