@@ -9,11 +9,11 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
-  <!-- ✨ Google Generative AI (Gemini) 公式SDK の読み込み -->
+  <!-- ✨ Google Generative AI 安定版SDK の読み込み -->
   <script type="importmap">
     {
       "imports": {
-        "@google/genai": "https://esm.run/@google/genai"
+        "@google/generative-ai": "https://esm.run/@google/generative-ai"
       }
     }
   </script>
@@ -655,7 +655,7 @@
   </div>
 
   <script type="module">
-    import { GoogleGenAI } from "@google/genai";
+    import { GoogleGenerativeAI } from "@google/generative-ai";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCICc75-iLAn2vIWBoxJBLGQQRd7lhiLDs",
@@ -771,7 +771,7 @@
       }).join("\n");
     }
 
-    /* ✨ Google公式SDKを使ったGemini通信処理 (gemini-1.5-flash 正式指定) */
+    /* ✨ GoogleGenerativeAI 正式版SDKによる通信関数 */
     async function callGeminiAPI(promptText) {
       const apiKey = localStorage.getItem("GEMINI_API_KEY");
       if (!apiKey) {
@@ -780,14 +780,13 @@
       }
 
       try {
-        const ai = new GoogleGenAI({ apiKey: apiKey });
-        const response = await ai.models.generateContent({
-          model: 'gemini-1.5-flash',
-          contents: promptText,
-        });
-        return response.text.trim();
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const result = await model.generateContent(promptText);
+        const response = await result.response;
+        return response.text().trim();
       } catch (e) {
-        console.error("Gemini SDK Error:", e);
+        console.error("Gemini Error:", e);
         throw new Error(e.message || "Gemini API通信エラー");
       }
     }
