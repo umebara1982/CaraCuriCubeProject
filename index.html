@@ -92,6 +92,7 @@
     button:hover { opacity: 0.9; }
 
     .btn-add { background-color: #27ae60; box-shadow: 0 0 5px rgba(39, 174, 96, 0.4); }
+    .btn-category { background-color: #16a085; box-shadow: 0 0 5px rgba(22, 160, 133, 0.3); }
     .btn-company { background-color: #d35400; box-shadow: 0 0 5px rgba(211, 84, 0, 0.3); }
     .btn-csv { background-color: #8e44ad; }
     .btn-manual { background-color: #16a085; }
@@ -126,7 +127,7 @@
 
     .modal-card {
       background: #FFFFFF;
-      width: 440px;
+      width: 480px;
       max-width: 90%;
       border-radius: 8px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.2);
@@ -179,7 +180,7 @@
       gap: 8px;
     }
 
-    .company-list-item {
+    .company-list-item, .category-list-item {
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -188,6 +189,7 @@
       border: 1px solid #E2E8F0;
       border-radius: 4px;
       margin-bottom: 4px;
+      gap: 6px;
     }
 
     .drag-handle {
@@ -623,6 +625,7 @@
     </select>
 
     <button onclick="openAddTaskModal()" class="btn-add">＋ 新規タスク追加</button>
+    <button onclick="openCategoryModal()" class="btn-category">📂 カテゴリー管理</button>
     <button onclick="openAddCompanyModal()" class="btn-company">🏢 担当会社管理</button>
     <button onclick="exportCSV()" class="btn-csv">📥 CSV出力</button>
     <button onclick="downloadManual()" class="btn-manual">📖 マニュアル</button>
@@ -749,13 +752,7 @@
         <div class="modal-field">
           <label>📂 カテゴリー（グループ）</label>
           <select id="modal-category">
-            <option value="1">1：CUEBUS開発・現地仕様確認</option>
-            <option value="2">2：商品・IP選定・IPデザイン・量産手配</option>
-            <option value="3">3：ECシステム・認証開発</option>
-            <option value="4">4：行政・消防・事前申請</option>
-            <option value="5">5：空港運用・搬入準備</option>
-            <option value="6">6：テスト・現地施工・オープン</option>
-            <option value="7">7：初期運用・次章展開準備</option>
+            <!-- JSで動的生成 -->
           </select>
         </div>
 
@@ -808,6 +805,37 @@
     </div>
   </div>
 
+  <!-- 📂 カテゴリー管理ポップアップ（モーダル） -->
+  <div class="modal-overlay" id="category-modal">
+    <div class="modal-card">
+      <div class="modal-header" style="background:#16a085;">
+        <span>📂 カテゴリー（区分）の管理・追加・修正</span>
+        <button onclick="closeCategoryModal()" style="background:transparent; border:none; color:white; font-size:1.2rem; cursor:pointer;">✖</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-field">
+          <label>新しいカテゴリーの追加</label>
+          <div style="display:flex; gap:6px;">
+            <input type="text" id="modal-new-category-name" placeholder="例：設営・アフターサポート" style="flex:1;">
+            <button onclick="submitNewCategory()" style="background:#16a085; padding:4px 12px;">＋ 追加</button>
+          </div>
+        </div>
+
+        <hr style="border:0; border-top:1px solid #E2E8F0; margin:6px 0;">
+
+        <div>
+          <label style="font-weight:bold; color:#444; display:block; margin-bottom:6px;">登録済みカテゴリー一覧（編集・修正・削除）</label>
+          <div id="category-manage-list" style="max-height:220px; overflow-y:auto;">
+            <!-- JSで動的生成 -->
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeCategoryModal()" style="background:#7f8c8d; padding:6px 16px;">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 🏢 担当会社管理（追加・削除）ポップアップ（モーダル） -->
   <div class="modal-overlay" id="add-company-modal">
     <div class="modal-card" style="width:400px;">
@@ -855,6 +883,7 @@
     const tasksRef = db.ref('narita_gantt_tasks');
     const updateRef = db.ref('narita_gantt_last_update');
     const companiesRef = db.ref('narita_gantt_custom_companies');
+    const categoriesRef = db.ref('narita_gantt_custom_categories'); // 📂 カテゴリーリアルタイム同期用
 
     const START_DATE = new Date("2026-08-01");
     const END_DATE = new Date("2027-03-31");
@@ -868,15 +897,17 @@
     const defaultOwners = ["Cuebus", "Hamaru Strategy", "成田国際空港", "全社合同"];
     let customOwners = [];
 
-    const categoryNames = {
-      "1": "📂 カテゴリー 1：什器開発・現地仕様確定",
-      "2": "📂 カテゴリー 2：商品・IPデザイン・量産手配",
-      "3": "📂 カテゴリー 3：ECシステム・認証開発",
-      "4": "📂 カテゴリー 4：行政・消防・事前申請",
-      "5": "📂 カテゴリー 5：空港運用・搬入準備",
-      "6": "📂 カテゴリー 6：テスト・現地施工・オープン",
-      "7": "📂 カテゴリー 7：初期運用・次章展開準備"
+    /* 初期（デフォルト）のカテゴリー一覧 */
+    const defaultCategoryNames = {
+      "1": "什器開発・現地仕様確定",
+      "2": "商品・IPデザイン・量産手配",
+      "3": "ECシステム・認証開発",
+      "4": "行政・消防・事前申請",
+      "5": "空港運用・搬入準備",
+      "6": "テスト・現地施工・オープン",
+      "7": "初期運用・次章展開準備"
     };
+    let categoryNames = JSON.parse(JSON.stringify(defaultCategoryNames));
 
     const defaultTasks = [
       { id: "1.1", cat: "開発", name: "CUEBUS詳細設計", owner: "Cuebus", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true },
@@ -933,6 +964,18 @@
       renderAll();
     });
 
+    // Firebaseからカテゴリー一覧の監視
+    categoriesRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        categoryNames = data;
+      } else {
+        categoryNames = JSON.parse(JSON.stringify(defaultCategoryNames));
+      }
+      updateCategoryDropdowns();
+      renderAll();
+    });
+
     updateRef.on('value', (snapshot) => {
       const timeStr = snapshot.val();
       if (timeStr) {
@@ -950,6 +993,35 @@
     /* 🏢 全体で使用するすべての会社リストを取得 */
     function getAllOwners() {
       return [...defaultOwners, ...customOwners];
+    }
+
+    /* 📂 ドロップダウンおよびカテゴリー管理ポップアップの自動更新 */
+    function updateCategoryDropdowns() {
+      const catSelect = document.getElementById("modal-category");
+      if (!catSelect) return;
+      catSelect.innerHTML = "";
+
+      Object.keys(categoryNames).forEach(k => {
+        const opt = document.createElement("option");
+        opt.value = k;
+        opt.innerText = `${k}：${categoryNames[k]}`;
+        catSelect.appendChild(opt);
+      });
+
+      const catManageList = document.getElementById("category-manage-list");
+      if (catManageList) {
+        catManageList.innerHTML = "";
+        Object.keys(categoryNames).forEach(k => {
+          const item = document.createElement("div");
+          item.className = "category-list-item";
+          item.innerHTML = `
+            <span style="font-weight:bold; min-width:25px;">${k}.</span>
+            <input type="text" value="${categoryNames[k]}" onchange="updateCategoryName('${k}', this.value)" style="flex:1;">
+            <button onclick="deleteCategory('${k}')" style="background:#e74c3c; padding:2px 8px; font-size:0.72rem;">削除</button>
+          `;
+          catManageList.appendChild(item);
+        });
+      }
     }
 
     /* 🏢 ドロップダウンおよび会社管理ポップアップリストの自動更新 */
@@ -976,21 +1048,22 @@
         modalSelect.appendChild(opt);
       });
 
-      // 会社管理ポップアップ内のカスタム会社一覧リスト作成
       const customListContainer = document.getElementById("custom-company-list");
-      customListContainer.innerHTML = "";
-      if (customOwners.length === 0) {
-        customListContainer.innerHTML = `<div style="color:#888; font-size:0.75rem;">追加されたカスタム会社はありません。</div>`;
-      } else {
-        customOwners.forEach((company, idx) => {
-          const item = document.createElement("div");
-          item.className = "company-list-item";
-          item.innerHTML = `
-            <span style="font-weight:bold; color:#0277BD;">${company}</span>
-            <button onclick="removeCompany(${idx})" style="background:#e74c3c; padding:2px 8px; font-size:0.72rem;">削除</button>
-          `;
-          customListContainer.appendChild(item);
-        });
+      if (customListContainer) {
+        customListContainer.innerHTML = "";
+        if (customOwners.length === 0) {
+          customListContainer.innerHTML = `<div style="color:#888; font-size:0.75rem;">追加されたカスタム会社はありません。</div>`;
+        } else {
+          customOwners.forEach((company, idx) => {
+            const item = document.createElement("div");
+            item.className = "company-list-item";
+            item.innerHTML = `
+              <span style="font-weight:bold; color:#0277BD;">${company}</span>
+              <button onclick="removeCompany(${idx})" style="background:#e74c3c; padding:2px 8px; font-size:0.72rem;">削除</button>
+            `;
+            customListContainer.appendChild(item);
+          });
+        }
       }
     }
 
@@ -1004,9 +1077,10 @@
       }
     }
 
-    /* 🎯 タスク追加ポップアップ（モーダル）制御関数 */
+    /* 🎯 タスク追加ポップアップ制御 */
     function openAddTaskModal() {
       updateCompanyDropdowns();
+      updateCategoryDropdowns();
       document.getElementById("add-task-modal").classList.add("active");
       document.getElementById("modal-name").value = "";
       document.getElementById("modal-name").focus();
@@ -1020,7 +1094,50 @@
       document.getElementById("add-task-modal").classList.remove("active");
     }
 
-    /* 🏢 会社追加ポップアップ（モーダル）制御関数 */
+    /* 📂 カテゴリー管理ポップアップ制御 */
+    function openCategoryModal() {
+      updateCategoryDropdowns();
+      document.getElementById("category-modal").classList.add("active");
+    }
+
+    function closeCategoryModal() {
+      document.getElementById("category-modal").classList.remove("active");
+    }
+
+    /* 📂 新規カテゴリーの追加実行 */
+    function submitNewCategory() {
+      const input = document.getElementById("modal-new-category-name");
+      const name = input.value.trim();
+      if (!name) {
+        alert("カテゴリー名を入力してください。");
+        return;
+      }
+
+      const keys = Object.keys(categoryNames).map(n => parseInt(n));
+      const nextKey = keys.length > 0 ? Math.max(...keys) + 1 : 1;
+
+      categoryNames[nextKey] = name;
+      categoriesRef.set(categoryNames);
+      input.value = "";
+      alert(`🎉 カテゴリー「${nextKey}：${name}」を追加しました！`);
+    }
+
+    /* 📂 カテゴリー名の修正（直接書き換え） */
+    function updateCategoryName(key, newName) {
+      if (!newName.trim()) return;
+      categoryNames[key] = newName.trim();
+      categoriesRef.set(categoryNames);
+    }
+
+    /* 📂 カテゴリーの削除 */
+    function deleteCategory(key) {
+      if (confirm(`カテゴリー「${key}：${categoryNames[key]}」を削除しますか？`)) {
+        delete categoryNames[key];
+        categoriesRef.set(categoryNames);
+      }
+    }
+
+    /* 🏢 会社追加ポップアップ制御 */
     function openAddCompanyModal() {
       updateCompanyDropdowns();
       document.getElementById("add-company-modal").classList.add("active");
@@ -1032,7 +1149,6 @@
       document.getElementById("add-company-modal").classList.remove("active");
     }
 
-    /* 🏢 新しい担当会社の登録実行 */
     function submitNewCompany() {
       const name = document.getElementById("modal-company-name").value.trim();
       if (!name) {
@@ -1051,13 +1167,11 @@
       alert(`🎉 担当会社「${name}」を登録しました！`);
     }
 
-    /* 🏢 登録済みカスタム会社の削除実行 */
     function removeCompany(idx) {
       const targetCompany = customOwners[idx];
-      if (confirm(`担当会社「${targetCompany}」を削除しますか？\n（※既存タスクの担当表示にも影響します）`)) {
+      if (confirm(`担当会社「${targetCompany}」を削除しますか？`)) {
         customOwners.splice(idx, 1);
         companiesRef.set(customOwners);
-        alert(`🗑️ 担当会社「${targetCompany}」を削除しました。`);
       }
     }
 
@@ -1125,7 +1239,8 @@
       const backupData = {
         label: label,
         tasks: JSON.parse(JSON.stringify(tasks)),
-        customOwners: JSON.parse(JSON.stringify(customOwners))
+        customOwners: JSON.parse(JSON.stringify(customOwners)),
+        categoryNames: JSON.parse(JSON.stringify(categoryNames))
       };
 
       let backups = JSON.parse(localStorage.getItem("N_GANTT_BACKUPS") || "{}");
@@ -1161,6 +1276,10 @@
             if (backups[chosenKey].customOwners) {
               customOwners = JSON.parse(JSON.stringify(backups[chosenKey].customOwners));
               companiesRef.set(customOwners);
+            }
+            if (backups[chosenKey].categoryNames) {
+              categoryNames = JSON.parse(JSON.stringify(backups[chosenKey].categoryNames));
+              categoriesRef.set(categoryNames);
             }
             alert("🎉 バックアップデータを読み込み、復元しました！");
           }
@@ -1490,11 +1609,11 @@
         const mainGroup = t.id ? String(t.id).split('.')[0] : "1";
         if (mainGroup !== currentCategoryGroup) {
           currentCategoryGroup = mainGroup;
-          const cName = categoryNames[mainGroup] || `📂 カテゴリー ${mainGroup}`;
+          const cNameText = categoryNames[mainGroup] ? `📂 カテゴリー ${mainGroup}：${categoryNames[mainGroup]}` : `📂 カテゴリー ${mainGroup}`;
 
           const phaseTr = document.createElement("tr");
           phaseTr.className = "phase-header-row";
-          phaseTr.innerHTML = `<td colspan="9">${cName}</td>`;
+          phaseTr.innerHTML = `<td colspan="9">${cNameText}</td>`;
           tbody.appendChild(phaseTr);
 
           const gPhaseRow = document.createElement("div");
@@ -1693,7 +1812,9 @@
       if (confirm("初期のタスク・日付状態にリセットしますか？（全社のデータが初期化されます）")) {
         tasks = JSON.parse(JSON.stringify(defaultTasks));
         customOwners = [];
+        categoryNames = JSON.parse(JSON.stringify(defaultCategoryNames));
         companiesRef.set([]);
+        categoriesRef.set(categoryNames);
         saveTasks();
       }
     }
@@ -1729,7 +1850,7 @@
 1. システムの基本仕様
 --------------------------------------------------
 ■ リアルタイム全社同期
-   ブラウザ上でタスク内容、日付、担当会社、進捗ステータスを変更すると、クラウドを介して他の閲覧者の画面へ即座に自動反映されます。手動保存は不要です。
+   ブラウザ上でタスク内容、日付、担当会社、進捗ステータス、カテゴリー等を変更すると、クラウドを介して他の閲覧者の画面へ即座に自動反映されます。手動保存は不要です。
 
 ■ 🔴 「今日（現在日）」のハイライト表示
    カレンダーヘッダーの当日日付が赤色で強調表示されるほか、ガントチャートの今日にあたる縦1列全体に薄い赤色の背景帯が表示され、現在の進行位置が一目で分かります。
@@ -1751,6 +1872,9 @@
   2. タスク名称、担当会社（外注先を含む）、開始日・完了期限、進捗状況、CP設定を行います。
   3. 「＋ 登録する」を押すと、指定したカテゴリーの最下部へ自動的に移動・追加・採番されます。
 
+【📂 カテゴリー（区分）の追加・修正・削除】
+  上部の「📂 カテゴリー管理」ボタンから、フェーズ区分の新規作成、名称の修正（書き換え）、不要なカテゴリーの削除がいつでも可能です。全画面へリアルタイム反映されます。
+
 【🏢 担当会社・外注先の登録および削除】
   ・追加: 上部の「🏢 担当会社管理」ボタンを押して新しい会社名を登録できます。全画面・ダッシュボードへ連動追加されます。
   ・削除: 「🏢 担当会社管理」画面の下部リストにある不要な会社の「削除」ボタンを押すことで、リストから整理・削除が可能です。
@@ -1764,7 +1888,7 @@
 --------------------------------------------------
 3. データのバックアップ・管理
 --------------------------------------------------
-・「🔑 管理者」メニュー（パスワード: 0705）から「📸 現在のデータバックアップ作成」を実行すると、その時点のタスク状態および会社リストを日付付きで保存できます。
+・「🔑 管理者」メニュー（パスワード: 0705）から「📸 現在のデータバックアップ作成」を実行すると、その時点のタスク状態および会社・カテゴリーリストを日付付きで保存できます。
 ・「📂 バックアップから復元」を実行すると、過去の保存データを選択していつでも元の状態に戻すことができます。
 ・不要になった過去のバックアップは「🗑️ バックアップ削除」から個別整理が可能です。
 
