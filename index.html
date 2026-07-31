@@ -497,7 +497,7 @@
       <h1>✈️ 【NAA × Cuebus × Hamaru Strategy】統合管理工程表</h1>
       <p>
         期間: 2026年8月1日 〜 2027年3月31日<br>
-        <span class="open-target">オープン目標: 2026年11月20日（金）</span>
+        <span class="open-target">オープン目標: 2026年11月10日（火）</span>
       </p>
     </div>
     <div style="display: flex; gap: 15px; align-items: center;">
@@ -668,6 +668,7 @@
     const DAY_WIDTH = 24;
     const TODAY = new Date();
 
+    /* 🔑 管理者パスワード設定 */
     const ADMIN_PASSWORD = "0705";
 
     const categoryNames = {
@@ -1403,7 +1404,7 @@
     }
 
     function updateCountdown() {
-      const target = new Date("2026-11-20T00:00:00").getTime();
+      const target = new Date("2026-11-10T00:00:00").getTime();
       const now = new Date().getTime();
       const diff = target - now;
       const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
