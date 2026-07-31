@@ -92,6 +92,7 @@
     button:hover { opacity: 0.9; }
 
     .btn-add { background-color: #27ae60; box-shadow: 0 0 5px rgba(39, 174, 96, 0.4); }
+    .btn-company { background-color: #d35400; box-shadow: 0 0 5px rgba(211, 84, 0, 0.3); }
     .btn-csv { background-color: #8e44ad; }
     .btn-manual { background-color: #16a085; }
     .btn-dash { background-color: #2980b9; box-shadow: 0 0 5px rgba(41, 128, 185, 0.4); }
@@ -111,7 +112,7 @@
       flex-wrap: wrap;
     }
 
-    /* 🎯 タスク追加ポップアップ（モーダル）CSS */
+    /* ポップアップ（モーダル）共通CSS */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -317,7 +318,7 @@
       margin-bottom: 4px;
       font-size: 0.72rem;
     }
-    .load-bar-label { width: 85px; font-weight: bold; }
+    .load-bar-label { width: 85px; font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .load-bar-bg { flex-grow: 1; background: #E2E8F0; height: 8px; border-radius: 4px; overflow: hidden; }
     .load-bar-fill { height: 100%; background: #3498db; }
 
@@ -477,7 +478,16 @@
 
     .day-cell.sat { background-color: #F0F6FF; color: #0055AA; }
     .day-cell.sun { background-color: #FFF0F0; color: #CC0000; }
-    .day-cell.today { background-color: #ff3333; color: #ffffff; font-weight: bold; }
+    
+    /* 🔴 今日のヘッダーセルハイライト強め表現 */
+    .day-cell.today { 
+      background: linear-gradient(135deg, #e74c3c, #c00000) !important; 
+      color: #ffffff !important; 
+      font-weight: bold;
+      border-left: 1px solid #c00000;
+      border-right: 1px solid #c00000;
+      box-shadow: inset 0 0 2px rgba(0,0,0,0.3);
+    }
 
     .gantt-body { position: relative; background-color: #FFFFFF; }
 
@@ -502,6 +512,12 @@
 
     .gantt-bg-cell.sat { background-color: #F0F6FF; }
     .gantt-bg-cell.sun { background-color: #FFF0F0; }
+    
+    /* 🔴 チャート本体の今日列ハイライト（薄赤の背景帯） */
+    .gantt-bg-cell.today { 
+      background-color: #FFEAEA !important; 
+      border-right: 1px dashed #E74C3C !important;
+    }
 
     .today-line {
       position: absolute;
@@ -552,6 +568,7 @@
     .owner-cuebus { background-color: #FFF2CC; color: #7F6000; }
     .owner-hamaru { background-color: #FCE4D6; color: #C00000; }
     .owner-joint { background-color: #E2EFDA; color: #375623; }
+    .owner-custom { background-color: #E1F5FE; color: #0277BD; }
 
     .legend { display: flex; gap: 10px; font-size: 0.75rem; align-items: center; margin-left: auto; }
     .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
@@ -583,10 +600,6 @@
     <label>絞り込み:</label>
     <select id="filter-owner" onchange="renderAll()">
       <option value="ALL">全社表示</option>
-      <option value="成田国際空港">成田国際空港</option>
-      <option value="Cuebus">Cuebus</option>
-      <option value="Hamaru Strategy">Hamaru Strategy</option>
-      <option value="全社合同">全社合同</option>
     </select>
 
     <label>表示条件:</label>
@@ -601,6 +614,7 @@
     </select>
 
     <button onclick="openAddTaskModal()" class="btn-add">＋ 新規タスク追加</button>
+    <button onclick="openAddCompanyModal()" class="btn-company">🏢 担当会社追加</button>
     <button onclick="exportCSV()" class="btn-csv">📥 CSV出力</button>
     <button onclick="downloadManual()" class="btn-manual">📖 マニュアル</button>
     <button onclick="toggleDashPanel(true)" class="btn-dash">📊 分析ダッシュボード</button>
@@ -620,6 +634,7 @@
     <div class="legend">
       <span><span class="legend-box" style="background:#C00000;"></span> 赤：最重要パス(CP)</span>
       <span><span class="legend-box" style="background:#3498db;"></span> 青：通常タスク</span>
+      <span><span class="legend-box" style="background:#FFEAEA; border:1px dashed #E74C3C;"></span> 縦の赤帯：今日（現在日）</span>
       <span><span class="legend-box" style="background:#fce4e4; border:1px solid #e74c3c;"></span> 赤セル：期限超過(遅延)</span>
     </div>
   </div>
@@ -737,16 +752,13 @@
 
         <div class="modal-field">
           <label>✏️ タスク名称</label>
-          <input type="text" id="modal-name" placeholder="例：〇〇の承認手続き">
+          <input type="text" id="modal-name" placeholder="例：演出照明システム発注">
         </div>
 
         <div class="modal-field">
-          <label>🏢 担当会社</label>
+          <label>🏢 担当会社・外注先</label>
           <select id="modal-owner">
-            <option value="Cuebus">Cuebus</option>
-            <option value="Hamaru Strategy">Hamaru Strategy</option>
-            <option value="成田国際空港">成田国際空港</option>
-            <option value="全社合同">全社合同</option>
+            <!-- JSで動的セット -->
           </select>
         </div>
 
@@ -787,6 +799,29 @@
     </div>
   </div>
 
+  <!-- 🏢 担当会社追加ポップアップ（モーダル） -->
+  <div class="modal-overlay" id="add-company-modal">
+    <div class="modal-card" style="width:380px;">
+      <div class="modal-header" style="background:#d35400;">
+        <span>🏢 新しい担当会社・外注先の登録</span>
+        <button onclick="closeAddCompanyModal()" style="background:transparent; border:none; color:white; font-size:1.2rem; cursor:pointer;">✖</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-field">
+          <label>会社名・外注先名称</label>
+          <input type="text" id="modal-company-name" placeholder="例：演出外注A社、照明施工B社">
+        </div>
+        <p style="font-size:0.72rem; color:#666; margin:0; line-height:1.4;">
+          ※登録すると即座に全ユーザーの担当選択枠およびダッシュボードの負荷グラフへ自動反映されます。
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button onclick="closeAddCompanyModal()" style="background:#7f8c8d; padding:6px 12px;">キャンセル</button>
+        <button onclick="submitNewCompany()" style="background:#d35400; padding:6px 16px;">🏢 登録する</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCICc75-iLAn2vIWBoxJBLGQQRd7lhiLDs",
@@ -802,6 +837,7 @@
     const db = firebase.database();
     const tasksRef = db.ref('narita_gantt_tasks');
     const updateRef = db.ref('narita_gantt_last_update');
+    const companiesRef = db.ref('narita_gantt_custom_companies');
 
     const START_DATE = new Date("2026-08-01");
     const END_DATE = new Date("2027-03-31");
@@ -810,6 +846,10 @@
 
     /* 🔑 管理者パスワード設定 */
     const ADMIN_PASSWORD = "0705";
+
+    /* 初期（デフォルト）の担当会社一覧 */
+    const defaultOwners = ["Cuebus", "Hamaru Strategy", "成田国際空港", "全社合同"];
+    let customOwners = [];
 
     const categoryNames = {
       "1": "📂 カテゴリー 1：什器開発・現地仕様確定",
@@ -852,6 +892,7 @@
     let draggedIndex = null;
     let isAdminUnlocked = false;
 
+    // Firebaseからタスクデータの監視
     tasksRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -860,6 +901,18 @@
         tasks = JSON.parse(JSON.stringify(defaultTasks));
         saveTasks();
       }
+      renderAll();
+    });
+
+    // Firebaseからカスタム追加会社の監視
+    companiesRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        customOwners = data;
+      } else {
+        customOwners = [];
+      }
+      updateCompanyDropdowns();
       renderAll();
     });
 
@@ -877,6 +930,36 @@
       updateRef.set(timeString);
     }
 
+    /* 🏢 全体で使用するすべての会社リストを取得 */
+    function getAllOwners() {
+      return [...defaultOwners, ...customOwners];
+    }
+
+    /* 🏢 各ドロップダウンの選択肢を自動更新 */
+    function updateCompanyDropdowns() {
+      const allList = getAllOwners();
+      
+      const filterSelect = document.getElementById("filter-owner");
+      const currentFilterVal = filterSelect.value;
+      filterSelect.innerHTML = `<option value="ALL">全社表示</option>`;
+      allList.forEach(o => {
+        const opt = document.createElement("option");
+        opt.value = o;
+        opt.innerText = o;
+        filterSelect.appendChild(opt);
+      });
+      filterSelect.value = currentFilterVal;
+
+      const modalSelect = document.getElementById("modal-owner");
+      modalSelect.innerHTML = "";
+      allList.forEach(o => {
+        const opt = document.createElement("option");
+        opt.value = o;
+        opt.innerText = o;
+        modalSelect.appendChild(opt);
+      });
+    }
+
     function toggleDashPanel(openState) {
       const panel = document.getElementById("dash-panel");
       if (openState !== undefined) {
@@ -887,13 +970,13 @@
       }
     }
 
-    /* 🎯 モーダル（ポップアップ）制御関数 */
+    /* 🎯 タスク追加ポップアップ（モーダル）制御関数 */
     function openAddTaskModal() {
+      updateCompanyDropdowns();
       document.getElementById("add-task-modal").classList.add("active");
       document.getElementById("modal-name").value = "";
       document.getElementById("modal-name").focus();
       
-      // 今日の日付を初期セット
       const todayStr = TODAY.toISOString().split('T')[0];
       document.getElementById("modal-start").value = todayStr;
       autoFillEndDate(todayStr);
@@ -903,7 +986,36 @@
       document.getElementById("add-task-modal").classList.remove("active");
     }
 
-    /* 開始日入力時に7日後を自動セットするアシスト */
+    /* 🏢 会社追加ポップアップ（モーダル）制御関数 */
+    function openAddCompanyModal() {
+      document.getElementById("add-company-modal").classList.add("active");
+      document.getElementById("modal-company-name").value = "";
+      document.getElementById("modal-company-name").focus();
+    }
+
+    function closeAddCompanyModal() {
+      document.getElementById("add-company-modal").classList.remove("active");
+    }
+
+    /* 🏢 新しい担当会社の登録実行 */
+    function submitNewCompany() {
+      const name = document.getElementById("modal-company-name").value.trim();
+      if (!name) {
+        alert("会社名・外注先名称を入力してください。");
+        return;
+      }
+
+      if (getAllOwners().includes(name)) {
+        alert("すでに登録されている名称です。");
+        return;
+      }
+
+      customOwners.push(name);
+      companiesRef.set(customOwners);
+      closeAddCompanyModal();
+      alert(`🎉 新しい担当会社「${name}」を登録しました！\n（全社の担当欄およびダッシュボードに追加されました）`);
+    }
+
     function autoFillEndDate(startDateStr) {
       if (!startDateStr) return;
       const d = new Date(startDateStr);
@@ -911,7 +1023,6 @@
       document.getElementById("modal-end").value = d.toISOString().split('T')[0];
     }
 
-    /* ポップアップからの登録実行処理 */
     function submitNewTask() {
       const catVal = document.getElementById("modal-category").value;
       const nameVal = document.getElementById("modal-name").value.trim();
@@ -926,12 +1037,10 @@
         return;
       }
 
-      // 該当カテゴリーの既存タスク数をカウントして自動ID生成
       const categoryTasks = tasks.filter(t => t.id && String(t.id).startsWith(catVal + "."));
       const newSubIdx = categoryTasks.length + 1;
       const newID = `${catVal}.${newSubIdx}`;
 
-      // 該当カテゴリーの最後の位置を探して挿入
       let lastIndex = -1;
       tasks.forEach((t, idx) => {
         if (t.id && String(t.id).startsWith(catVal + ".")) {
@@ -959,7 +1068,6 @@
       saveTasks();
       closeAddTaskModal();
       
-      // 追加したタスクまでスムーズスクロール
       setTimeout(() => scrollToTask(newID), 300);
     }
 
@@ -971,7 +1079,8 @@
       
       const backupData = {
         label: label,
-        tasks: JSON.parse(JSON.stringify(tasks))
+        tasks: JSON.parse(JSON.stringify(tasks)),
+        customOwners: JSON.parse(JSON.stringify(customOwners))
       };
 
       let backups = JSON.parse(localStorage.getItem("N_GANTT_BACKUPS") || "{}");
@@ -1004,6 +1113,10 @@
           if (confirm(`「${backups[chosenKey].label}」の状態に全社データを復元しますか？\n（現在のデータは置き換わります）`)) {
             tasks = JSON.parse(JSON.stringify(backups[chosenKey].tasks));
             saveTasks();
+            if (backups[chosenKey].customOwners) {
+              customOwners = JSON.parse(JSON.stringify(backups[chosenKey].customOwners));
+              companiesRef.set(customOwners);
+            }
             alert("🎉 バックアップデータを読み込み、復元しました！");
           }
         } else {
@@ -1087,10 +1200,10 @@
         });
       }
 
-      // 4. 担当会社別の負荷分析（未完了タスク件数）
+      // 4. 担当会社別の負荷分析
       const loadBarsContainer = document.getElementById("dash-load-bars");
       loadBarsContainer.innerHTML = "";
-      const owners = ["Cuebus", "Hamaru Strategy", "成田国際空港", "全社合同"];
+      const owners = getAllOwners();
 
       owners.forEach(owner => {
         const ownerUncompleted = tasks.filter(t => t.owner === owner && t.status !== "完了").length;
@@ -1100,7 +1213,7 @@
         const row = document.createElement("div");
         row.className = "load-bar-row";
         row.innerHTML = `
-          <div class="load-bar-label">${owner}</div>
+          <div class="load-bar-label" title="${owner}">${owner}</div>
           <div class="load-bar-bg">
             <div class="load-bar-fill" style="width: ${loadPercent}%;"></div>
           </div>
@@ -1133,7 +1246,6 @@
       }
     }
 
-    /* 🎯 クリックで該当タスク行にスムーズスクロール */
     function scrollToTask(taskId) {
       const tbody = document.getElementById("task-tbody");
       const rows = tbody.querySelectorAll("tr");
@@ -1238,6 +1350,7 @@
       }
     }
 
+    /* 🔴 今日のヘッダーセル＆背景ハイライト生成 */
     function renderGanttHeader() {
       const headerContainer = document.getElementById("gantt-header");
       headerContainer.innerHTML = "";
@@ -1259,7 +1372,11 @@
         if (d.getDay() === 6) cls += " sat";
         if (d.getDay() === 0) cls += " sun";
         
-        if (d.toDateString() === TODAY.toDateString()) cls += " today";
+        // 🔴 今日ハイライト判定
+        if (d.toDateString() === TODAY.toDateString()) {
+          cls += " today";
+          dayCell.title = "今日（現在日）";
+        }
 
         dayCell.className = cls;
         dayCell.innerText = d.getDate();
@@ -1289,7 +1406,8 @@
       if (owner === '成田国際空港') return 'owner-naa';
       if (owner === 'Cuebus') return 'owner-cuebus';
       if (owner === 'Hamaru Strategy') return 'owner-hamaru';
-      return 'owner-joint';
+      if (owner === '全社合同') return 'owner-joint';
+      return 'owner-custom';
     }
 
     function renderAll() {
@@ -1319,6 +1437,7 @@
       ganttBody.innerHTML = "";
 
       const totalWidth = daysArray.length * DAY_WIDTH;
+      const allOwnersList = getAllOwners();
 
       let currentCategoryGroup = null;
 
@@ -1347,6 +1466,12 @@
           if (endDate < TODAY) isDelayed = true;
         }
 
+        let ownerOptionsHTML = "";
+        allOwnersList.forEach(o => {
+          const isSelected = (t.owner === o) ? 'selected' : '';
+          ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
+        });
+
         const tr = document.createElement("tr");
         tr.dataset.index = realIdx;
 
@@ -1359,10 +1484,7 @@
           <td><input type="text" value="${t.name || ''}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
           <td style="text-align:center;">
             <select class="owner-select ${getOwnerClass(t.owner)}" onchange="updateTask(${realIdx}, 'owner', this.value)" style="width: 100%;">
-              <option value="Cuebus" class="owner-cuebus" ${t.owner === 'Cuebus' ? 'selected' : ''}>Cuebus</option>
-              <option value="Hamaru Strategy" class="owner-hamaru" ${t.owner === 'Hamaru Strategy' ? 'selected' : ''}>Hamaru Strategy</option>
-              <option value="成田国際空港" class="owner-naa" ${t.owner === '成田国際空港' ? 'selected' : ''}>成田国際空港</option>
-              <option value="全社合同" class="owner-joint" ${t.owner === '全社合同' ? 'selected' : ''}>全社合同</option>
+              ${ownerOptionsHTML}
             </select>
           </td>
           <td><input type="date" value="${t.start || ''}" class="${isDelayed ? 'is-delayed' : ''}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
@@ -1398,11 +1520,17 @@
         gRow.className = "gantt-row";
         gRow.style.width = totalWidth + "px";
 
+        /* 🔴 チャートセル生成（今日背景帯の付与） */
         daysArray.forEach(d => {
           const bgCell = document.createElement("div");
           let cls = "gantt-bg-cell";
           if (d.getDay() === 6) cls += " sat";
           if (d.getDay() === 0) cls += " sun";
+          
+          if (d.toDateString() === TODAY.toDateString()) {
+            cls += " today";
+          }
+
           bgCell.className = cls;
           gRow.appendChild(bgCell);
         });
@@ -1522,6 +1650,8 @@
     function resetData() {
       if (confirm("初期のタスク・日付状態にリセットしますか？（全社のデータが初期化されます）")) {
         tasks = JSON.parse(JSON.stringify(defaultTasks));
+        customOwners = [];
+        companiesRef.set([]);
         saveTasks();
       }
     }
@@ -1545,7 +1675,7 @@
       document.body.removeChild(link);
     }
 
-    /* 📖 実用取扱マニュアル（更新版） */
+    /* 📖 実用取扱マニュアル */
     function downloadManual() {
       const manualText = `==================================================
 【工程表 CaraCuriCube】運用取扱マニュアル
@@ -1557,24 +1687,31 @@
 1. システムの基本仕様
 --------------------------------------------------
 ■ リアルタイム全社同期
-   ブラウザ上でタスク内容、日付、進捗ステータスを変更すると、クラウドを介して他の閲覧者の画面へ即座に自動反映されます。手動で保存ボタンを押す必要はありません。
+   ブラウザ上でタスク内容、日付、担当会社、進捗ステータスを変更すると、クラウドを介して他の閲覧者の画面へ即座に自動反映されます。手動保存は不要です。
+
+■ 🔴 「今日（現在日）」のハイライト表示
+   カレンダーヘッダーの当日日付が赤色で強調表示されるほか、ガントチャートの今日にあたる縦1列全体に薄い赤色の背景帯が表示され、現在の進行位置が一目で分かります。
 
 ■ 分析ダッシュボード（画面右側パネル）
    現在の登録タスク状況から、以下の指標がリアルタイムで自動計算・更新されます。
    ・全体進捗率: プロジェクト全体の完了タスクの割合
    ・最重要CP（クリティカルパス）進行状況: 重点管理タスクの消化率
    ・期限超過タスク: 完了期限を過ぎて未完了のタスク一覧（クリックで該当行へ自動移動）
-   ・担当会社別の残タスク負荷: 各社の未完了タスク件数と負荷割合
+   ・担当会社別の残タスク負荷: 各社（新規追加した外注会社を含む）の未完了タスク件数と負荷割合
    ・保留・要協議タスク: 打ち合わせや朝会で確認すべき課題タスクの一覧
 
 --------------------------------------------------
 2. 基本的な操作手順
 --------------------------------------------------
-【タスクの新規追加】（モーダル登録）
-  画面上部の「＋ 新規タスク追加」ボタンをクリックすると、専用のポップアップウィンドウが表示されます。
+【タスクの新規追加】（ポップアップ登録）
+  画面上部の「＋ 新規タスク追加」ボタンをクリックすると、専用のポップアップ画面が表示されます。
   1. 登録したいカテゴリー（例: 1:什器開発、2:商品・IP...）を選択します。
-  2. タスク名称、担当会社、開始日・完了期限（※開始日を入れると自動で7日後がセットされます）、進捗状況、CP設定を行います。
-  3. 「＋ 登録する」を押すと、指定したカテゴリーの定位置へ自動的に整理・採番されて追加されます。
+  2. タスク名称、担当会社（外注先を含む）、開始日・完了期限、進捗状況、CP設定を行います。
+  3. 「＋ 登録する」を押すと、指定したカテゴリーの最下部へ自動的に移動・追加・採番されます。
+
+【🏢 担当会社・外注先の新規登録】
+  外注先や新しい協力会社が増えた場合、上部の「🏢 担当会社追加」ボタンから新しい会社名を登録できます。
+  登録した会社名は全ユーザーのドロップダウン選択肢およびダッシュボードの負荷グラフへ即座に追加されます。
 
 【直接編集】
   テーブル内のセルをクリックすることで、タスク名、担当会社、日付、進捗状況をいつでも直接変更可能です。
@@ -1582,13 +1719,10 @@
 【タスクの並び替え・移動】
   行の左端にある「≡」アイコンをドラッグ＆ドロップするか、操作列の［↑］［↓］ボタンを押すことで順序を変更できます。
 
-【遅延（アラート）表示】
-  完了期限を過ぎて未完了（完了以外）のタスクは、日付セルが自動的に【赤背景】で強調されます。
-
 --------------------------------------------------
 3. データのバックアップ・管理
 --------------------------------------------------
-・「🔑 管理者」メニュー（パスワード: 0705）から「📸 現在のデータバックアップ作成」を実行すると、その時点のタスク状態を日付付きで保存できます。
+・「🔑 管理者」メニュー（パスワード: 0705）から「📸 現在のデータバックアップ作成」を実行すると、その時点のタスク状態および会社リストを日付付きで保存できます。
 ・「📂 バックアップから復元」を実行すると、過去の保存データを選択していつでも元の状態に戻すことができます。
 ・不要になった過去のバックアップは「🗑️ バックアップ削除」から個別整理が可能です。
 
