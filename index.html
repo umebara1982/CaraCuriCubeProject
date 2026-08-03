@@ -409,6 +409,28 @@
     }
     .chat-del-btn:hover { opacity: 1; }
 
+    /* スタンプボタンエリア */
+    .stamp-bar {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .stamp-btn {
+      background: #FFFFFF;
+      border: 1px solid #D1C4E9;
+      color: #8e44ad;
+      padding: 2px 6px;
+      border-radius: 12px;
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .stamp-btn:hover {
+      background: #8e44ad;
+      color: #FFFFFF;
+    }
+
     .task-side {
       width: 60%;
       min-width: 300px;
@@ -818,6 +840,15 @@
         <div class="dash-card" style="border: 2px solid #8e44ad; background: #FAF5FF;">
           <div class="dash-card-title" style="color: #8e44ad;">💬 リアルタイム伝言チャット</div>
           
+          <!-- ワンタップ スタンプボタン -->
+          <div class="stamp-bar">
+            <button class="stamp-btn" onclick="submitStamp('👍 了解')">👍 了解</button>
+            <button class="stamp-btn" onclick="submitStamp('✅ 済')">✅ 済</button>
+            <button class="stamp-btn" onclick="submitStamp('🙏 感謝')">🙏 感謝</button>
+            <button class="stamp-btn" onclick="submitStamp('👀 確認中')">👀 確認中</button>
+            <button class="stamp-btn" onclick="submitStamp('⚠️ 要対応')">⚠️ 要対応</button>
+          </div>
+
           <!-- チャット入力欄 & 差出人会社選択 -->
           <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
             <div style="display: flex; gap: 4px;">
@@ -1106,7 +1137,7 @@
     function submitMemo() {
       const input = document.getElementById("memo-input");
       const text = input.value.trim();
-      const sender = document.getElementById("memo-sender-select").value || "共有";
+      const sender = document.getElementById("memo-sender-select").value || "全社合同";
       if (!text) return;
 
       const now = new Date();
@@ -1121,6 +1152,22 @@
 
       memosRef.set(memoList);
       input.value = "";
+    }
+
+    /* 💬 ワンタップスタンプの送信 */
+    function submitStamp(stampText) {
+      const sender = document.getElementById("memo-sender-select").value || "全社合同";
+      const now = new Date();
+      const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+
+      memoList.push({
+        id: Date.now().toString(),
+        sender: sender,
+        text: stampText,
+        time: timeStr
+      });
+
+      memosRef.set(memoList);
     }
 
     /* 💬 伝言板（メモ）の削除 */
@@ -1144,12 +1191,11 @@
         const item = document.createElement("div");
         item.className = "chat-bubble";
         
-        // 会社に応じた背景色クラス
         const ownerCls = getOwnerClass(m.sender || "全社合同");
         
         item.innerHTML = `
           <div class="chat-header">
-            <span class="chat-sender ${ownerCls}" style="padding:1px 5px; border-radius:3px;">${m.sender || '共有'}</span>
+            <span class="chat-sender ${ownerCls}" style="padding:1px 5px; border-radius:3px;">${m.sender || '全社合同'}</span>
             <div>
               <span class="chat-time">${m.time}</span>
               <button onclick="deleteMemo('${m.id}')" class="chat-del-btn" style="margin-left:4px;">消</button>
@@ -1160,7 +1206,7 @@
         container.appendChild(item);
       });
 
-      // 最新のメッセージの位置へ自動スクロール
+      // 最新メッセージへの自動スクロール
       container.scrollTop = container.scrollHeight;
     }
 
@@ -1216,7 +1262,6 @@
       const modalSelect = document.getElementById("modal-owner");
       modalSelect.innerHTML = "";
 
-      // 💬 伝言板用差出人ドロップダウン
       const senderSelect = document.getElementById("memo-sender-select");
       if (senderSelect) senderSelect.innerHTML = "";
 
@@ -2052,7 +2097,7 @@
    ブラウザ上でタスク内容、日付、担当会社、進捗ステータス、カテゴリー、伝言メモ等を変更すると、クラウドを介して他の閲覧者の画面へ即座に自動反映されます。手動保存は不要です。
 
 ■ 💬 リアルタイム伝言チャット
-   ダッシュボード最下部に吹き出し形式の共有チャットが設置されています。会社名を選択して伝言を残したり、不要なメッセージを削除・整理できます。全社リアルタイム同期されます。
+   ダッシュボード最下部に吹き出し形式の共有チャットが設置されています。ワンタップスタンプ（了解、済、感謝など）や自由メモを残せます。不要メッセージの削除整理も可能です。全社リアルタイム同期されます。
 
 ■ 🟢 「今日（現在日）」のハイライト表示
    カレンダーヘッダーの当日日付および中央の縦線が緑色（エメラルドグリーン）で強調表示されるほか、ガントチャートの今日にあたる縦1列全体に薄い緑色の背景帯が表示され、現在の進行位置が一目で分かります。
