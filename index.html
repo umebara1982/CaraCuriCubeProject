@@ -349,29 +349,65 @@
     }
     .clickable-task-item:hover { background: #EBF5FB; border-color: #3498db; }
 
-    /* 💬 伝言板（掲示板）カード専用スタイル */
-    .memo-item {
-      background: #FFF;
-      border: 1px solid #CBD5E1;
-      border-radius: 5px;
-      padding: 6px 8px;
-      margin-bottom: 6px;
+    /* 💬 チャット風伝言板スタイル */
+    .chat-container {
+      max-height: 200px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 4px;
+      background: #FFFFFF;
+      border: 1px solid #E2E8F0;
+      border-radius: 6px;
+    }
+
+    .chat-bubble {
+      display: flex;
+      flex-direction: column;
+      background: #F1F5F9;
+      padding: 6px 10px;
+      border-radius: 8px;
+      position: relative;
+      font-size: 0.75rem;
+      border-left: 3px solid #8e44ad;
+    }
+
+    .chat-header {
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
-      gap: 6px;
+      align-items: center;
+      font-size: 0.68rem;
+      margin-bottom: 3px;
     }
-    .memo-text {
-      font-size: 0.75rem;
+
+    .chat-sender {
+      font-weight: bold;
+      color: #1B365D;
+    }
+
+    .chat-time {
+      color: #888;
+      font-size: 0.62rem;
+    }
+
+    .chat-text {
       color: #2C3E50;
       word-break: break-word;
       line-height: 1.35;
     }
-    .memo-meta {
-      font-size: 0.65rem;
-      color: #888;
-      margin-top: 2px;
+
+    .chat-del-btn {
+      background: #e74c3c;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      padding: 1px 4px;
+      font-size: 0.62rem;
+      cursor: pointer;
+      opacity: 0.7;
     }
+    .chat-del-btn:hover { opacity: 1; }
 
     .task-side {
       width: 60%;
@@ -778,16 +814,23 @@
           </div>
         </div>
 
-        <!-- 💬 伝言板（リアルタイム自由共有掲示板） -->
+        <!-- 💬 チャット風 伝言板（タイムライン掲示板） -->
         <div class="dash-card" style="border: 2px solid #8e44ad; background: #FAF5FF;">
-          <div class="dash-card-title" style="color: #8e44ad;">💬 プロジェクト伝言板（リアルタイムメモ）</div>
+          <div class="dash-card-title" style="color: #8e44ad;">💬 リアルタイム伝言チャット</div>
           
-          <div style="display: flex; gap: 4px; margin-bottom: 8px;">
-            <input type="text" id="memo-input" placeholder="例：〇〇の件、進捗いかがでしょうか？" style="flex: 1;" onkeypress="if(event.key==='Enter') submitMemo()">
-            <button onclick="submitMemo()" style="background: #8e44ad; padding: 4px 10px; font-size: 0.75rem;">送信</button>
+          <!-- チャット入力欄 & 差出人会社選択 -->
+          <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
+            <div style="display: flex; gap: 4px;">
+              <select id="memo-sender-select" style="font-size: 0.72rem; padding: 2px 4px;">
+                <!-- JSで動的生成 -->
+              </select>
+              <input type="text" id="memo-input" placeholder="例：〇〇の件、進捗いかがでしょうか？" style="flex: 1;" onkeypress="if(event.key==='Enter') submitMemo()">
+              <button onclick="submitMemo()" style="background: #8e44ad; padding: 4px 10px; font-size: 0.75rem;">送信</button>
+            </div>
           </div>
 
-          <div id="memo-list" style="max-height: 180px; overflow-y: auto;">
+          <!-- チャットメッセージタイムライン -->
+          <div class="chat-container" id="memo-list">
             <!-- JSで動的描画 -->
           </div>
         </div>
@@ -1034,7 +1077,7 @@
       renderAll();
     });
 
-    // 💬 Firebaseから伝言板メモの監視（初期は空）
+    // 💬 Firebaseから伝言板メモの監視
     memosRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -1063,13 +1106,15 @@
     function submitMemo() {
       const input = document.getElementById("memo-input");
       const text = input.value.trim();
+      const sender = document.getElementById("memo-sender-select").value || "共有";
       if (!text) return;
 
       const now = new Date();
       const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
-      memoList.unshift({
+      memoList.push({
         id: Date.now().toString(),
+        sender: sender,
         text: text,
         time: timeStr
       });
@@ -1084,29 +1129,39 @@
       memosRef.set(memoList);
     }
 
-    /* 💬 伝言板リストの描画 */
+    /* 💬 チャット風 伝言板リストの描画 */
     function renderMemos() {
       const container = document.getElementById("memo-list");
       if (!container) return;
 
       container.innerHTML = "";
       if (memoList.length === 0) {
-        container.innerHTML = `<div style="color:#888; font-size:0.72rem;">伝言メモは現在ありません。</div>`;
+        container.innerHTML = `<div style="color:#888; font-size:0.72rem; padding: 10px; text-align: center;">伝言メモは現在ありません。</div>`;
         return;
       }
 
       memoList.forEach(m => {
         const item = document.createElement("div");
-        item.className = "memo-item";
+        item.className = "chat-bubble";
+        
+        // 会社に応じた背景色クラス
+        const ownerCls = getOwnerClass(m.sender || "全社合同");
+        
         item.innerHTML = `
-          <div>
-            <div class="memo-text">${m.text}</div>
-            <div class="memo-meta">🕒 ${m.time}</div>
+          <div class="chat-header">
+            <span class="chat-sender ${ownerCls}" style="padding:1px 5px; border-radius:3px;">${m.sender || '共有'}</span>
+            <div>
+              <span class="chat-time">${m.time}</span>
+              <button onclick="deleteMemo('${m.id}')" class="chat-del-btn" style="margin-left:4px;">消</button>
+            </div>
           </div>
-          <button onclick="deleteMemo('${m.id}')" style="background:#e74c3c; padding:2px 6px; font-size:0.65rem; border-radius:3px; flex-shrink:0;">削除</button>
+          <div class="chat-text">${m.text}</div>
         `;
         container.appendChild(item);
       });
+
+      // 最新のメッセージの位置へ自動スクロール
+      container.scrollTop = container.scrollHeight;
     }
 
     /* 🏢 全体で使用するすべての会社リストを取得 */
@@ -1160,11 +1215,23 @@
 
       const modalSelect = document.getElementById("modal-owner");
       modalSelect.innerHTML = "";
+
+      // 💬 伝言板用差出人ドロップダウン
+      const senderSelect = document.getElementById("memo-sender-select");
+      if (senderSelect) senderSelect.innerHTML = "";
+
       allList.forEach(o => {
         const opt = document.createElement("option");
         opt.value = o;
         opt.innerText = o;
         modalSelect.appendChild(opt);
+
+        if (senderSelect) {
+          const opt2 = document.createElement("option");
+          opt2.value = o;
+          opt2.innerText = o;
+          senderSelect.appendChild(opt2);
+        }
       });
 
       const customListContainer = document.getElementById("custom-company-list");
@@ -1984,8 +2051,8 @@
 ■ リアルタイム全社同期
    ブラウザ上でタスク内容、日付、担当会社、進捗ステータス、カテゴリー、伝言メモ等を変更すると、クラウドを介して他の閲覧者の画面へ即座に自動反映されます。手動保存は不要です。
 
-■ 💬 プロジェクト伝言板（リアルタイム自由共有掲示板）
-   ダッシュボード最下部に伝言板が設置されています。自由なメモを残したり、不要になったメモを削除・整理できます。全社リアルタイム同期されます。
+■ 💬 リアルタイム伝言チャット
+   ダッシュボード最下部に吹き出し形式の共有チャットが設置されています。会社名を選択して伝言を残したり、不要なメッセージを削除・整理できます。全社リアルタイム同期されます。
 
 ■ 🟢 「今日（現在日）」のハイライト表示
    カレンダーヘッダーの当日日付および中央の縦線が緑色（エメラルドグリーン）で強調表示されるほか、ガントチャートの今日にあたる縦1列全体に薄い緑色の背景帯が表示され、現在の進行位置が一目で分かります。
