@@ -516,14 +516,14 @@
     .day-cell.sat { background-color: #F0F6FF; color: #0055AA; }
     .day-cell.sun { background-color: #FFF0F0; color: #CC0000; }
     
-    /* 🟡 今日のヘッダーセルハイライト（イエロー変更版） */
+    /* 🟢 今日のヘッダーセルハイライト（エメラルドグリーン） */
     .day-cell.today { 
-      background: linear-gradient(135deg, #FFD700, #FFC107) !important; 
-      color: #2C3E50 !important; 
+      background: linear-gradient(135deg, #27AE60, #2ECC71) !important; 
+      color: #ffffff !important; 
       font-weight: bold;
-      border-left: 1px solid #D4AC0D;
-      border-right: 1px solid #D4AC0D;
-      box-shadow: inset 0 0 2px rgba(0,0,0,0.2);
+      border-left: 1px solid #1E8449;
+      border-right: 1px solid #1E8449;
+      box-shadow: inset 0 0 2px rgba(0,0,0,0.3);
     }
 
     .gantt-body { position: relative; background-color: #FFFFFF; }
@@ -550,22 +550,22 @@
     .gantt-bg-cell.sat { background-color: #F0F6FF; }
     .gantt-bg-cell.sun { background-color: #FFF0F0; }
     
-    /* 🟡 チャート本体の今日列ハイライト（薄黄色の背景帯） */
+    /* 🟩 チャート本体の今日列ハイライト（ミントグリーン背景） */
     .gantt-bg-cell.today { 
-      background-color: #FFFDE7 !important; 
-      border-right: 1px dashed #F1C40F !important;
+      background-color: #E8F8F5 !important; 
+      border-right: 1px dashed #27AE60 !important;
     }
 
-    /* 🟡 今日の縦ライン（イエロー変更版） */
+    /* 🟢 今日の縦ライン（エメラルドグリーン） */
     .today-line {
       position: absolute;
       top: 0;
       bottom: 0;
       width: 3px;
-      background-color: #FFC107;
+      background-color: #27AE60;
       z-index: 5;
       pointer-events: none;
-      box-shadow: 0 0 4px rgba(255, 193, 7, 0.6);
+      box-shadow: 0 0 4px rgba(39, 174, 96, 0.6);
     }
 
     .bar {
@@ -687,7 +687,7 @@
     <div class="legend">
       <span><span class="legend-box" style="background:#C00000;"></span> 赤：最重要パス(CP)</span>
       <span><span class="legend-box" style="background:#3498db;"></span> 青：通常タスク</span>
-      <span><span class="legend-box" style="background:#FFC107;"></span> 黄線：今日（現在日）</span>
+      <span><span class="legend-box" style="background:#27AE60;"></span> 緑線：今日（現在日）</span>
       <span><span class="legend-box" style="background:#fce4e4; border:1px solid #e74c3c;"></span> 赤セル：期限超過(遅延)</span>
     </div>
   </div>
@@ -1987,8 +1987,8 @@
 ■ 💬 プロジェクト伝言板（リアルタイム自由共有掲示板）
    ダッシュボード最下部に伝言板が設置されています。自由なメモを残したり、不要になったメモを削除・整理できます。全社リアルタイム同期されます。
 
-■ 🟡 「今日（現在日）」のハイライト表示
-   カレンダーヘッダーの当日日付および中央の縦線が黄色で強調表示されるほか、ガントチャートの今日にあたる縦1列全体に薄い黄色の背景帯が表示され、現在の進行位置が一目で分かります。
+■ 🟢 「今日（現在日）」のハイライト表示
+   カレンダーヘッダーの当日日付および中央の縦線が緑色（エメラルドグリーン）で強調表示されるほか、ガントチャートの今日にあたる縦1列全体に薄い緑色の背景帯が表示され、現在の進行位置が一目で分かります。
 
 ■ 分析ダッシュボード（画面右側パネル）
    現在の登録タスク状況から、以下の指標がリアルタイムで自動計算・更新されます。
