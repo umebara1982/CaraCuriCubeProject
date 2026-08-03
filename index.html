@@ -351,7 +351,7 @@
 
     /* 💬 チャット風伝言板スタイル */
     .chat-container {
-      max-height: 200px;
+      max-height: 220px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -397,6 +397,64 @@
       line-height: 1.35;
     }
 
+    .chat-reactions {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 4px;
+      align-items: center;
+    }
+
+    .reaction-badge {
+      background: #FFFFFF;
+      border: 1px solid #CBD5E1;
+      border-radius: 10px;
+      padding: 1px 6px;
+      font-size: 0.68rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      transition: all 0.2s;
+    }
+    .reaction-badge:hover {
+      background: #F3E5F5;
+      border-color: #8e44ad;
+    }
+
+    .reaction-add-btn {
+      background: #EFE6F7;
+      color: #8e44ad;
+      border: none;
+      border-radius: 10px;
+      padding: 1px 6px;
+      font-size: 0.65rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    .reaction-add-btn:hover { background: #8e44ad; color: #FFF; }
+
+    .stamp-picker {
+      display: none;
+      gap: 3px;
+      margin-top: 4px;
+      background: #FFF;
+      padding: 3px;
+      border-radius: 6px;
+      border: 1px solid #8e44ad;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .stamp-picker.active { display: flex; }
+
+    .stamp-picker-item {
+      cursor: pointer;
+      font-size: 0.85rem;
+      padding: 2px 4px;
+      border-radius: 4px;
+      transition: background 0.2s;
+    }
+    .stamp-picker-item:hover { background: #F3E5F5; }
+
     .chat-del-btn {
       background: #e74c3c;
       color: white;
@@ -408,28 +466,6 @@
       opacity: 0.7;
     }
     .chat-del-btn:hover { opacity: 1; }
-
-    /* スタンプボタンエリア */
-    .stamp-bar {
-      display: flex;
-      gap: 4px;
-      flex-wrap: wrap;
-      margin-bottom: 6px;
-    }
-    .stamp-btn {
-      background: #FFFFFF;
-      border: 1px solid #D1C4E9;
-      color: #8e44ad;
-      padding: 2px 6px;
-      border-radius: 12px;
-      font-size: 0.7rem;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .stamp-btn:hover {
-      background: #8e44ad;
-      color: #FFFFFF;
-    }
 
     .task-side {
       width: 60%;
@@ -840,15 +876,6 @@
         <div class="dash-card" style="border: 2px solid #8e44ad; background: #FAF5FF;">
           <div class="dash-card-title" style="color: #8e44ad;">💬 リアルタイム伝言チャット</div>
           
-          <!-- ワンタップ スタンプボタン -->
-          <div class="stamp-bar">
-            <button class="stamp-btn" onclick="submitStamp('👍 了解')">👍 了解</button>
-            <button class="stamp-btn" onclick="submitStamp('✅ 済')">✅ 済</button>
-            <button class="stamp-btn" onclick="submitStamp('🙏 感謝')">🙏 感謝</button>
-            <button class="stamp-btn" onclick="submitStamp('👀 確認中')">👀 確認中</button>
-            <button class="stamp-btn" onclick="submitStamp('⚠️ 要対応')">⚠️ 要対応</button>
-          </div>
-
           <!-- チャット入力欄 & 差出人会社選択 -->
           <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
             <div style="display: flex; gap: 4px;">
@@ -1147,27 +1174,31 @@
         id: Date.now().toString(),
         sender: sender,
         text: text,
-        time: timeStr
+        time: timeStr,
+        reactions: {}
       });
 
       memosRef.set(memoList);
       input.value = "";
     }
 
-    /* 💬 ワンタップスタンプの送信 */
-    function submitStamp(stampText) {
-      const sender = document.getElementById("memo-sender-select").value || "全社合同";
-      const now = new Date();
-      const timeStr = `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    /* 💬 メッセージへのスタンプリアクションの追加 */
+    function toggleReaction(memoId, emoji) {
+      const memo = memoList.find(m => m.id === memoId);
+      if (!memo) return;
 
-      memoList.push({
-        id: Date.now().toString(),
-        sender: sender,
-        text: stampText,
-        time: timeStr
-      });
+      if (!memo.reactions) memo.reactions = {};
+      memo.reactions[emoji] = (memo.reactions[emoji] || 0) + 1;
 
       memosRef.set(memoList);
+    }
+
+    /* 💬 スタンプピッカー表示切り替え */
+    function toggleStampPicker(memoId) {
+      const picker = document.getElementById(`stamp-picker-${memoId}`);
+      if (picker) {
+        picker.classList.toggle("active");
+      }
     }
 
     /* 💬 伝言板（メモ）の削除 */
@@ -1176,7 +1207,7 @@
       memosRef.set(memoList);
     }
 
-    /* 💬 チャット風 伝言板リストの描画 */
+    /* 💬 チャット風 伝言板リストの描画（メッセージ別リアクション機能搭載） */
     function renderMemos() {
       const container = document.getElementById("memo-list");
       if (!container) return;
@@ -1187,11 +1218,30 @@
         return;
       }
 
+      const stamps = ['👍', '✅', '🙏', '👀', '❤️', '⚠️'];
+
       memoList.forEach(m => {
         const item = document.createElement("div");
         item.className = "chat-bubble";
         
         const ownerCls = getOwnerClass(m.sender || "全社合同");
+
+        // リアクションバッジのHTML作成
+        let reactionsHTML = "";
+        if (m.reactions) {
+          Object.keys(m.reactions).forEach(emoji => {
+            const count = m.reactions[emoji];
+            if (count > 0) {
+              reactionsHTML += `<span class="reaction-badge" onclick="toggleReaction('${m.id}', '${emoji}')">${emoji} ${count}</span>`;
+            }
+          });
+        }
+
+        // スタンプ選択ピッカーHTML作成
+        let pickerStampsHTML = "";
+        stamps.forEach(s => {
+          pickerStampsHTML += `<span class="stamp-picker-item" onclick="toggleReaction('${m.id}', '${s}'); toggleStampPicker('${m.id}');">${s}</span>`;
+        });
         
         item.innerHTML = `
           <div class="chat-header">
@@ -1202,11 +1252,19 @@
             </div>
           </div>
           <div class="chat-text">${m.text}</div>
+          
+          <div class="chat-reactions">
+            ${reactionsHTML}
+            <button class="reaction-add-btn" onclick="toggleStampPicker('${m.id}')">＋スタンプ</button>
+          </div>
+
+          <div class="stamp-picker" id="stamp-picker-${m.id}">
+            ${pickerStampsHTML}
+          </div>
         `;
         container.appendChild(item);
       });
 
-      // 最新メッセージへの自動スクロール
       container.scrollTop = container.scrollHeight;
     }
 
@@ -2096,8 +2154,8 @@
 ■ リアルタイム全社同期
    ブラウザ上でタスク内容、日付、担当会社、進捗ステータス、カテゴリー、伝言メモ等を変更すると、クラウドを介して他の閲覧者の画面へ即座に自動反映されます。手動保存は不要です。
 
-■ 💬 リアルタイム伝言チャット
-   ダッシュボード最下部に吹き出し形式の共有チャットが設置されています。ワンタップスタンプ（了解、済、感謝など）や自由メモを残せます。不要メッセージの削除整理も可能です。全社リアルタイム同期されます。
+■ 💬 リアルタイム伝言チャット（スタンプリアクション機能付き）
+   ダッシュボード最下部に吹き出し形式の共有チャットが設置されています。書き込まれた伝言に対してメッセージごとの「＋スタンプ」ボタンからワンタップで絵文字リアクション（👍, ✅, 🙏等）が送れます。
 
 ■ 🟢 「今日（現在日）」のハイライト表示
    カレンダーヘッダーの当日日付および中央の縦線が緑色（エメラルドグリーン）で強調表示されるほか、ガントチャートの今日にあたる縦1列全体に薄い緑色の背景帯が表示され、現在の進行位置が一目で分かります。
