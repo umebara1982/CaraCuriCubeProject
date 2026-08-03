@@ -563,6 +563,20 @@
       font-weight: bold;
     }
 
+    /* ░ 日付未入力（空欄）スタイルの斜めストライプ ░ */
+    .is-empty-date {
+      background-color: #F8FAFC !important;
+      background-image: repeating-linear-gradient(
+        45deg,
+        #E2E8F0 0,
+        #E2E8F0 2px,
+        transparent 0,
+        transparent 6px
+      ) !important;
+      border: 1px dashed #94A3B8 !important;
+      color: #64748B !important;
+    }
+
     tr.dragging { opacity: 0.4; background-color: #e0e0e0; }
 
     .gantt-header-container {
@@ -783,6 +797,7 @@
       <span><span class="legend-box" style="background:#3498db;"></span> 青：通常タスク</span>
       <span><span class="legend-box" style="background:#27AE60;"></span> 緑線：今日（現在日）</span>
       <span><span class="legend-box" style="background:#fce4e4; border:1px solid #e74c3c;"></span> 赤セル：期限超過(遅延)</span>
+      <span><span class="legend-box" style="background-image:repeating-linear-gradient(45deg,#E2E8F0 0,#E2E8F0 2px,transparent 0,transparent 6px); border:1px dashed #94A3B8;"></span> 斜線セル：日付未入力</span>
     </div>
   </div>
 
@@ -1928,6 +1943,9 @@
           if (endDate < TODAY) isDelayed = true;
         }
 
+        const isStartEmpty = !t.start;
+        const isEndEmpty = !t.end;
+
         let ownerOptionsHTML = "";
         allOwnersList.forEach(o => {
           const isSelected = (t.owner === o) ? 'selected' : '';
@@ -1949,8 +1967,8 @@
               ${ownerOptionsHTML}
             </select>
           </td>
-          <td><input type="date" value="${t.start || ''}" class="${isDelayed ? 'is-delayed' : ''}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
-          <td><input type="date" value="${t.end || ''}" class="${isDelayed ? 'is-delayed' : ''}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
+          <td><input type="date" value="${t.start || ''}" class="${isDelayed ? 'is-delayed' : ''} ${isStartEmpty ? 'is-empty-date' : ''}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
+          <td><input type="date" value="${t.end || ''}" class="${isDelayed ? 'is-delayed' : ''} ${isEndEmpty ? 'is-empty-date' : ''}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
           <td style="text-align:center;">
             <select class="status-select ${getStatusClass(t.status)}" onchange="updateTask(${realIdx}, 'status', this.value)">
               <option value="未着手" ${t.status === '未着手' ? 'selected' : ''}>未着手</option>
@@ -2153,6 +2171,9 @@
 --------------------------------------------------
 ■ リアルタイム全社同期
    ブラウザ上でタスク内容、日付、担当会社、進捗ステータス、カテゴリー、伝言メモ等を変更すると、クラウドを介して他の閲覧者の画面へ即座に自動反映されます。手動保存は不要です。
+
+■ ░ 日付未入力タスクの斜めストライプ表示
+   開始日や完了期限が空欄（未設定）のセルは、薄いグレーの斜めストライプ（点線枠）で自動ハイライトされ、入力漏れやスケジュール確定が必要なタスクが一目で分かります。
 
 ■ 💬 リアルタイム伝言チャット（スタンプリアクション機能付き）
    ダッシュボード最下部に吹き出し形式の共有チャットが設置されています。書き込まれた伝言に対してメッセージごとの「＋スタンプ」ボタンからワンタップで絵文字リアクション（👍, ✅, 🙏等）が送れます。
