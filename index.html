@@ -91,14 +91,16 @@
 
     button:hover { opacity: 0.9; }
 
+    /* 🎨 各操作ボタン専用カラー（重複解消） */
     .btn-add { background-color: #27ae60; box-shadow: 0 0 5px rgba(39, 174, 96, 0.4); }
     .btn-category { background-color: #16a085; box-shadow: 0 0 5px rgba(22, 160, 133, 0.3); }
-    .btn-company { background-color: #d35400; box-shadow: 0 0 5px rgba(211, 84, 0, 0.3); }
+    .btn-company { background-color: #e67e22; box-shadow: 0 0 5px rgba(230, 126, 34, 0.3); }
     .btn-csv { background-color: #8e44ad; }
-    .btn-manual { background-color: #16a085; }
+    .btn-manual { background-color: #7f8c8d; }
     .btn-dash { background-color: #2980b9; box-shadow: 0 0 5px rgba(41, 128, 185, 0.4); }
+    .btn-admin { background-color: #c00000; box-shadow: 0 0 5px rgba(192, 0, 0, 0.4); }
+
     .btn-copy-full { background-color: #6c5ce7; }
-    .btn-admin { background-color: #d35400; }
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
     .btn-move { background-color: #34495e; padding: 2px 4px; font-size: 0.72rem; }
 
@@ -109,7 +111,7 @@
       background: #f1f2f6;
       padding: 6px 12px;
       border-radius: 4px;
-      border: 1px dashed #d35400;
+      border: 1px dashed #c00000;
       flex-wrap: wrap;
     }
 
@@ -1004,7 +1006,7 @@
   <!-- 🏢 担当会社管理（追加・削除）ポップアップ（モーダル） -->
   <div class="modal-overlay" id="add-company-modal">
     <div class="modal-card" style="width:400px;">
-      <div class="modal-header" style="background:#d35400;">
+      <div class="modal-header" style="background:#e67e22;">
         <span>🏢 担当会社・外注先の管理</span>
         <button onclick="closeAddCompanyModal()" style="background:transparent; border:none; color:white; font-size:1.2rem; cursor:pointer;">✖</button>
       </div>
@@ -1013,7 +1015,7 @@
           <label>新しい会社名・外注先名称の追加</label>
           <div style="display:flex; gap:6px;">
             <input type="text" id="modal-company-name" placeholder="例：演出外注A社" style="flex:1;">
-            <button onclick="submitNewCompany()" style="background:#d35400; padding:4px 12px;">追加</button>
+            <button onclick="submitNewCompany()" style="background:#e67e22; padding:4px 12px;">追加</button>
           </div>
         </div>
 
