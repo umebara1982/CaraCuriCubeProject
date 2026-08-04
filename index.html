@@ -773,7 +773,7 @@
     <button onclick="openCategoryModal()" class="btn-category">📂 カテゴリー管理</button>
     <button onclick="openAddCompanyModal()" class="btn-company">🏢 担当会社管理</button>
     <button onclick="exportCSV()" class="btn-csv">📥 CSV出力</button>
-    <button onclick="downloadManual()" class="btn-manual">📖 マニュアル</button>
+    <button onclick="openManualModal()" class="btn-manual">📖 マニュアル</button>
     <button onclick="toggleDashPanel(true)" class="btn-dash">📊 分析ダッシュボード</button>
 
     <button onclick="toggleAdminMenu()" class="btn-admin">🔑 管理者</button>
@@ -1034,6 +1034,41 @@
     </div>
   </div>
 
+  <!-- 📖 取扱マニュアル表示ポップアップ（モーダル） -->
+  <div class="modal-overlay" id="manual-modal">
+    <div class="modal-card" style="width:600px; max-width:95%;">
+      <div class="modal-header" style="background:#7f8c8d;">
+        <span>📖 取扱マニュアル・機能ガイド</span>
+        <button onclick="closeManualModal()" style="background:transparent; border:none; color:white; font-size:1.2rem; cursor:pointer;">✖</button>
+      </div>
+      <div class="modal-body" style="max-height: 420px; overflow-y: auto; font-size: 0.78rem; line-height: 1.6;">
+        <h4 style="margin: 0 0 6px 0; color: var(--primary-color);">1. システムの基本仕様</h4>
+        <ul style="padding-left: 18px; margin: 0 0 12px 0;">
+          <li><b>リアルタイム全社同期:</b> 編集内容（タスク・日付・担当・伝言）はクラウドへ即座に自動保存・全体同期されます。</li>
+          <li><b>🟧 日付未入力タスク表示:</b> 開始日・完了期限が未設定のセルは薄オレンジ破線枠でハイライトされます。</li>
+          <li><b>💬 リアルタイム伝言チャット:</b> 吹き出し形式でメモを共有。各メッセージへの「＋スタンプ」リアクション機能も備えています。</li>
+          <li><b>🟢 「今日（現在日）」ハイライト:</b> カレンダーの当日および中央の緑縦線で現在地を強調表示します。</li>
+        </ul>
+
+        <h4 style="margin: 0 0 6px 0; color: var(--primary-color);">2. 基本的な操作手順</h4>
+        <ul style="padding-left: 18px; margin: 0 0 12px 0;">
+          <li><b>タスク追加:</b> 「＋ 新規タスク追加」ボタンから登録。指定カテゴリーの最下部へ自動配置されます。</li>
+          <li><b>カテゴリー・会社管理:</b> 上部ボタンから区分の作成や、担当会社（外注先）の追加・削除がいつでも可能です。</li>
+          <li><b>直接編集・並び替え:</b> 表の各セルを直接書き換え可能。「≡」のドラッグや「↑」「↓」で順序移動ができます。</li>
+        </ul>
+
+        <h4 style="margin: 0 0 6px 0; color: var(--primary-color);">3. バックアップ機能</h4>
+        <ul style="padding-left: 18px; margin: 0 0 0 0;">
+          <li>管理者用メニューから現在の全データバックアップ作成、および過去データの復元・整理が可能です。</li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button onclick="downloadManual()" style="background:#2980b9; padding:6px 14px;">📄 テキスト形式で保存</button>
+        <button onclick="closeManualModal()" style="background:#7f8c8d; padding:6px 16px;">閉じる</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const firebaseConfig = {
       apiKey: "AIzaSyCICc75-iLAn2vIWBoxJBLGQQRd7lhiLDs",
@@ -1172,6 +1207,15 @@
       const now = new Date();
       const timeString = `${String(now.getMonth()+1).padStart(2,'0')}/${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
       updateRef.set(timeString);
+    }
+
+    /* 📖 マニュアルポップアップ制御 */
+    function openManualModal() {
+      document.getElementById("manual-modal").classList.add("active");
+    }
+
+    function closeManualModal() {
+      document.getElementById("manual-modal").classList.remove("active");
     }
 
     /* 💬 伝言板（メモ）の送信実行 */
@@ -2158,7 +2202,7 @@
       document.body.removeChild(link);
     }
 
-    /* 📖 実用取扱マニュアル */
+    /* 📖 実用取扱マニュアルダウンロード */
     function downloadManual() {
       const manualText = `==================================================
 【工程表 CaraCuriCube】運用取扱マニュアル
@@ -2180,14 +2224,6 @@
 
 ■ 🟢 「今日（現在日）」のハイライト表示
    カレンダーヘッダーの当日日付および中央の縦線が緑色（エメラルドグリーン）で強調表示されるほか、ガントチャートの今日にあたる縦1列全体に薄い緑色の背景帯が表示され、現在の進行位置が一目で分かります。
-
-■ 分析ダッシュボード（画面右側パネル）
-   現在の登録タスク状況から、以下の指標がリアルタイムで自動計算・更新されます。
-   ・全体進捗率: プロジェクト全体の完了タスクの割合
-   ・最重要CP（クリティカルパス）進行状況: 重点管理タスクの消化率
-   ・期限超過タスク: 完了期限を過ぎて未完了のタスク一覧（クリックで該当行へ自動移動）
-   ・担当会社別の残タスク負荷: 各社（新規追加した外注会社を含む）の未完了タスク件数と負荷割合
-   ・保留・要協議タスク: 打ち合わせや朝会で確認すべき課題タスクの一覧
 
 --------------------------------------------------
 2. 基本的な操作手順
