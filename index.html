@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>【工程表】成田空港 CaraCuriCube Project</title>
+  <title>【工程表】成田空港 CaraCuriCube Project (Cuebus専用)</title>
 
   <!-- Firebase SDK の読み込み -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
@@ -72,7 +72,7 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
-    select, button, input[type="date"], input[type="text"] {
+    select, button, input[type="date"], input[type="text"], textarea {
       padding: 4px 6px;
       border: 1px solid var(--border-color);
       border-radius: 4px;
@@ -91,7 +91,7 @@
 
     button:hover { opacity: 0.9; }
 
-    /* 🎨 各操作ボタン専用カラー（重複解消） */
+    /* 🎨 各操作ボタン専用カラー */
     .btn-add { background-color: #27ae60; box-shadow: 0 0 5px rgba(39, 174, 96, 0.4); }
     .btn-category { background-color: #16a085; box-shadow: 0 0 5px rgba(22, 160, 133, 0.3); }
     .btn-company { background-color: #e67e22; box-shadow: 0 0 5px rgba(230, 126, 34, 0.3); }
@@ -102,7 +102,34 @@
 
     .btn-copy-full { background-color: #6c5ce7; }
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
-    .btn-move { background-color: #34495e; padding: 2px 4px; font-size: 0.72rem; }
+    
+    /* 📝 備考・メモボタン専用スタイル */
+    .btn-note { 
+      background-color: #34495e; 
+      padding: 2px 6px; 
+      font-size: 0.72rem;
+      border-radius: 3px;
+    }
+    .btn-note.has-note {
+      background-color: #2980b9 !important;
+      font-weight: bold;
+      box-shadow: 0 0 4px rgba(41, 128, 185, 0.5);
+    }
+
+    .note-badge-cell {
+      display: inline-block;
+      max-width: 65px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 0.65rem;
+      background: #E2E8F0;
+      color: #334155;
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-left: 2px;
+      vertical-align: middle;
+    }
 
     .admin-menu {
       display: none;
@@ -180,6 +207,29 @@
       display: flex;
       justify-content: flex-end;
       gap: 8px;
+    }
+
+    .stamp-btn-group {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+    }
+    .stamp-btn {
+      padding: 3px 8px;
+      font-size: 0.72rem;
+      border-radius: 12px;
+      border: 1px solid #CBD5E1;
+      background: #F8FAFC;
+      color: #334155;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    .stamp-btn:hover {
+      background: #3498db;
+      color: white;
+      border-color: #2980b9;
     }
 
     .company-list-item, .category-list-item {
@@ -399,6 +449,11 @@
       line-height: 1.35;
     }
 
+    #memo-input::placeholder {
+      font-size: 0.7rem;
+      color: #999;
+    }
+
     .chat-reactions {
       display: flex;
       gap: 4px;
@@ -565,7 +620,6 @@
       font-weight: bold;
     }
 
-    /* 🟧 日付未入力（空欄）注意の薄オレンジスタイル */
     .is-empty-date {
       background-color: #FFE8D6 !important;
       border: 1px dashed #E67E22 !important;
@@ -620,7 +674,6 @@
     .day-cell.sat { background-color: #F0F6FF; color: #0055AA; }
     .day-cell.sun { background-color: #FFF0F0; color: #CC0000; }
     
-    /* 🟢 今日のヘッダーセルハイライト（エメラルドグリーン） */
     .day-cell.today { 
       background: linear-gradient(135deg, #27AE60, #2ECC71) !important; 
       color: #ffffff !important; 
@@ -654,13 +707,11 @@
     .gantt-bg-cell.sat { background-color: #F0F6FF; }
     .gantt-bg-cell.sun { background-color: #FFF0F0; }
     
-    /* 🟩 チャート本体の今日列ハイライト（ミントグリーン背景） */
     .gantt-bg-cell.today { 
       background-color: #E8F8F5 !important; 
       border-right: 1px dashed #27AE60 !important;
     }
 
-    /* 🟢 今日の縦ライン（エメラルドグリーン） */
     .today-line {
       position: absolute;
       top: 0;
@@ -708,23 +759,21 @@
       border: 1px solid #ccc;
     }
     
-    /* 基本会社用の個別背景色 */
     .owner-naa { background-color: #D0E1F9 !important; color: #003366 !important; border-color: #B0C4DE !important; }
     .owner-cuebus { background-color: #FFF2CC !important; color: #7F6000 !important; border-color: #FFE599 !important; }
     .owner-hamaru { background-color: #FCE4D6 !important; color: #C00000 !important; border-color: #F8CBAD !important; }
     .owner-joint { background-color: #E2EFDA !important; color: #375623 !important; border-color: #C6E0B4 !important; }
 
-    /* 🎨 追加会社用の10色・高発色くっきりカラーパレット */
-    .owner-c0 { background-color: #E1BEE7 !important; color: #4A148C !important; border-color: #CE93D8 !important; } /* パープル */
-    .owner-c1 { background-color: #FFE0B2 !important; color: #E65100 !important; border-color: #FFCC80 !important; } /* オレンジ */
-    .owner-c2 { background-color: #F8BBD0 !important; color: #880E4F !important; border-color: #F48FB1 !important; } /* マゼンタピンク */
-    .owner-c3 { background-color: #C8E6C9 !important; color: #1B5E20 !important; border-color: #A5D6A7 !important; } /* エメラルド */
-    .owner-c4 { background-color: #B2EBF2 !important; color: #006064 !important; border-color: #80DEEA !important; } /* シアン */
-    .owner-c5 { background-color: #FFCCBC !important; color: #BF360C !important; border-color: #FFAB91 !important; } /* テラコッタ */
-    .owner-c6 { background-color: #F0F4C3 !important; color: #827717 !important; border-color: #E6EE9C !important; } /* ライム */
-    .owner-c7 { background-color: #D1C4E9 !important; color: #311B92 !important; border-color: #B39DDB !important; } /* バイオレット */
-    .owner-c8 { background-color: #B2DFDB !important; color: #004D40 !important; border-color: #80CBC4 !important; } /* ミントグリーン */
-    .owner-c9 { background-color: #F48FB1 !important; color: #880E4F !important; border-color: #F06292 !important; } /* ディープローズ */
+    .owner-c0 { background-color: #E1BEE7 !important; color: #4A148C !important; border-color: #CE93D8 !important; }
+    .owner-c1 { background-color: #FFE0B2 !important; color: #E65100 !important; border-color: #FFCC80 !important; }
+    .owner-c2 { background-color: #F8BBD0 !important; color: #880E4F !important; border-color: #F48FB1 !important; }
+    .owner-c3 { background-color: #C8E6C9 !important; color: #1B5E20 !important; border-color: #A5D6A7 !important; }
+    .owner-c4 { background-color: #B2EBF2 !important; color: #006064 !important; border-color: #80DEEA !important; }
+    .owner-c5 { background-color: #FFCCBC !important; color: #BF360C !important; border-color: #FFAB91 !important; }
+    .owner-c6 { background-color: #F0F4C3 !important; color: #827717 !important; border-color: #E6EE9C !important; }
+    .owner-c7 { background-color: #D1C4E9 !important; color: #311B92 !important; border-color: #B39DDB !important; }
+    .owner-c8 { background-color: #B2DFDB !important; color: #004D40 !important; border-color: #80CBC4 !important; }
+    .owner-c9 { background-color: #F48FB1 !important; color: #880E4F !important; border-color: #F06292 !important; }
 
     .legend { display: flex; gap: 10px; font-size: 0.75rem; align-items: center; margin-left: auto; }
     .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
@@ -734,7 +783,7 @@
 
   <header>
     <div>
-      <h1>✈️ 【NAA × Cuebus × Hamaru Strategy】統合管理工程表</h1>
+      <h1>✈️ 【Cuebus社内用】成田空港 CaraCuriCube 工程表</h1>
       <p>
         期間: 2026年8月1日 〜 2027年3月31日<br>
         <span class="open-target">オープン目標: 2026年11月10日（火）</span>
@@ -811,7 +860,7 @@
               <th style="width: 85px;">完了期限</th>
               <th style="width: 65px;">進捗</th>
               <th style="width: 35px;">CP</th>
-              <th style="width: 80px;">順序・操作</th>
+              <th style="width: 80px;">備考・操作</th>
             </tr>
           </thead>
           <tbody id="task-tbody">
@@ -883,22 +932,20 @@
           </div>
         </div>
 
-        <!-- 💬 チャット風 伝言板（タイムライン掲示板） -->
+        <!-- 💬 チャット風 伝言板 -->
         <div class="dash-card" style="border: 2px solid #8e44ad; background: #FAF5FF;">
-          <div class="dash-card-title" style="color: #8e44ad;">💬 リアルタイム伝言チャット</div>
+          <div class="dash-card-title" style="color: #8e44ad;">💬 社内伝言チャット</div>
           
-          <!-- チャット入力欄 & 差出人会社選択 -->
           <div style="display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px;">
             <div style="display: flex; gap: 4px;">
               <select id="memo-sender-select" style="font-size: 0.72rem; padding: 2px 4px;">
                 <!-- JSで動的生成 -->
               </select>
-              <input type="text" id="memo-input" placeholder="例：〇〇の件、進捗いかがでしょうか？" style="flex: 1;" onkeypress="if(event.key==='Enter') submitMemo()">
+              <input type="text" id="memo-input" placeholder="例：〇〇の件、確認お願いします" style="flex: 1;" onkeypress="if(event.key==='Enter') submitMemo()">
               <button onclick="submitMemo()" style="background: #8e44ad; padding: 4px 10px; font-size: 0.75rem;">送信</button>
             </div>
           </div>
 
-          <!-- チャットメッセージタイムライン -->
           <div class="chat-container" id="memo-list">
             <!-- JSで動的描画 -->
           </div>
@@ -908,7 +955,40 @@
     </div>
   </div>
 
-  <!-- 🎯 タスク追加ポップアップ（モーダル） -->
+  <!-- 📝 備考・コメント編集小窓（モーダル） -->
+  <div class="modal-overlay" id="note-modal">
+    <div class="modal-card" style="width: 420px;">
+      <div class="modal-header" style="background: #34495e;">
+        <span id="note-modal-title">📝 備考・メンテコメントの編集</span>
+        <button onclick="closeNoteModal()" style="background:transparent; border:none; color:white; font-size:1.2rem; cursor:pointer;">✖</button>
+      </div>
+      <div class="modal-body">
+        <div style="font-weight: bold; color: var(--primary-color); font-size: 0.85rem;" id="note-task-name">--</div>
+        
+        <div class="modal-field">
+          <label>ワンタップ・スタンプの追加</label>
+          <div class="stamp-btn-group">
+            <button class="stamp-btn" onclick="addNoteStamp('【済】')">✅ 【済】</button>
+            <button class="stamp-btn" onclick="addNoteStamp('【確認中】')">🔍 【確認中】</button>
+            <button class="stamp-btn" onclick="addNoteStamp('【至急】')">🚨 【至急】</button>
+            <button class="stamp-btn" onclick="addNoteStamp('【要協議】')">💬 【要協議】</button>
+            <button class="stamp-btn" onclick="addNoteStamp('【保留】')">⏸️ 【保留】</button>
+          </div>
+        </div>
+
+        <div class="modal-field">
+          <label>メモ・コメント内容（消去・書き換え可能）</label>
+          <textarea id="note-textarea" rows="4" placeholder="例：仕様変更のため次回会議で再確認。" style="width:100%; font-size:0.8rem;"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button onclick="clearNoteText()" style="background:#e74c3c; padding:6px 12px;">🗑️ メモ消去</button>
+        <button onclick="saveNoteText()" style="background:#27ae60; padding:6px 16px;">💾 保存する</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🎯 タスク追加ポップアップ -->
   <div class="modal-overlay" id="add-task-modal">
     <div class="modal-card">
       <div class="modal-header">
@@ -972,7 +1052,7 @@
     </div>
   </div>
 
-  <!-- 📂 カテゴリー管理ポップアップ（モーダル） -->
+  <!-- 📂 カテゴリー管理ポップアップ -->
   <div class="modal-overlay" id="category-modal">
     <div class="modal-card">
       <div class="modal-header" style="background:#16a085;">
@@ -1003,7 +1083,7 @@
     </div>
   </div>
 
-  <!-- 🏢 担当会社管理（追加・削除）ポップアップ（モーダル） -->
+  <!-- 🏢 担当会社管理ポップアップ -->
   <div class="modal-overlay" id="add-company-modal">
     <div class="modal-card" style="width:400px;">
       <div class="modal-header" style="background:#e67e22;">
@@ -1034,7 +1114,7 @@
     </div>
   </div>
 
-  <!-- 📖 取扱マニュアル表示ポップアップ（モーダル） -->
+  <!-- 📖 取扱マニュアルポップアップ -->
   <div class="modal-overlay" id="manual-modal">
     <div class="modal-card" style="width:600px; max-width:95%;">
       <div class="modal-header" style="background:#7f8c8d;">
@@ -1044,8 +1124,9 @@
       <div class="modal-body" style="max-height: 420px; overflow-y: auto; font-size: 0.78rem; line-height: 1.6;">
         <h4 style="margin: 0 0 6px 0; color: var(--primary-color);">1. システムの基本仕様</h4>
         <ul style="padding-left: 18px; margin: 0 0 12px 0;">
-          <li><b>リアルタイム全社同期:</b> 編集内容（タスク・日付・担当・伝言）はクラウドへ即座に自動保存・全体同期されます。</li>
+          <li><b>リアルタイム自社同期:</b> 本画面での変更（Cuebus自社用）は専用クラウドへ即座に保存されます。3社統合版データとは分離されています。</li>
           <li><b>🟧 日付未入力タスク表示:</b> 開始日・完了期限が未設定のセルは薄オレンジ破線枠でハイライトされます。</li>
+          <li><b>📝 備考・小窓コメント機能:</b> 操作列の「📝 備考」ボタンからメモの記入やスタンプ（済、確認中、至急等）をセットできます。</li>
           <li><b>💬 リアルタイム伝言チャット:</b> 吹き出し形式でメモを共有。各メッセージへの「＋スタンプ」リアクション機能も備えています。</li>
           <li><b>🟢 「今日（現在日）」ハイライト:</b> カレンダーの当日および中央の緑縦線で現在地を強調表示します。</li>
         </ul>
@@ -1054,7 +1135,7 @@
         <ul style="padding-left: 18px; margin: 0 0 12px 0;">
           <li><b>タスク追加:</b> 「＋ 新規タスク追加」ボタンから登録。指定カテゴリーの最下部へ自動配置されます。</li>
           <li><b>カテゴリー・会社管理:</b> 上部ボタンから区分の作成や、担当会社（外注先）の追加・削除がいつでも可能です。</li>
-          <li><b>直接編集・並び替え:</b> 表の各セルを直接書き換え可能。「≡」のドラッグや「↑」「↓」で順序移動ができます。</li>
+          <li><b>直接編集・並び替え:</b> 表の各セルを直接書き換え可能。「≡」のドラッグで順序移動ができます。</li>
         </ul>
 
         <h4 style="margin: 0 0 6px 0; color: var(--primary-color);">3. バックアップ機能</h4>
@@ -1082,17 +1163,18 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    const tasksRef = db.ref('narita_gantt_tasks');
-    const updateRef = db.ref('narita_gantt_last_update');
-    const companiesRef = db.ref('narita_gantt_custom_companies');
-    const categoriesRef = db.ref('narita_gantt_custom_categories');
-    const memosRef = db.ref('narita_gantt_memos');
+
+    /* 🔑 Cuebus専用のデータ保存ノード */
+    const tasksRef = db.ref('cuebus_gantt_tasks');
+    const updateRef = db.ref('cuebus_gantt_last_update');
+    const companiesRef = db.ref('cuebus_gantt_custom_companies');
+    const categoriesRef = db.ref('cuebus_gantt_custom_categories');
+    const memosRef = db.ref('cuebus_gantt_memos');
 
     const START_DATE = new Date("2026-08-01");
     const END_DATE = new Date("2027-03-31");
     const DAY_WIDTH = 24;
     
-    // 時刻の誤差をなくすため、純粋な年月日オブジェクトを作成
     const nowTemp = new Date();
     const TODAY = new Date(nowTemp.getFullYear(), nowTemp.getMonth(), nowTemp.getDate());
 
@@ -1116,36 +1198,37 @@
     let categoryNames = JSON.parse(JSON.stringify(defaultCategoryNames));
 
     const defaultTasks = [
-      { id: "1.1", cat: "開発", name: "CUEBUS詳細設計", owner: "Cuebus", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true },
-      { id: "1.2", cat: "空港対応", name: "設置予定地確認（危険予知・電源位置）", owner: "Cuebus", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true },
-      { id: "1.3", cat: "追加", name: "電源確認（用意可能A数）", owner: "成田国際空港", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true },
-      { id: "1.4", cat: "開発", name: "昇降リフト・詳細設計", owner: "Cuebus", start: "2026-09-01", end: "2026-10-30", status: "進行中", cp: true },
-      { id: "1.5", cat: "開発", name: "制御開発（ストーリー・動きのロジック）", owner: "Cuebus", start: "2026-09-01", end: "2026-10-30", status: "未着手", cp: true },
-      { id: "1.6", cat: "開発", name: "演出設計（光・音・動きの連動）", owner: "Cuebus", start: "2026-09-01", end: "2026-09-30", status: "未着手", cp: false },
-      { id: "2.1", cat: "商品/IP", name: "第1弾IP交渉・契約締結・デザイン許諾", owner: "Hamaru Strategy", start: "2026-07-29", end: "2026-09-30", status: "進行中", cp: true },
-      { id: "2.2", cat: "商品/IP", name: "デザイン・仕様決定", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false },
-      { id: "2.3", cat: "商品/IP", name: "Tシャツ量産発注", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: true },
-      { id: "2.4", cat: "商品/IP", name: "Tシャツ納品・現地発送", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: true },
-      { id: "3.1", cat: "システム", name: "Shopify構築（多言語・決済連携）", owner: "Cuebus", start: "2026-08-28", end: "2026-08-28", status: "未着手", cp: false },
-      { id: "3.2", cat: "システム", name: "QR認証・真贋証明システム確定", owner: "Cuebus×Hamaru", start: "2026-10-30", end: "2026-10-30", status: "未着手", cp: false },
-      { id: "4.1", cat: "行政", name: "消防確認・各種申請書作成", owner: "Cuebus", start: "2026-09-01", end: "2026-09-30", status: "未着手", cp: true },
-      { id: "4.2", cat: "追加", name: "助成金・補助金等の申請準備（可能であれば）", owner: "Cuebus", start: "2026-08-01", end: "2026-08-31", status: "未着手", cp: false },
-      { id: "5.1", cat: "空港対応", name: "決済端末調達", owner: "成田国際空港", start: "", end: "", status: "未着手", cp: true },
-      { id: "5.2", cat: "空港対応", name: "搬入計画書作成（物量・ルート）", owner: "Cuebus×成田空港", start: "2026-10-01", end: "2026-10-30", status: "未着手", cp: true },
-      { id: "5.3", cat: "店舗運用", name: "現場接客・補充スタッフ（バイト）採用", owner: "Cuebus", start: "2026-10-01", end: "2026-10-30", status: "未着手", cp: false },
-      { id: "6.1", cat: "結合テスト", name: "搬入前事前テスト（動作×演出×決済×QR）", owner: "Cuebus", start: "2026-10-01", end: "2026-10-30", status: "未着手", cp: true },
-      { id: "6.2", cat: "現地施工", name: "成田空港 現場搬入・設置工事", owner: "Cuebus", start: "2026-11-02", end: "2026-11-06", status: "未着手", cp: true },
-      { id: "6.3", cat: "リハーサル", name: "現地総合リハーサル", owner: "全社合同", start: "2026-11-06", end: "2026-11-06", status: "未着手", cp: true },
-      { id: "6.4", cat: "運用準備", name: "プレオープン（関係者内覧・運用テスト）", owner: "全社合同", start: "2026-11-09", end: "2026-11-09", status: "未着手", cp: true },
-      { id: "6.5", cat: "オープン", name: "★グランドオープン（9:00〜）★", owner: "全社合同", start: "2026-11-10", end: "2026-11-10", status: "未着手", cp: true },
-      { id: "7.1", cat: "初期運用", name: "初期稼働モニタリング", owner: "Cuebus", start: "2026-11-10", end: "2026-11-30", status: "未着手", cp: false },
-      { id: "7.2", cat: "Phase2", name: "第2弾IP企画 & 他グッズ展開検討", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false }
+      { id: "1.1", cat: "開発", name: "CUEBUS詳細設計", owner: "Cuebus", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true, note: "" },
+      { id: "1.2", cat: "空港対応", name: "設置予定地確認（危険予知・電源位置）", owner: "Cuebus", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true, note: "" },
+      { id: "1.3", cat: "追加", name: "電源確認（用意可能A数）", owner: "成田国際空港", start: "2026-07-01", end: "2026-08-31", status: "進行中", cp: true, note: "" },
+      { id: "1.4", cat: "開発", name: "昇降リフト・詳細設計", owner: "Cuebus", start: "2026-09-01", end: "2026-10-30", status: "進行中", cp: true, note: "" },
+      { id: "1.5", cat: "開発", name: "制御開発（ストーリー・動きのロジック）", owner: "Cuebus", start: "2026-09-01", end: "2026-10-30", status: "未着手", cp: true, note: "" },
+      { id: "1.6", cat: "開発", name: "演出設計（光・音・動きの連動）", owner: "Cuebus", start: "2026-09-01", end: "2026-09-30", status: "未着手", cp: false, note: "" },
+      { id: "2.1", cat: "商品/IP", name: "第1弾IP交渉・契約締結・デザイン許諾", owner: "Hamaru Strategy", start: "2026-07-29", end: "2026-09-30", status: "進行中", cp: true, note: "" },
+      { id: "2.2", cat: "商品/IP", name: "デザイン・仕様決定", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false, note: "" },
+      { id: "2.3", cat: "商品/IP", name: "Tシャツ量産発注", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: true, note: "" },
+      { id: "2.4", cat: "商品/IP", name: "Tシャツ納品・現地発送", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: true, note: "" },
+      { id: "3.1", cat: "システム", name: "Shopify構築（多言語・決済連携）", owner: "Cuebus", start: "2026-08-28", end: "2026-08-28", status: "未着手", cp: false, note: "" },
+      { id: "3.2", cat: "システム", name: "QR認証・真贋証明システム確定", owner: "Cuebus×Hamaru", start: "2026-10-30", end: "2026-10-30", status: "未着手", cp: false, note: "" },
+      { id: "4.1", cat: "行政", name: "消防確認・各種申請書作成", owner: "Cuebus", start: "2026-09-01", end: "2026-09-30", status: "未着手", cp: true, note: "" },
+      { id: "4.2", cat: "追加", name: "助成金・補助金等の申請準備（可能であれば）", owner: "Cuebus", start: "2026-08-01", end: "2026-08-31", status: "未着手", cp: false, note: "" },
+      { id: "5.1", cat: "空港対応", name: "決済端末調達", owner: "成田国際空港", start: "", end: "", status: "未着手", cp: true, note: "" },
+      { id: "5.2", cat: "空港対応", name: "搬入計画書作成（物量・ルート）", owner: "Cuebus×成田空港", start: "2026-10-01", end: "2026-10-30", status: "未着手", cp: true, note: "" },
+      { id: "5.3", cat: "店舗運用", name: "現場接客・補充スタッフ（バイト）採用", owner: "Cuebus", start: "2026-10-01", end: "2026-10-30", status: "未着手", cp: false, note: "" },
+      { id: "6.1", cat: "結合テスト", name: "搬入前事前テスト（動作×演出×決済×QR）", owner: "Cuebus", start: "2026-10-01", end: "2026-10-30", status: "未着手", cp: true, note: "" },
+      { id: "6.2", cat: "現地施工", name: "成田空港 現場搬入・設置工事", owner: "Cuebus", start: "2026-11-02", end: "2026-11-06", status: "未着手", cp: true, note: "" },
+      { id: "6.3", cat: "リハーサル", name: "現地総合リハーサル", owner: "全社合同", start: "2026-11-06", end: "2026-11-06", status: "未着手", cp: true, note: "" },
+      { id: "6.4", cat: "運用準備", name: "プレオープン（関係者内覧・運用テスト）", owner: "全社合同", start: "2026-11-09", end: "2026-11-09", status: "未着手", cp: true, note: "" },
+      { id: "6.5", cat: "オープン", name: "★グランドオープン（9:00〜）★", owner: "全社合同", start: "2026-11-10", end: "2026-11-10", status: "未着手", cp: true, note: "" },
+      { id: "7.1", cat: "初期運用", name: "初期稼働モニタリング", owner: "Cuebus", start: "2026-11-10", end: "2026-11-30", status: "未着手", cp: false, note: "" },
+      { id: "7.2", cat: "Phase2", name: "第2弾IP企画 & 他グッズ展開検討", owner: "Hamaru Strategy", start: "", end: "", status: "未着手", cp: false, note: "" }
     ];
 
     let tasks = [];
     let daysArray = [];
-    let memoList = []; // 伝言板リスト
+    let memoList = [];
     let draggedIndex = null;
+    let currentEditingTaskIdx = null;
     let isAdminUnlocked = false;
 
     // Firebaseからタスクデータの監視
@@ -1160,7 +1243,6 @@
       renderAll();
     });
 
-    // Firebaseからカスタム追加会社の監視
     companiesRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -1172,7 +1254,6 @@
       renderAll();
     });
 
-    // Firebaseからカテゴリー一覧の監視
     categoriesRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -1184,7 +1265,6 @@
       renderAll();
     });
 
-    // 💬 Firebaseから伝言板メモの監視
     memosRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -1209,7 +1289,48 @@
       updateRef.set(timeString);
     }
 
-    /* 📖 マニュアルポップアップ制御 */
+    /* 📝 備考小窓（モーダル）制御 */
+    function openNoteModal(idx) {
+      currentEditingTaskIdx = idx;
+      const task = tasks[idx];
+      document.getElementById("note-task-name").innerText = `[${task.id}] ${task.name}`;
+      document.getElementById("note-textarea").value = task.note || "";
+      document.getElementById("note-modal").classList.add("active");
+      document.getElementById("note-textarea").focus();
+    }
+
+    function closeNoteModal() {
+      document.getElementById("note-modal").classList.remove("active");
+      currentEditingTaskIdx = null;
+    }
+
+    function addNoteStamp(stampText) {
+      const textarea = document.getElementById("note-textarea");
+      if (textarea.value.trim().length > 0) {
+        textarea.value = stampText + " " + textarea.value;
+      } else {
+        textarea.value = stampText;
+      }
+    }
+
+    function saveNoteText() {
+      if (currentEditingTaskIdx !== null) {
+        const val = document.getElementById("note-textarea").value.trim();
+        tasks[currentEditingTaskIdx].note = val;
+        saveTasks();
+        closeNoteModal();
+      }
+    }
+
+    function clearNoteText() {
+      if (currentEditingTaskIdx !== null) {
+        document.getElementById("note-textarea").value = "";
+        tasks[currentEditingTaskIdx].note = "";
+        saveTasks();
+        closeNoteModal();
+      }
+    }
+
     function openManualModal() {
       document.getElementById("manual-modal").classList.add("active");
     }
@@ -1218,7 +1339,6 @@
       document.getElementById("manual-modal").classList.remove("active");
     }
 
-    /* 💬 伝言板（メモ）の送信実行 */
     function submitMemo() {
       const input = document.getElementById("memo-input");
       const text = input.value.trim();
@@ -1240,7 +1360,6 @@
       input.value = "";
     }
 
-    /* 💬 メッセージへのスタンプリアクションの追加 */
     function toggleReaction(memoId, emoji) {
       const memo = memoList.find(m => m.id === memoId);
       if (!memo) return;
@@ -1251,7 +1370,6 @@
       memosRef.set(memoList);
     }
 
-    /* 💬 スタンプピッカー表示切り替え */
     function toggleStampPicker(memoId) {
       const picker = document.getElementById(`stamp-picker-${memoId}`);
       if (picker) {
@@ -1259,13 +1377,11 @@
       }
     }
 
-    /* 💬 伝言板（メモ）の削除 */
     function deleteMemo(memoId) {
       memoList = memoList.filter(m => m.id !== memoId);
       memosRef.set(memoList);
     }
 
-    /* 💬 チャット風 伝言板リストの描画（メッセージ別リアクション機能搭載） */
     function renderMemos() {
       const container = document.getElementById("memo-list");
       if (!container) return;
@@ -1284,7 +1400,6 @@
         
         const ownerCls = getOwnerClass(m.sender || "全社合同");
 
-        // リアクションバッジのHTML作成
         let reactionsHTML = "";
         if (m.reactions) {
           Object.keys(m.reactions).forEach(emoji => {
@@ -1295,7 +1410,6 @@
           });
         }
 
-        // スタンプ選択ピッカーHTML作成
         let pickerStampsHTML = "";
         stamps.forEach(s => {
           pickerStampsHTML += `<span class="stamp-picker-item" onclick="toggleReaction('${m.id}', '${s}'); toggleStampPicker('${m.id}');">${s}</span>`;
@@ -1326,12 +1440,10 @@
       container.scrollTop = container.scrollHeight;
     }
 
-    /* 🏢 全体で使用するすべての会社リストを取得 */
     function getAllOwners() {
       return [...defaultOwners, ...customOwners];
     }
 
-    /* 📂 ドロップダウンおよびカテゴリー管理ポップアップの自動更新 */
     function updateCategoryDropdowns() {
       const catSelect = document.getElementById("modal-category");
       if (!catSelect) return;
@@ -1360,7 +1472,6 @@
       }
     }
 
-    /* 🏢 ドロップダウンおよび会社管理ポップアップリストの自動更新 */
     function updateCompanyDropdowns() {
       const allList = getAllOwners();
       
@@ -1424,7 +1535,6 @@
       }
     }
 
-    /* 🎯 タスク追加ポップアップ制御 */
     function openAddTaskModal() {
       updateCompanyDropdowns();
       updateCategoryDropdowns();
@@ -1441,7 +1551,6 @@
       document.getElementById("add-task-modal").classList.remove("active");
     }
 
-    /* 📂 カテゴリー管理ポップアップ制御 */
     function openCategoryModal() {
       updateCategoryDropdowns();
       document.getElementById("category-modal").classList.add("active");
@@ -1451,7 +1560,6 @@
       document.getElementById("category-modal").classList.remove("active");
     }
 
-    /* 📂 新規カテゴリーの追加実行 */
     function submitNewCategory() {
       const input = document.getElementById("modal-new-category-name");
       const name = input.value.trim();
@@ -1469,14 +1577,12 @@
       alert(`🎉 カテゴリー「${nextKey}：${name}」を追加しました！`);
     }
 
-    /* 📂 カテゴリー名の修正（直接書き換え） */
     function updateCategoryName(key, newName) {
       if (!newName.trim()) return;
       categoryNames[key] = newName.trim();
       categoriesRef.set(categoryNames);
     }
 
-    /* 📂 カテゴリーの削除 */
     function deleteCategory(key) {
       if (confirm(`カテゴリー「${key}：${categoryNames[key]}」を削除しますか？`)) {
         delete categoryNames[key];
@@ -1484,7 +1590,6 @@
       }
     }
 
-    /* 🏢 会社追加ポップアップ制御 */
     function openAddCompanyModal() {
       updateCompanyDropdowns();
       document.getElementById("add-company-modal").classList.add("active");
@@ -1562,7 +1667,8 @@
         start: startVal,
         end: endVal,
         status: statusVal,
-        cp: cpVal
+        cp: cpVal,
+        note: ""
       };
 
       if (lastIndex !== -1) {
@@ -1577,7 +1683,6 @@
       setTimeout(() => scrollToTask(newID), 300);
     }
 
-    /* 📸 バックアップ作成機能 */
     function createBackup() {
       const now = new Date();
       const key = `BACKUP_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
@@ -1591,16 +1696,15 @@
         memoList: JSON.parse(JSON.stringify(memoList))
       };
 
-      let backups = JSON.parse(localStorage.getItem("N_GANTT_BACKUPS") || "{}");
+      let backups = JSON.parse(localStorage.getItem("CUEBUS_GANTT_BACKUPS") || "{}");
       backups[key] = backupData;
-      localStorage.setItem("N_GANTT_BACKUPS", JSON.stringify(backups));
+      localStorage.setItem("CUEBUS_GANTT_BACKUPS", JSON.stringify(backups));
 
       alert(`✅ 現在の状態をバックアップ保存しました！\n（保存名: ${label}）`);
     }
 
-    /* 📂 バックアップ復元機能 */
     function restoreBackup() {
-      let backups = JSON.parse(localStorage.getItem("N_GANTT_BACKUPS") || "{}");
+      let backups = JSON.parse(localStorage.getItem("CUEBUS_GANTT_BACKUPS") || "{}");
       const keys = Object.keys(backups);
 
       if (keys.length === 0) {
@@ -1618,7 +1722,7 @@
         const num = parseInt(selected) - 1;
         if (num >= 0 && num < keys.length) {
           const chosenKey = keys[num];
-          if (confirm(`「${backups[chosenKey].label}」の状態に全社データを復元しますか？\n（現在のデータは置き換わります）`)) {
+          if (confirm(`「${backups[chosenKey].label}」の状態にデータを復元しますか？`)) {
             tasks = JSON.parse(JSON.stringify(backups[chosenKey].tasks));
             saveTasks();
             if (backups[chosenKey].customOwners) {
@@ -1641,9 +1745,8 @@
       }
     }
 
-    /* 🗑️ バックアップ削除機能 */
     function deleteBackup() {
-      let backups = JSON.parse(localStorage.getItem("N_GANTT_BACKUPS") || "{}");
+      let backups = JSON.parse(localStorage.getItem("CUEBUS_GANTT_BACKUPS") || "{}");
       const keys = Object.keys(backups);
 
       if (keys.length === 0) {
@@ -1663,7 +1766,7 @@
           const chosenKey = keys[num];
           if (confirm(`「${backups[chosenKey].label}」を本当に削除しますか？`)) {
             delete backups[chosenKey];
-            localStorage.setItem("N_GANTT_BACKUPS", JSON.stringify(backups));
+            localStorage.setItem("CUEBUS_GANTT_BACKUPS", JSON.stringify(backups));
             alert("🗑️ 選択したバックアップデータを削除しました。");
           }
         } else {
@@ -1672,19 +1775,16 @@
       }
     }
 
-    /* 📊 リアルタイムダッシュボード自動計算ロジック */
     function updateDashboard() {
       const totalCount = tasks.length;
       if (totalCount === 0) return;
 
-      // 1. 全体進捗率
       const completedCount = tasks.filter(t => t.status === "完了").length;
       const progressPercent = Math.round((completedCount / totalCount) * 100);
       document.getElementById("dash-progress-text").innerText = `${progressPercent}%`;
       document.getElementById("dash-progress-count").innerText = `完了 ${completedCount} / ${totalCount} 件`;
       document.getElementById("dash-progress-bar").style.width = `${progressPercent}%`;
 
-      // 2. CP進行状況
       const cpTasks = tasks.filter(t => t.cp);
       const cpTotal = cpTasks.length;
       const cpCompleted = cpTasks.filter(t => t.status === "完了").length;
@@ -1693,7 +1793,6 @@
       document.getElementById("dash-cp-count").innerText = `CP完了 ${cpCompleted} / ${cpTotal} 件`;
       document.getElementById("dash-cp-bar").style.width = `${cpPercent}%`;
 
-      // 3. 遅延タスクの自動検出＆リスト化
       const delayContainer = document.getElementById("dash-delay-list");
       delayContainer.innerHTML = "";
       const delayedTasks = tasks.filter(t => t.end && t.status !== '完了' && new Date(t.end) < TODAY);
@@ -1716,7 +1815,6 @@
         });
       }
 
-      // 4. 担当会社別の負荷分析
       const loadBarsContainer = document.getElementById("dash-load-bars");
       loadBarsContainer.innerHTML = "";
       const owners = getAllOwners();
@@ -1738,7 +1836,6 @@
         loadBarsContainer.appendChild(row);
       });
 
-      // 5. 保留・協議中タスク
       const pendingContainer = document.getElementById("dash-pending-list");
       pendingContainer.innerHTML = "";
       const pendingTasks = tasks.filter(t => t.status === "保留中");
@@ -1795,7 +1892,7 @@
       let defaultTasksCode = "    const defaultTasks = [\n";
       tasks.forEach((t, index) => {
         const isLast = index === tasks.length - 1;
-        defaultTasksCode += `      { id: "${t.id || ''}", cat: "${t.cat || ''}", name: "${t.name || ''}", owner: "${t.owner || ''}", start: "${t.start || ''}", end: "${t.end || ''}", status: "${t.status || '未着手'}", cp: ${t.cp ? 'true' : 'false'} }${isLast ? '' : ','}\n`;
+        defaultTasksCode += `      { id: "${t.id || ''}", cat: "${t.cat || ''}", name: "${t.name || ''}", owner: "${t.owner || ''}", start: "${t.start || ''}", end: "${t.end || ''}", status: "${t.status || '未着手'}", cp: ${t.cp ? 'true' : 'false'}, note: "${t.note || ''}" }${isLast ? '' : ','}\n`;
       });
       defaultTasksCode += "    ];";
 
@@ -1916,7 +2013,6 @@
       return 'status-not-started';
     }
 
-    /* 🎨 追加会社ごとの10色固有カラー判定 */
     function getOwnerClass(owner) {
       if (owner === '成田国際空港') return 'owner-naa';
       if (owner === 'Cuebus') return 'owner-cuebus';
@@ -1995,6 +2091,9 @@
           ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
         });
 
+        const hasNote = (t.note && t.note.trim().length > 0);
+        const noteBadgeHTML = hasNote ? `<span class="note-badge-cell" title="${t.note}">${t.note}</span>` : '';
+
         const tr = document.createElement("tr");
         tr.dataset.index = realIdx;
 
@@ -2027,8 +2126,8 @@
             </select>
           </td>
           <td style="text-align:center;">
-            <button class="btn-move" title="1行上に移動" onclick="moveTask('up', ${realIdx})">↑</button>
-            <button class="btn-move" title="1行下に移動" onclick="moveTask('down', ${realIdx})">↓</button>
+            <button class="btn-note ${hasNote ? 'has-note' : ''}" title="${hasNote ? t.note : '備考メモを追加'}" onclick="openNoteModal(${realIdx})">📝 備考</button>
+            ${noteBadgeHTML}
             <button class="btn-delete" title="削除" onclick="deleteTask(${realIdx})">消</button>
           </td>
         `;
@@ -2079,7 +2178,6 @@
       });
 
       if (TODAY >= START_DATE && TODAY <= END_DATE) {
-        // 時刻の影響を受けない正確な日数差の計算
         const todayDiff = Math.round((TODAY - START_DATE) / (1000 * 60 * 60 * 24));
         const todayLine = document.createElement("div");
         todayLine.className = "today-line";
@@ -2120,20 +2218,6 @@
       draggedIndex = null;
     }
 
-    function moveTask(direction, idx) {
-      if (direction === 'up' && idx > 0) {
-        const item = tasks.splice(idx, 1)[0];
-        tasks.splice(idx - 1, 0, item);
-        autoRenumberIDs();
-        saveTasks();
-      } else if (direction === 'down' && idx < tasks.length - 1) {
-        const item = tasks.splice(idx, 1)[0];
-        tasks.splice(idx + 1, 0, item);
-        autoRenumberIDs();
-        saveTasks();
-      }
-    }
-
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
@@ -2171,7 +2255,7 @@
     }
 
     function resetData() {
-      if (confirm("初期のタスク・日付状態にリセットしますか？（全社のデータが初期化されます）")) {
+      if (confirm("初期状態にリセットしますか？")) {
         tasks = JSON.parse(JSON.stringify(defaultTasks));
         customOwners = ["Cuebus×Hamaru", "Cuebus×成田空港"];
         categoryNames = JSON.parse(JSON.stringify(defaultCategoryNames));
@@ -2185,82 +2269,33 @@
 
     function exportCSV() {
       let csvContent = "\uFEFF";
-      csvContent += "ID,タスク名称,担当,開始日,完了期限,進捗,CP(クリティカルパス)\n";
+      csvContent += "ID,タスク名称,担当,開始日,完了期限,進捗,CP(クリティカルパス),備考\n";
 
       tasks.forEach(t => {
         const cpStr = t.cp ? "★" : "-";
-        csvContent += `"${t.id}","${t.name}","${t.owner}","${t.start}","${t.end}","${t.status}","${cpStr}"\n`;
+        const noteStr = t.note ? t.note.replace(/"/g, '""') : "";
+        csvContent += `"${t.id}","${t.name}","${t.owner}","${t.start}","${t.end}","${t.status}","${cpStr}","${noteStr}"\n`;
       });
 
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", `成田空港プロジェクト工程表_${new Date().toISOString().slice(0,10)}.csv`);
+      link.setAttribute("download", `Cuebus工程表_${new Date().toISOString().slice(0,10)}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     }
 
-    /* 📖 実用取扱マニュアルダウンロード */
     function downloadManual() {
       const manualText = `==================================================
-【工程表 CaraCuriCube】運用取扱マニュアル
-==================================================
-
-本システムは、成田空港プロジェクトにおける複数社間の進捗・スケジュールをリアルタイムで統合管理するためのWebシステムです。
-
---------------------------------------------------
-1. システムの基本仕様
---------------------------------------------------
-■ リアルタイム全社同期
-   ブラウザ上でタスク内容、日付、担当会社、進捗ステータス、カテゴリー、伝言メモ等を変更すると、クラウドを介して他の閲覧者の画面へ即座に自動反映されます。手動保存は不要です。
-
-■ 🟧 日付未入力タスクの薄オレンジ警告表示
-   開始日や完了期限が空欄（未設定）のセルは、薄オレンジの破線枠で自動ハイライトされ、入力漏れやスケジュール確定が必要なタスクが一目で分かります。
-
-■ 💬 リアルタイム伝言チャット（スタンプリアクション機能付き）
-   ダッシュボード最下部に吹き出し形式の共有チャットが設置されています。書き込まれた伝言に対してメッセージごとの「＋スタンプ」ボタンからワンタップで絵文字リアクション（👍, ✅, 🙏等）が送れます。
-
-■ 🟢 「今日（現在日）」のハイライト表示
-   カレンダーヘッダーの当日日付および中央の縦線が緑色（エメラルドグリーン）で強調表示されるほか、ガントチャートの今日にあたる縦1列全体に薄い緑色の背景帯が表示され、現在の進行位置が一目で分かります。
-
---------------------------------------------------
-2. 基本的な操作手順
---------------------------------------------------
-【タスクの新規追加】（ポップアップ登録）
-  画面上部の「＋ 新規タスク追加」ボタンをクリックすると、専用のポップアップ画面が表示されます。
-  1. 登録したいカテゴリー（例: 1:什器開発、2:商品・IP...）を選択します。
-  2. タスク名称、担当会社（外注先を含む）、開始日・完了期限、進捗状況、CP設定を行います。
-  3. 「＋ 登録する」を押すと、指定したカテゴリーの最下部へ自動的に移動・追加・採番されます。
-
-【📂 カテゴリー（区分）の追加・修正・削除】
-  上部の「📂 カテゴリー管理」ボタンから、フェーズ区分の新規作成、名称の修正（書き換え）、不要なカテゴリーの削除がいつでも可能です。全画面へリアルタイム反映されます。
-
-【🏢 担当会社・外注先の登録および削除】
-  ・追加: 上部の「🏢 担当会社管理」ボタンを押して新しい会社名を登録できます。登録順に10色のカラーパレットから重複しにくい見やすい背景色が自動割り当てされます。
-  ・削除: 「🏢 担当会社管理」画面の下部リストにある不要な会社の「削除」ボタンを押すことで、リストから整理・削除が可能です。
-
-【直接編集】
-  テーブル内のセルをクリックすることで、タスク名、担当会社、日付、進捗状況をいつでも直接変更可能です。
-
-【タスクの並び替え・移動】
-  行の左端にある「≡」アイコンをドラッグ＆ドロップするか、操作列の［↑］［↓］ボタンを押すことで順序を変更できます。
-
---------------------------------------------------
-3. データのバックアップ・管理
---------------------------------------------------
-・🔑 「管理者」メニュー（管理者専用パスワード）から「📸 現在のデータバックアップ作成」を実行すると、その時点のタスク状態および会社・カテゴリーリスト、伝言メモが日付付きで保存できます。
-・「📂 バックアップから復元」を実行すると、過去の保存データを選択していつでも元の状態に戻すことができます。
-・不要になった過去のバックアップは「🗑️ バックアップ削除」から個別整理が可能です。
-
+【Cuebus専用工程表】取扱マニュアル
 ==================================================`;
-
       const blob = new Blob([manualText], { type: 'text/plain;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.setAttribute("href", url);
-      link.setAttribute("download", "成田空港CaraCuriCube_取扱マニュアル.txt");
+      link.setAttribute("download", "Cuebus工程表_取扱マニュアル.txt");
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
