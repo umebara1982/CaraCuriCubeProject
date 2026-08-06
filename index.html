@@ -156,9 +156,10 @@
       z-index: 9999;
       pointer-events: none;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-      max-width: 280px;
+      max-width: 320px;
       word-break: break-word;
       line-height: 1.4;
+      white-space: pre-wrap; /* 改行をそのまま綺麗に再現表示 */
     }
 
     .admin-menu {
@@ -1272,6 +1273,7 @@
     let isAdminUnlocked = false;
     let collapsedCategories = {};
 
+    /* ⚡ 安全なエスケープ対応ツールチップ */
     function showTooltip(e, text) {
       const tooltip = document.getElementById("custom-tooltip");
       tooltip.innerText = text;
@@ -1361,7 +1363,6 @@
       updateRef.set(timeString);
     }
 
-    /* 📝 備考モーダル制御 & URL自動抽出 */
     function openNoteModal(idx) {
       currentEditingTaskIdx = idx;
       const task = tasks[idx];
@@ -1379,7 +1380,6 @@
       currentDetectedURL = null;
     }
 
-    /* 🔗 リアルタイムURL検知 & リンク表示処理 */
     function updateNoteLinkPreview(text) {
       const container = document.getElementById("note-link-preview-container");
       const openBtn = document.getElementById("note-open-url-btn");
@@ -2152,6 +2152,16 @@
       return 'owner-custom';
     }
 
+    /* 🛡️ ツールチップ用の安全なエスケープ関数（改行・引用符対応） */
+    function escapeTooltipText(str) {
+      if (!str) return '';
+      return str
+        .replace(/\\/g, '\\\\')
+        .replace(/'/g, "\\'")
+        .replace(/"/g, '&quot;')
+        .replace(/\r?\n/g, '&#10;');
+    }
+
     function renderAll() {
       initDays();
       renderGanttHeader();
@@ -2243,12 +2253,12 @@
             ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
           });
 
-          /* 📝 備考入力の有無に応じたボタン表示（全行3ボタン［備考・複製・消］常時配置） */
+          /* 📝 安全に改行・引用符を処理したツールチップ属性生成 */
           const hasNote = (t.note && t.note.trim().length > 0);
-          const noteTextEscaped = hasNote ? t.note.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
+          const safeTooltipText = hasNote ? escapeTooltipText(t.note) : '';
 
           let actionHTML = `
-            <button class="btn-note ${hasNote ? 'has-note' : ''}" ${hasNote ? `onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()"` : ''} onclick="openNoteModal(${realIdx})">📝 備考</button>
+            <button class="btn-note ${hasNote ? 'has-note' : ''}" ${hasNote ? `onmouseenter="showTooltip(event, '${safeTooltipText}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()"` : ''} onclick="openNoteModal(${realIdx})">📝 備考</button>
             <button class="btn-duplicate" title="タスクを複製" onclick="duplicateTask(${realIdx})">📋</button>
             <button class="btn-delete" title="タスク削除" onclick="deleteTask(${realIdx})">消</button>
           `;
