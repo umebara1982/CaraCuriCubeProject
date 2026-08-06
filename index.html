@@ -107,6 +107,7 @@
       padding: 2px 5px; 
       font-size: 0.72rem;
       border-radius: 3px;
+      white-space: nowrap;
     }
     .btn-note.has-note {
       background-color: #2980b9 !important;
@@ -114,23 +115,35 @@
       box-shadow: 0 0 4px rgba(41, 128, 185, 0.5);
     }
 
-    /* 🎨 備考バッジ & 即時ツールチップ用CSS */
+    /* 🎨 操作セルのコンテナ配置最適化 */
+    .action-cell-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0 2px;
+    }
+
+    /* 備考バッジ（消ボタン非表示時に幅いっぱいに表示） */
     .note-badge-cell {
       display: inline-block;
       font-size: 0.68rem;
       background: #E2E8F0;
       color: #1E293B;
-      padding: 1px 4px;
+      padding: 2px 4px;
       border-radius: 3px;
-      margin-left: 2px;
-      vertical-align: middle;
       border: 1px solid #CBD5E1;
       font-weight: bold;
       white-space: nowrap;
-      cursor: default; /* 「？」マークを廃止して標準マウスに */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 50px;
+      cursor: default;
     }
 
-    /* ⚡ 載せた瞬間に即表示（0秒）されるカスタムツールチップ */
+    /* ⚡ 載せた瞬間に即表示されるカスタムツールチップ */
     #custom-tooltip {
       position: absolute;
       display: none;
@@ -877,8 +890,8 @@
               <th style="width: 85px;">完了期限</th>
               <th style="width: 65px;">進捗</th>
               <th style="width: 35px;">CP</th>
-              <!-- 無駄な余白を削減（コンパクト化） -->
-              <th style="width: 85px;">備考・操作</th>
+              <!-- 列幅をスマートに統一（75px） -->
+              <th style="width: 75px;">備考・操作</th>
             </tr>
           </thead>
           <tbody id="task-tbody">
@@ -1000,7 +1013,8 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button onclick="clearNoteText()" style="background:#e74c3c; padding:6px 12px;">🗑️ メモ消去</button>
+        <button onclick="deleteCurrentTaskFromNote()" style="background:#c00000; padding:6px 12px; margin-right:auto;">🗑️ タスク自体を削除</button>
+        <button onclick="clearNoteText()" style="background:#e74c3c; padding:6px 12px;">メモを消去</button>
         <button onclick="saveNoteText()" style="background:#27ae60; padding:6px 16px;">💾 保存する</button>
       </div>
     </div>
@@ -1368,6 +1382,16 @@
         tasks[currentEditingTaskIdx].note = "";
         saveTasks();
         closeNoteModal();
+      }
+    }
+
+    function deleteCurrentTaskFromNote() {
+      if (currentEditingTaskIdx !== null) {
+        const taskName = tasks[currentEditingTaskIdx].name;
+        if (confirm(`タスク「${taskName}」を削除しますか？`)) {
+          deleteTask(currentEditingTaskIdx);
+          closeNoteModal();
+        }
       }
     }
 
@@ -2131,11 +2155,24 @@
           ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
         });
 
-        /* 📝 備考メモ存在判定 & 即時ツールチップ用HTML */
+        /* 📝 備考入力有無に応じた操作要素の動的切り替え */
         const hasNote = (t.note && t.note.trim().length > 0);
         const noteTextEscaped = hasNote ? t.note.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
-        
-        const noteBadgeHTML = hasNote ? `<span class="note-badge-cell" onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()">${t.note}</span>` : '';
+
+        // 備考あり：［備考］［バッジ］（［消］は隠す）
+        // 備考なし：［備考］［消］
+        let actionHTML = '';
+        if (hasNote) {
+          actionHTML = `
+            <button class="btn-note has-note" onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="openNoteModal(${realIdx})">📝 備考</button>
+            <span class="note-badge-cell" onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()">${t.note}</span>
+          `;
+        } else {
+          actionHTML = `
+            <button class="btn-note" onclick="openNoteModal(${realIdx})">📝 備考</button>
+            <button class="btn-delete" title="タスク削除" onclick="deleteTask(${realIdx})">消</button>
+          `;
+        }
 
         const tr = document.createElement("tr");
         tr.dataset.index = realIdx;
@@ -2169,9 +2206,9 @@
             </select>
           </td>
           <td style="text-align:center;">
-            <button class="btn-note ${hasNote ? 'has-note' : ''}" ${hasNote ? `onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()"` : ''} onclick="openNoteModal(${realIdx})">📝 備考</button>
-            ${noteBadgeHTML}
-            <button class="btn-delete" title="削除" onclick="deleteTask(${realIdx})">消</button>
+            <div class="action-cell-container">
+              ${actionHTML}
+            </div>
           </td>
         `;
 
