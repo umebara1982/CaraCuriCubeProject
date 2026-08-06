@@ -590,6 +590,7 @@
       border-collapse: collapse;
       font-size: 0.78rem;
       table-layout: fixed;
+      margin-bottom: 50px; /* ★ 最下部の余白確保 */
     }
 
     .task-table th {
@@ -604,7 +605,7 @@
       white-space: nowrap;
     }
 
-    /* 行の高さを全て同一（36px）かつボダー計算を統一 */
+    /* 行の高さを全て同一（36px）に完全統一 */
     .task-table tr {
       height: var(--row-height);
     }
@@ -639,28 +640,11 @@
       background-color: #D5E1ED;
     }
 
-    /* 🎯 底上げ領域：高さ60px */
-    .bottom-padding-row {
-      height: 60px !important;
-    }
-    .bottom-padding-row td {
-      border: none !important;
-      background: transparent !important;
-      height: 60px !important;
-    }
-
     .gantt-phase-row {
       background-color: #E6ECF2;
       height: var(--row-height);
       border-top: 1px solid #B0C4DE;
       border-bottom: 1px solid #B0C4DE;
-      flex-shrink: 0;
-    }
-
-    .gantt-bottom-padding-row {
-      height: 60px !important;
-      background: transparent !important;
-      border: none !important;
       flex-shrink: 0;
     }
 
@@ -738,7 +722,11 @@
       box-shadow: inset 0 0 2px rgba(0,0,0,0.3);
     }
 
-    .gantt-body { position: relative; background-color: #FFFFFF; }
+    .gantt-body { 
+      position: relative; 
+      background-color: #FFFFFF; 
+      padding-bottom: 50px; /* ★ カレンダー側も同じく最下部余白をセット */
+    }
 
     .gantt-row {
       display: flex;
@@ -2379,20 +2367,6 @@
         });
       });
 
-      // 🎯 最下部スクロール時に最後の行（7.2など）が絶対隠れない透明な高さ60px底上げ行
-      const padTr = document.createElement("tr");
-      padTr.className = "bottom-padding-row";
-      padTr.innerHTML = `<td colspan="9" style="height:60px; border:none; background:transparent;"></td>`;
-      tbody.appendChild(padTr);
-
-      const gPadRow = document.createElement("div");
-      gPadRow.className = "gantt-bottom-padding-row";
-      gPadRow.style.width = totalWidth + "px";
-      gPadRow.style.height = "60px";
-      gPadRow.style.border = "none";
-      gPadRow.style.background = "transparent";
-      ganttBody.appendChild(gPadRow);
-
       if (TODAY >= START_DATE && TODAY <= END_DATE) {
         const todayDiff = Math.round((TODAY - START_DATE) / (1000 * 60 * 60 * 24));
         const todayLine = document.createElement("div");
@@ -2434,7 +2408,7 @@
       draggedIndex = null;
     }
 
-    /* 🎯 左右のスクロール・カレンダー側スクロールの絶対同期関数（数値完全一致） */
+    /* 🎯 左右のスクロール・カレンダー側スクロールの絶対同期関数 */
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
