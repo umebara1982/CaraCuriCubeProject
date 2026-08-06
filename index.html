@@ -638,7 +638,6 @@
       background-color: #D5E1ED;
     }
 
-    /* 🎯 最後の行（7.2など）が隠れないための透明な底上げスペース行 */
     .bottom-padding-row {
       height: 60px !important;
     }
@@ -655,7 +654,6 @@
       flex-shrink: 0;
     }
 
-    /* 🎯 カレンダー側にも同じく60pxの透明な底上げスペース行を配置 */
     .gantt-bottom-padding-row {
       height: 60px !important;
       background: transparent !important;
@@ -2430,7 +2428,7 @@
       draggedIndex = null;
     }
 
-    /* 🎯 リアルタイム上下スクロール絶対同期 */
+    /* 🎯 カレンダー側（右側）スクロール時も完全に縦同期する双方向リアルタイム制御 */
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
