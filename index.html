@@ -625,15 +625,6 @@
       background-color: #D5E1ED;
     }
 
-    .gantt-phase-row {
-      background-color: #E6ECF2;
-      height: var(--phase-height);
-      border-top: 1px solid #B0C4DE;
-      border-bottom: 1px solid #B0C4DE;
-      box-sizing: border-box;
-      flex-shrink: 0;
-    }
-
     /* 🔴 期限超過（遅延） */
     .is-delayed {
       background-color: #fce4e4 !important;
@@ -836,7 +827,6 @@
   </header>
 
   <div class="controls">
-    <!-- 機能1: 🔍 キーワード検索ボックス -->
     <label>🔍 検索:</label>
     <input type="text" id="search-keyword" placeholder="キーワード検索..." oninput="renderAll()" style="width: 110px;">
 
@@ -856,7 +846,6 @@
       <option value="STATUS_完了">🟢 完了のみ</option>
     </select>
 
-    <!-- 機能2: 📍 今日にジャンプボタン -->
     <button onclick="scrollToToday()" class="btn-today-jump">📍 今日にジャンプ</button>
 
     <button onclick="openAddTaskModal()" class="btn-add">＋ 新規タスク追加</button>
@@ -1269,7 +1258,7 @@
     let draggedIndex = null;
     let currentEditingTaskIdx = null;
     let isAdminUnlocked = false;
-    let collapsedCategories = {}; // 機能5: 折りたたみ状態保持
+    let collapsedCategories = {};
 
     function showTooltip(e, text) {
       const tooltip = document.getElementById("custom-tooltip");
@@ -1292,7 +1281,6 @@
       tooltip.style.display = "none";
     }
 
-    // 機能2: 今日の位置へスラスラスクロール
     function scrollToToday() {
       if (TODAY >= START_DATE && TODAY <= END_DATE) {
         const todayDiff = Math.round((TODAY - START_DATE) / (1000 * 60 * 60 * 24));
@@ -1304,7 +1292,6 @@
       }
     }
 
-    // Firebaseからタスクデータの監視
     tasksRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
@@ -1403,12 +1390,12 @@
       }
     }
 
-    // 機能4: タスク複製機能
     function duplicateTask(idx) {
       const original = tasks[idx];
-      const categoryTasks = tasks.filter(t => t.id && String(t.id).startsWith(original.id.split('.')[0] + "."));
+      const catKey = original.id.split('.')[0];
+      const categoryTasks = tasks.filter(t => t.id && String(t.id).startsWith(catKey + "."));
       const newSubIdx = categoryTasks.length + 1;
-      const newID = `${original.id.split('.')[0]}.${newSubIdx}`;
+      const newID = `${catKey}.${newSubIdx}`;
 
       const duplicated = JSON.parse(JSON.stringify(original));
       duplicated.id = newID;
@@ -1419,7 +1406,6 @@
       saveTasks();
     }
 
-    // 機能5: カテゴリーの折りたたみ切り替え
     function toggleCategoryCollapse(catKey) {
       collapsedCategories[catKey] = !collapsedCategories[catKey];
       renderAll();
@@ -2138,7 +2124,6 @@
           if (targetStatus !== "UNCOMPLETED" && t.status !== targetStatus) return false;
         }
 
-        // 機能1: キーワード検索フィルター
         if (searchKeyword !== "") {
           const targetStr = `${t.id || ''} ${t.name || ''} ${t.owner || ''} ${t.note || ''}`.toLowerCase();
           if (!targetStr.includes(searchKeyword)) return false;
@@ -2156,166 +2141,172 @@
       const totalWidth = daysArray.length * DAY_WIDTH;
       const allOwnersList = getAllOwners();
 
-      let currentCategoryGroup = null;
+      // ★ 登録されている全カテゴリーを取得（タスク0件の空カテゴリーも確実に描画）
+      const allCategoryKeys = Object.keys(categoryNames).sort((a,b) => parseInt(a) - parseInt(b));
 
-      filtered.forEach((t) => {
-        const realIdx = tasks.findIndex(item => item.id === t.id);
+      allCategoryKeys.forEach(mainGroup => {
+        // このカテゴリーに所属するフィルター後のタスク
+        const catTasks = filtered.filter(t => t.id && String(t.id).split('.')[0] === String(mainGroup));
 
-        const mainGroup = t.id ? String(t.id).split('.')[0] : "1";
-        if (mainGroup !== currentCategoryGroup) {
-          currentCategoryGroup = mainGroup;
-          const cNameText = categoryNames[mainGroup] ? `📂 カテゴリー ${mainGroup}：${categoryNames[mainGroup]}` : `📂 カテゴリー ${mainGroup}`;
-
-          const isCollapsed = !!collapsedCategories[mainGroup];
-          const icon = isCollapsed ? '▶' : '▼';
-
-          const phaseTr = document.createElement("tr");
-          phaseTr.className = "phase-header-row";
-          phaseTr.onclick = () => toggleCategoryCollapse(mainGroup);
-          phaseTr.innerHTML = `<td colspan="9">${icon} ${cNameText} <span style="font-size:0.7rem; font-weight:normal; opacity:0.8;">(クリックで${isCollapsed ? '展開' : '折りたたみ'})</span></td>`;
-          tbody.appendChild(phaseTr);
-
-          const gPhaseRow = document.createElement("div");
-          gPhaseRow.className = "gantt-phase-row";
-          gPhaseRow.style.width = totalWidth + "px";
-          ganttBody.appendChild(gPhaseRow);
-        }
-
-        // 機能5: カテゴリーが折りたたまれている場合は描写をスキップ
-        if (collapsedCategories[mainGroup]) {
+        // 検索や絞り込みを行っている最中でタスクが無い場合は、絞り込み結果を邪魔しないようスキップ
+        if (catTasks.length === 0 && (ownerVal !== "ALL" || cpVal !== "ALL" || searchKeyword !== "")) {
           return;
         }
 
-        // 機能3: 直近期限（7日以内） & 遅延判定
-        let isDelayed = false;
-        let isNearDue = false;
+        const cNameText = categoryNames[mainGroup] ? `📂 カテゴリー ${mainGroup}：${categoryNames[mainGroup]}` : `📂 カテゴリー ${mainGroup}`;
+        const isCollapsed = !!collapsedCategories[mainGroup];
+        const icon = isCollapsed ? '▶' : '▼';
 
-        if (t.end && t.status !== '完了') {
-          const endDate = new Date(t.end);
-          if (endDate < TODAY) {
-            isDelayed = true;
-          } else {
-            const diffTime = endDate - TODAY;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-            if (diffDays >= 0 && diffDays <= 7) {
-              isNearDue = true;
+        // カテゴリーヘッダー行の描画
+        const phaseTr = document.createElement("tr");
+        phaseTr.className = "phase-header-row";
+        phaseTr.onclick = () => toggleCategoryCollapse(mainGroup);
+        
+        const countText = catTasks.length === 0 ? ' (タスクなし)' : ` (${catTasks.length}件)`;
+        phaseTr.innerHTML = `<td colspan="9">${icon} ${cNameText} <span style="font-size:0.7rem; font-weight:normal; opacity:0.8;">${countText} - クリックで${isCollapsed ? '展開' : '折りたたみ'}</span></td>`;
+        tbody.appendChild(phaseTr);
+
+        const gPhaseRow = document.createElement("div");
+        gPhaseRow.className = "gantt-phase-row";
+        gPhaseRow.style.width = totalWidth + "px";
+        ganttBody.appendChild(gPhaseRow);
+
+        // 折りたたまれている場合はタスク行を描画しない
+        if (isCollapsed) return;
+
+        // カテゴリー内のタスクを描画
+        catTasks.forEach((t) => {
+          const realIdx = tasks.findIndex(item => item.id === t.id);
+
+          let isDelayed = false;
+          let isNearDue = false;
+
+          if (t.end && t.status !== '完了') {
+            const endDate = new Date(t.end);
+            if (endDate < TODAY) {
+              isDelayed = true;
+            } else {
+              const diffTime = endDate - TODAY;
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+              if (diffDays >= 0 && diffDays <= 7) {
+                isNearDue = true;
+              }
             }
           }
-        }
 
-        const isStartEmpty = !t.start;
-        const isEndEmpty = !t.end;
+          const isStartEmpty = !t.start;
+          const isEndEmpty = !t.end;
 
-        let ownerOptionsHTML = "";
-        allOwnersList.forEach(o => {
-          const isSelected = (t.owner === o) ? 'selected' : '';
-          ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
-        });
+          let ownerOptionsHTML = "";
+          allOwnersList.forEach(o => {
+            const isSelected = (t.owner === o) ? 'selected' : '';
+            ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
+          });
 
-        const hasNote = (t.note && t.note.trim().length > 0);
-        const noteTextEscaped = hasNote ? t.note.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
+          const hasNote = (t.note && t.note.trim().length > 0);
+          const noteTextEscaped = hasNote ? t.note.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
 
-        // 機能4: 複製ボタン［📋］の追加
-        let actionHTML = '';
-        if (hasNote) {
-          actionHTML = `
-            <button class="btn-note has-note" onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="openNoteModal(${realIdx})">📝 備考</button>
-            <button class="btn-duplicate" title="タスクを複製" onclick="duplicateTask(${realIdx})">📋</button>
-          `;
-        } else {
-          actionHTML = `
-            <button class="btn-note" onclick="openNoteModal(${realIdx})">📝 備考</button>
-            <button class="btn-duplicate" title="タスクを複製" onclick="duplicateTask(${realIdx})">📋</button>
-            <button class="btn-delete" title="タスク削除" onclick="deleteTask(${realIdx})">消</button>
-          `;
-        }
-
-        let endClass = "";
-        if (isDelayed) endClass = "is-delayed";
-        else if (isNearDue) endClass = "is-near-due";
-        else if (isEndEmpty) endClass = "is-empty-date";
-
-        const tr = document.createElement("tr");
-        tr.dataset.index = realIdx;
-
-        tr.addEventListener("dragover", handleDragOver);
-        tr.addEventListener("drop", handleDrop);
-
-        tr.innerHTML = `
-          <td style="text-align:center;"><span class="drag-handle" draggable="true">≡</span></td>
-          <td><input type="text" value="${t.id || ''}" onchange="updateTask(${realIdx}, 'id', this.value)" style="width: 100%; text-align: center;"></td>
-          <td><input type="text" value="${t.name || ''}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
-          <td style="text-align:center;">
-            <select class="owner-select ${getOwnerClass(t.owner)}" onchange="updateTask(${realIdx}, 'owner', this.value)" style="width: 100%;">
-              ${ownerOptionsHTML}
-            </select>
-          </td>
-          <td><input type="date" value="${t.start || ''}" class="${isDelayed ? 'is-delayed' : ''} ${isStartEmpty ? 'is-empty-date' : ''}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
-          <td><input type="date" value="${t.end || ''}" class="${endClass}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
-          <td style="text-align:center;">
-            <select class="status-select ${getStatusClass(t.status)}" onchange="updateTask(${realIdx}, 'status', this.value)">
-              <option value="未着手" ${t.status === '未着手' ? 'selected' : ''}>未着手</option>
-              <option value="進行中" ${t.status === '進行中' ? 'selected' : ''}>進行中</option>
-              <option value="保留中" ${t.status === '保留中' ? 'selected' : ''}>保留中</option>
-              <option value="完了" ${t.status === '完了' ? 'selected' : ''}>完了</option>
-            </select>
-          </td>
-          <td style="text-align:center;">
-            <select class="cp-select" onchange="updateTaskBool(${realIdx}, 'cp', this.value)" style="width: 100%; padding: 2px 0;">
-              <option value="true" ${t.cp ? 'selected' : ''}>★</option>
-              <option value="false" ${!t.cp ? 'selected' : ''}>-</option>
-            </select>
-          </td>
-          <td style="text-align:center;">
-            <div class="action-cell-container">
-              ${actionHTML}
-            </div>
-          </td>
-        `;
-
-        const handle = tr.querySelector('.drag-handle');
-        handle.addEventListener("dragstart", (e) => handleDragStart(e, realIdx, tr));
-        handle.addEventListener("dragend", (e) => handleDragEnd(tr));
-
-        tbody.appendChild(tr);
-
-        const gRow = document.createElement("div");
-        gRow.className = "gantt-row";
-        gRow.style.width = totalWidth + "px";
-
-        daysArray.forEach(d => {
-          const bgCell = document.createElement("div");
-          let cls = "gantt-bg-cell";
-          if (d.getDay() === 6) cls += " sat";
-          if (d.getDay() === 0) cls += " sun";
-          
-          if (d.toDateString() === TODAY.toDateString()) {
-            cls += " today";
+          let actionHTML = '';
+          if (hasNote) {
+            actionHTML = `
+              <button class="btn-note has-note" onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="openNoteModal(${realIdx})">📝 備考</button>
+              <button class="btn-duplicate" title="タスクを複製" onclick="duplicateTask(${realIdx})">📋</button>
+            `;
+          } else {
+            actionHTML = `
+              <button class="btn-note" onclick="openNoteModal(${realIdx})">📝 備考</button>
+              <button class="btn-duplicate" title="タスクを複製" onclick="duplicateTask(${realIdx})">📋</button>
+              <button class="btn-delete" title="タスク削除" onclick="deleteTask(${realIdx})">消</button>
+            `;
           }
 
-          bgCell.className = cls;
-          gRow.appendChild(bgCell);
-        });
+          let endClass = "";
+          if (isDelayed) endClass = "is-delayed";
+          else if (isNearDue) endClass = "is-near-due";
+          else if (isEndEmpty) endClass = "is-empty-date";
 
-        if (t.start && t.end) {
-          const tStart = new Date(t.start);
-          const tEnd = new Date(t.end);
+          const tr = document.createElement("tr");
+          tr.dataset.index = realIdx;
 
-          if (tEnd >= START_DATE && tStart <= END_DATE) {
-            const startDiff = Math.max(0, Math.floor((tStart - START_DATE) / (1000 * 60 * 60 * 24)));
-            const duration = Math.max(1, Math.floor((tEnd - tStart) / (1000 * 60 * 60 * 24)) + 1);
+          tr.addEventListener("dragover", handleDragOver);
+          tr.addEventListener("drop", handleDrop);
 
-            const bar = document.createElement("div");
-            bar.className = "bar" + (t.cp ? " cp" : "");
-            bar.style.left = (startDiff * DAY_WIDTH) + "px";
-            bar.style.width = (duration * DAY_WIDTH - 1) + "px";
-            bar.title = `${t.name} (${t.start} 〜 ${t.end})`;
+          tr.innerHTML = `
+            <td style="text-align:center;"><span class="drag-handle" draggable="true">≡</span></td>
+            <td><input type="text" value="${t.id || ''}" onchange="updateTask(${realIdx}, 'id', this.value)" style="width: 100%; text-align: center;"></td>
+            <td><input type="text" value="${t.name || ''}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
+            <td style="text-align:center;">
+              <select class="owner-select ${getOwnerClass(t.owner)}" onchange="updateTask(${realIdx}, 'owner', this.value)" style="width: 100%;">
+                ${ownerOptionsHTML}
+              </select>
+            </td>
+            <td><input type="date" value="${t.start || ''}" class="${isDelayed ? 'is-delayed' : ''} ${isStartEmpty ? 'is-empty-date' : ''}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
+            <td><input type="date" value="${t.end || ''}" class="${endClass}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
+            <td style="text-align:center;">
+              <select class="status-select ${getStatusClass(t.status)}" onchange="updateTask(${realIdx}, 'status', this.value)">
+                <option value="未着手" ${t.status === '未着手' ? 'selected' : ''}>未着手</option>
+                <option value="進行中" ${t.status === '進行中' ? 'selected' : ''}>進行中</option>
+                <option value="保留中" ${t.status === '保留中' ? 'selected' : ''}>保留中</option>
+                <option value="完了" ${t.status === '完了' ? 'selected' : ''}>完了</option>
+              </select>
+            </td>
+            <td style="text-align:center;">
+              <select class="cp-select" onchange="updateTaskBool(${realIdx}, 'cp', this.value)" style="width: 100%; padding: 2px 0;">
+                <option value="true" ${t.cp ? 'selected' : ''}>★</option>
+                <option value="false" ${!t.cp ? 'selected' : ''}>-</option>
+              </select>
+            </td>
+            <td style="text-align:center;">
+              <div class="action-cell-container">
+                ${actionHTML}
+              </div>
+            </td>
+          `;
 
-            gRow.appendChild(bar);
+          const handle = tr.querySelector('.drag-handle');
+          handle.addEventListener("dragstart", (e) => handleDragStart(e, realIdx, tr));
+          handle.addEventListener("dragend", (e) => handleDragEnd(tr));
+
+          tbody.appendChild(tr);
+
+          const gRow = document.createElement("div");
+          gRow.className = "gantt-row";
+          gRow.style.width = totalWidth + "px";
+
+          daysArray.forEach(d => {
+            const bgCell = document.createElement("div");
+            let cls = "gantt-bg-cell";
+            if (d.getDay() === 6) cls += " sat";
+            if (d.getDay() === 0) cls += " sun";
+            
+            if (d.toDateString() === TODAY.toDateString()) {
+              cls += " today";
+            }
+
+            bgCell.className = cls;
+            gRow.appendChild(bgCell);
+          });
+
+          if (t.start && t.end) {
+            const tStart = new Date(t.start);
+            const tEnd = new Date(t.end);
+
+            if (tEnd >= START_DATE && tStart <= END_DATE) {
+              const startDiff = Math.max(0, Math.floor((tStart - START_DATE) / (1000 * 60 * 60 * 24)));
+              const duration = Math.max(1, Math.floor((tEnd - tStart) / (1000 * 60 * 60 * 24)) + 1);
+
+              const bar = document.createElement("div");
+              bar.className = "bar" + (t.cp ? " cp" : "");
+              bar.style.left = (startDiff * DAY_WIDTH) + "px";
+              bar.style.width = (duration * DAY_WIDTH - 1) + "px";
+              bar.title = `${t.name} (${t.start} 〜 ${t.end})`;
+
+              gRow.appendChild(bar);
+            }
           }
-        }
 
-        ganttBody.appendChild(gRow);
+          ganttBody.appendChild(gRow);
+        });
       });
 
       if (TODAY >= START_DATE && TODAY <= END_DATE) {
