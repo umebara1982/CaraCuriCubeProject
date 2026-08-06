@@ -145,21 +145,22 @@
       text-decoration: underline;
     }
 
+    /* ⚡ 載せた瞬間に即表示されるカスタムツールチップ */
     #custom-tooltip {
       position: absolute;
       display: none;
-      background: rgba(15, 23, 42, 0.92);
+      background: rgba(15, 23, 42, 0.94);
       color: #FFFFFF;
-      padding: 6px 10px;
-      border-radius: 4px;
+      padding: 8px 12px;
+      border-radius: 6px;
       font-size: 0.75rem;
       z-index: 9999;
       pointer-events: none;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
       max-width: 320px;
-      word-break: break-word;
+      word-break: break-all;
       line-height: 1.4;
-      white-space: pre-wrap; /* 改行をそのまま綺麗に再現表示 */
+      white-space: pre-wrap; /* 改行を再現 */
     }
 
     .admin-menu {
@@ -1273,7 +1274,15 @@
     let isAdminUnlocked = false;
     let collapsedCategories = {};
 
-    /* ⚡ 安全なエスケープ対応ツールチップ */
+    /* ⚡ 安全なデータ属性（data-note）読み取り式ツールチップイベント */
+    function handleTooltipHover(e) {
+      const target = e.currentTarget;
+      const noteText = target.getAttribute('data-note');
+      if (noteText) {
+        showTooltip(e, noteText);
+      }
+    }
+
     function showTooltip(e, text) {
       const tooltip = document.getElementById("custom-tooltip");
       tooltip.innerText = text;
@@ -2152,16 +2161,6 @@
       return 'owner-custom';
     }
 
-    /* 🛡️ ツールチップ用の安全なエスケープ関数（改行・引用符対応） */
-    function escapeTooltipText(str) {
-      if (!str) return '';
-      return str
-        .replace(/\\/g, '\\\\')
-        .replace(/'/g, "\\'")
-        .replace(/"/g, '&quot;')
-        .replace(/\r?\n/g, '&#10;');
-    }
-
     function renderAll() {
       initDays();
       renderGanttHeader();
@@ -2253,12 +2252,12 @@
             ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
           });
 
-          /* 📝 安全に改行・引用符を処理したツールチップ属性生成 */
+          /* 📝 データ属性（data-note）を使った超安全なツールチップ生成 */
           const hasNote = (t.note && t.note.trim().length > 0);
-          const safeTooltipText = hasNote ? escapeTooltipText(t.note) : '';
+          const noteTextEscapedForHTML = hasNote ? t.note.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
 
           let actionHTML = `
-            <button class="btn-note ${hasNote ? 'has-note' : ''}" ${hasNote ? `onmouseenter="showTooltip(event, '${safeTooltipText}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()"` : ''} onclick="openNoteModal(${realIdx})">📝 備考</button>
+            <button class="btn-note ${hasNote ? 'has-note' : ''}" ${hasNote ? `data-note="${noteTextEscapedForHTML}" onmouseenter="handleTooltipHover(event)" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()"` : ''} onclick="openNoteModal(${realIdx})">📝 備考</button>
             <button class="btn-duplicate" title="タスクを複製" onclick="duplicateTask(${realIdx})">📋</button>
             <button class="btn-delete" title="タスク削除" onclick="deleteTask(${realIdx})">消</button>
           `;
