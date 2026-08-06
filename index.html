@@ -17,8 +17,7 @@
       --card-bg: #FFFFFF;
       --border-color: #D0D7DE;
       --day-width: 24px;
-      --row-height: 36px;       /* 通常行の高さ */
-      --phase-height: 28px;     /* カテゴリー行の高さ */
+      --row-height: 36px;       /* 通常行・カテゴリー行ともに統一 */
       --ai-panel-width: 360px;  /* ダッシュボードパネルの幅 */
     }
     
@@ -602,6 +601,7 @@
       white-space: nowrap;
     }
 
+    /* 🎯 タスク行・カテゴリー行の高さを36pxで完全一元化 */
     .task-table tr {
       height: var(--row-height);
       box-sizing: border-box;
@@ -618,8 +618,9 @@
       vertical-align: middle;
     }
 
+    /* 🎯 カテゴリー行の高さもタスク行（36px）と同一にしてズレを防止 */
     .task-table tr.phase-header-row {
-      height: var(--phase-height);
+      height: var(--row-height);
       cursor: pointer;
       user-select: none;
     }
@@ -632,11 +633,21 @@
       padding: 0 10px;
       border-top: 1px solid #B0C4DE;
       border-bottom: 1px solid #B0C4DE;
-      height: var(--phase-height);
+      height: var(--row-height);
       box-sizing: border-box;
     }
     .task-table tr.phase-header-row:hover td {
       background-color: #D5E1ED;
+    }
+
+    /* 🎯 右側ガントチャートのカテゴリー行も36pxで完全一元化 */
+    .gantt-phase-row {
+      background-color: #E6ECF2;
+      height: var(--row-height);
+      border-top: 1px solid #B0C4DE;
+      border-bottom: 1px solid #B0C4DE;
+      box-sizing: border-box;
+      flex-shrink: 0;
     }
 
     .is-delayed {
@@ -1274,7 +1285,7 @@
     let isAdminUnlocked = false;
     let collapsedCategories = {};
 
-    /* ⚡ 安全なデータ属性（data-note）読み取り式ツールチップイベント */
+    /* ⚡ 安全なデータ属性（data-note, data-tooltip）読み取り式ツールチップ処理 */
     function handleTooltipHover(e) {
       const target = e.currentTarget;
       const noteText = target.getAttribute('data-note') || target.getAttribute('data-tooltip');
@@ -2161,12 +2172,15 @@
       return 'owner-custom';
     }
 
-    function escapeTooltipText(str) {
+    /* 🛡️ エスケープ関数（属性用） */
+    function escapeAttributeText(str) {
       if (!str) return '';
       return str
         .replace(/&/g, '&amp;')
         .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
     }
 
     function renderAll() {
@@ -2260,12 +2274,12 @@
             ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
           });
 
-          /* 📝 データ属性（data-note）を使った全ボタン即時ツールチップ対応 */
+          /* 📝 安全な data-note 属性でホバーテキストを保持 */
           const hasNote = (t.note && t.note.trim().length > 0);
-          const noteTextEscapedForHTML = hasNote ? escapeTooltipText(t.note) : '';
+          const safeNoteAttr = hasNote ? escapeAttributeText(t.note) : '';
 
           let actionHTML = `
-            <button class="btn-note ${hasNote ? 'has-note' : ''}" ${hasNote ? `data-note="${noteTextEscapedForHTML}" onmouseenter="handleTooltipHover(event)" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()"` : ''} onclick="openNoteModal(${realIdx})">📝 備考</button>
+            <button class="btn-note ${hasNote ? 'has-note' : ''}" ${hasNote ? `data-note="${safeNoteAttr}" onmouseenter="handleTooltipHover(event)" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()"` : ''} onclick="openNoteModal(${realIdx})">📝 備考</button>
             <button class="btn-duplicate" data-tooltip="タスクを複製" onmouseenter="handleTooltipHover(event)" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="duplicateTask(${realIdx})">📋</button>
             <button class="btn-delete" data-tooltip="タスク削除" onmouseenter="handleTooltipHover(event)" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="deleteTask(${realIdx})">消</button>
           `;
@@ -2426,6 +2440,7 @@
     function updateTaskBool(idx, field, val) {
       tasks[idx][field] = (val === 'true');
       saveTasks();
+      renderAll(); /* ★ CP切り替え時に即座に赤/青を切り替える */
     }
 
     function deleteTask(idx) {
