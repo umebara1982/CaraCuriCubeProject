@@ -102,6 +102,7 @@
     .btn-copy-full { background-color: #6c5ce7; }
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
     
+    /* 📝 備考ボタン（通常時） */
     .btn-note { 
       background-color: #34495e; 
       padding: 2px 5px; 
@@ -109,10 +110,15 @@
       border-radius: 3px;
       white-space: nowrap;
     }
+
+    /* 📝 備考ボタン（入力あり・明るいブルー＆合算固定幅） */
     .btn-note.has-note {
       background-color: #2980b9 !important;
       font-weight: bold;
+      width: 71px !important; /* 濃い青ボタン(48px) + 間隔(3px) + 消ボタン(20px) = 71px */
       box-shadow: 0 0 4px rgba(41, 128, 185, 0.5);
+      text-align: center;
+      padding: 2px 0;
     }
 
     /* 🎨 操作セルのコンテナ配置最適化 */
@@ -124,23 +130,6 @@
       width: 100%;
       box-sizing: border-box;
       padding: 0 2px;
-    }
-
-    /* 備考バッジ（消ボタン非表示時に幅いっぱいに表示） */
-    .note-badge-cell {
-      display: inline-block;
-      font-size: 0.68rem;
-      background: #E2E8F0;
-      color: #1E293B;
-      padding: 2px 4px;
-      border-radius: 3px;
-      border: 1px solid #CBD5E1;
-      font-weight: bold;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 50px;
-      cursor: default;
     }
 
     /* ⚡ 載せた瞬間に即表示されるカスタムツールチップ */
@@ -890,8 +879,8 @@
               <th style="width: 85px;">完了期限</th>
               <th style="width: 65px;">進捗</th>
               <th style="width: 35px;">CP</th>
-              <!-- 列幅をスマートに統一（75px） -->
-              <th style="width: 75px;">備考・操作</th>
+              <!-- 列幅をスマートに統一（80px） -->
+              <th style="width: 80px;">備考・操作</th>
             </tr>
           </thead>
           <tbody id="task-tbody">
@@ -2155,17 +2144,16 @@
           ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
         });
 
-        /* 📝 備考入力有無に応じた操作要素の動的切り替え */
+        /* 📝 備考入力の有無に応じたボタン表示切り替え（全サイズ完全一致） */
         const hasNote = (t.note && t.note.trim().length > 0);
         const noteTextEscaped = hasNote ? t.note.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
 
-        // 備考あり：［備考］［バッジ］（［消］は隠す）
-        // 備考なし：［備考］［消］
+        // 備考あり：［明るいブルーの備考ボタン（横幅71px固定）］のみ表示（［消］ボタン・灰色バッジは非表示）
+        // 備考なし：［濃い青の備考ボタン(48px)］［赤の消ボタン(20px)］を表示（計71px）
         let actionHTML = '';
         if (hasNote) {
           actionHTML = `
             <button class="btn-note has-note" onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="openNoteModal(${realIdx})">📝 備考</button>
-            <span class="note-badge-cell" onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()">${t.note}</span>
           `;
         } else {
           actionHTML = `
