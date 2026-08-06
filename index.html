@@ -114,7 +114,6 @@
       box-shadow: 0 0 4px rgba(41, 128, 185, 0.5);
     }
 
-    /* 🎨 備考バッジの表示調整（見切れ・干渉の解消） */
     .note-badge-cell {
       display: inline-block;
       font-size: 0.68rem;
@@ -127,6 +126,7 @@
       border: 1px solid #CBD5E1;
       font-weight: bold;
       white-space: nowrap;
+      cursor: help;
     }
 
     .admin-menu {
@@ -856,7 +856,6 @@
               <th style="width: 85px;">完了期限</th>
               <th style="width: 65px;">進捗</th>
               <th style="width: 35px;">CP</th>
-              <!-- 列幅を広げて見切れ・干渉を防止 -->
               <th style="width: 110px;">備考・操作</th>
             </tr>
           </thead>
@@ -1123,7 +1122,7 @@
         <ul style="padding-left: 18px; margin: 0 0 12px 0;">
           <li><b>リアルタイム自社同期:</b> 本画面での変更（Cuebus自社用）は専用クラウドへ即座に保存されます。3社統合版データとは分離されています。</li>
           <li><b>🟧 日付未入力タスク表示:</b> 開始日・完了期限が未設定のセルは薄オレンジ破線枠でハイライトされます。</li>
-          <li><b>📝 備考・小窓コメント機能:</b> 操作列の「📝 備考」ボタンからメモの記入やスタンプ（済、確認中、至急等）をセットできます。</li>
+          <li><b>📝 備考・小窓コメント機能:</b> 操作列の「📝 備考」ボタンからメモの記入やスタンプ（済、確認中、至急等）をセットできます。ボタンやバッジにカーソルを合わせるとポップアップで全文が確認できます。</li>
           <li><b>💬 リアルタイム伝言チャット:</b> 吹き出し形式でメモを共有。各メッセージへの「＋スタンプ」リアクション機能も備えています。</li>
           <li><b>🟢 「今日（現在日）」ハイライト:</b> カレンダーの当日および中央の緑縦線で現在地を強調表示します。</li>
         </ul>
@@ -2088,8 +2087,10 @@
           ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
         });
 
+        /* 📝 備考メモ存在判定 & ツールチップ生成 */
         const hasNote = (t.note && t.note.trim().length > 0);
-        const noteBadgeHTML = hasNote ? `<span class="note-badge-cell" title="${t.note}">${t.note}</span>` : '';
+        const noteTitle = hasNote ? t.note.replace(/"/g, '&quot;') : '備考メモを追加';
+        const noteBadgeHTML = hasNote ? `<span class="note-badge-cell" title="${noteTitle}">${t.note}</span>` : '';
 
         const tr = document.createElement("tr");
         tr.dataset.index = realIdx;
@@ -2123,7 +2124,7 @@
             </select>
           </td>
           <td style="text-align:center;">
-            <button class="btn-note ${hasNote ? 'has-note' : ''}" title="${hasNote ? t.note : '備考メモを追加'}" onclick="openNoteModal(${realIdx})">📝 備考</button>
+            <button class="btn-note ${hasNote ? 'has-note' : ''}" title="${noteTitle}" onclick="openNoteModal(${realIdx})">📝 備考</button>
             ${noteBadgeHTML}
             <button class="btn-delete" title="削除" onclick="deleteTask(${realIdx})">消</button>
           </td>
