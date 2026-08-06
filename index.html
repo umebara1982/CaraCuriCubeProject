@@ -7,7 +7,6 @@
 
   <!-- Firebase SDK の読み込み -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
-
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
   <style>
@@ -146,6 +145,7 @@
       text-decoration: underline;
     }
 
+    /* ⚡ 載せた瞬間に即表示されるカスタムツールチップ */
     #custom-tooltip {
       position: absolute;
       display: none;
@@ -562,7 +562,7 @@
       background: #FFF;
       overflow-y: auto;
       overflow-x: auto;
-      overscroll-behavior-y: contain; /* バウンスの完全抑制 */
+      overscroll-behavior-y: none !important; /* バウンスの完全阻止 */
     }
 
     .resizer {
@@ -582,7 +582,7 @@
       overflow: auto;
       background: #FFFFFF;
       position: relative;
-      overscroll-behavior-y: contain; /* バウンスの完全抑制 */
+      overscroll-behavior-y: none !important; /* バウンスの完全阻止 */
     }
 
     .task-table {
@@ -604,7 +604,6 @@
       white-space: nowrap;
     }
 
-    /* 🎯 タスク行・カテゴリー行の高さを36pxで完全一体化 */
     .task-table tr {
       height: var(--row-height);
     }
@@ -619,7 +618,6 @@
       vertical-align: middle;
     }
 
-    /* 🎯 カテゴリー行の高さもタスク行（36px）と完全同一化 */
     .task-table tr.phase-header-row {
       height: var(--row-height);
       cursor: pointer;
@@ -640,7 +638,6 @@
       background-color: #D5E1ED;
     }
 
-    /* 🎯 右側ガントチャートのカテゴリー行も36pxで完全一体化 */
     .gantt-phase-row {
       background-color: #E6ECF2;
       height: var(--row-height);
@@ -2405,20 +2402,23 @@
       draggedIndex = null;
     }
 
-    /* 🎯 リアルタイム上下スクロール絶対同期（コンマ数秒のズレ・ラグの追放） */
+    /* 🎯 リアルタイム上下スクロール物理絶対同期（トラックパッドのバウンスズレ完全無効化） */
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
       isSyncing = true;
+
       const taskSide = document.getElementById("task-side");
       const ganttSide = document.getElementById("gantt-side");
 
-      if (source === 'task') {
-        ganttSide.scrollTop = taskSide.scrollTop;
-      } else {
-        taskSide.scrollTop = ganttSide.scrollTop;
-      }
-      isSyncing = false;
+      const targetPos = (source === 'task') ? taskSide.scrollTop : ganttSide.scrollTop;
+
+      taskSide.scrollTop = targetPos;
+      ganttSide.scrollTop = targetPos;
+
+      requestAnimationFrame(() => {
+        isSyncing = false;
+      });
     }
 
     function updateTask(idx, field, val) {
