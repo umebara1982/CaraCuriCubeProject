@@ -91,7 +91,6 @@
 
     button:hover { opacity: 0.9; }
 
-    /* 🎨 各操作ボタン専用カラー */
     .btn-add { background-color: #27ae60; box-shadow: 0 0 5px rgba(39, 174, 96, 0.4); }
     .btn-category { background-color: #16a085; box-shadow: 0 0 5px rgba(22, 160, 133, 0.3); }
     .btn-company { background-color: #e67e22; box-shadow: 0 0 5px rgba(230, 126, 34, 0.3); }
@@ -103,7 +102,6 @@
     .btn-copy-full { background-color: #6c5ce7; }
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
     
-    /* 📝 備考・メモボタン専用スタイル */
     .btn-note { 
       background-color: #34495e; 
       padding: 2px 6px; 
@@ -116,19 +114,19 @@
       box-shadow: 0 0 4px rgba(41, 128, 185, 0.5);
     }
 
+    /* 🎨 備考バッジの表示調整（見切れ・干渉の解消） */
     .note-badge-cell {
       display: inline-block;
-      max-width: 65px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 0.65rem;
+      font-size: 0.68rem;
       background: #E2E8F0;
-      color: #334155;
-      padding: 1px 4px;
-      border-radius: 3px;
-      margin-left: 2px;
+      color: #1E293B;
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 4px;
       vertical-align: middle;
+      border: 1px solid #CBD5E1;
+      font-weight: bold;
+      white-space: nowrap;
     }
 
     .admin-menu {
@@ -142,7 +140,6 @@
       flex-wrap: wrap;
     }
 
-    /* ポップアップ（モーダル）共通CSS */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -401,7 +398,6 @@
     }
     .clickable-task-item:hover { background: #EBF5FB; border-color: #3498db; }
 
-    /* 💬 チャット風伝言板スタイル */
     .chat-container {
       max-height: 220px;
       overflow-y: auto;
@@ -860,7 +856,8 @@
               <th style="width: 85px;">完了期限</th>
               <th style="width: 65px;">進捗</th>
               <th style="width: 35px;">CP</th>
-              <th style="width: 80px;">備考・操作</th>
+              <!-- 列幅を広げて見切れ・干渉を防止 -->
+              <th style="width: 110px;">備考・操作</th>
             </tr>
           </thead>
           <tbody id="task-tbody">
