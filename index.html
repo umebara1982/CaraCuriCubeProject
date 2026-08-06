@@ -604,6 +604,7 @@
       white-space: nowrap;
     }
 
+    /* 行の高さを全て同一（36px）かつボダー計算を統一 */
     .task-table tr {
       height: var(--row-height);
     }
@@ -638,12 +639,14 @@
       background-color: #D5E1ED;
     }
 
+    /* 🎯 底上げ領域：高さ60px */
     .bottom-padding-row {
       height: 60px !important;
     }
     .bottom-padding-row td {
       border: none !important;
       background: transparent !important;
+      height: 60px !important;
     }
 
     .gantt-phase-row {
@@ -2376,15 +2379,18 @@
         });
       });
 
-      // 🎯 最下部スクロール時に最後の行（7.2など）が隠れないための透明底上げ行を追加
+      // 🎯 最下部スクロール時に最後の行（7.2など）が絶対隠れない透明な高さ60px底上げ行
       const padTr = document.createElement("tr");
       padTr.className = "bottom-padding-row";
-      padTr.innerHTML = `<td colspan="9"></td>`;
+      padTr.innerHTML = `<td colspan="9" style="height:60px; border:none; background:transparent;"></td>`;
       tbody.appendChild(padTr);
 
       const gPadRow = document.createElement("div");
       gPadRow.className = "gantt-bottom-padding-row";
       gPadRow.style.width = totalWidth + "px";
+      gPadRow.style.height = "60px";
+      gPadRow.style.border = "none";
+      gPadRow.style.background = "transparent";
       ganttBody.appendChild(gPadRow);
 
       if (TODAY >= START_DATE && TODAY <= END_DATE) {
@@ -2428,7 +2434,7 @@
       draggedIndex = null;
     }
 
-    /* 🎯 カレンダー側（右側）スクロール時も完全に縦同期する双方向リアルタイム制御 */
+    /* 🎯 左右のスクロール・カレンダー側スクロールの絶対同期関数（数値完全一致） */
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
