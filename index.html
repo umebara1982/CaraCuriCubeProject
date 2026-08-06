@@ -592,11 +592,6 @@
       table-layout: fixed;
     }
 
-    /* 🎯 最下部スクロールバーで最後の行が隠れないよう「底上げクッション(25px)」を配置 */
-    .task-table tbody {
-      padding-bottom: 25px;
-    }
-
     .task-table th {
       position: sticky;
       top: 0;
@@ -643,11 +638,28 @@
       background-color: #D5E1ED;
     }
 
+    /* 🎯 最後の行（7.2など）が隠れないための透明な底上げスペース行 */
+    .bottom-padding-row {
+      height: 60px !important;
+    }
+    .bottom-padding-row td {
+      border: none !important;
+      background: transparent !important;
+    }
+
     .gantt-phase-row {
       background-color: #E6ECF2;
       height: var(--row-height);
       border-top: 1px solid #B0C4DE;
       border-bottom: 1px solid #B0C4DE;
+      flex-shrink: 0;
+    }
+
+    /* 🎯 カレンダー側にも同じく60pxの透明な底上げスペース行を配置 */
+    .gantt-bottom-padding-row {
+      height: 60px !important;
+      background: transparent !important;
+      border: none !important;
       flex-shrink: 0;
     }
 
@@ -725,12 +737,7 @@
       box-shadow: inset 0 0 2px rgba(0,0,0,0.3);
     }
 
-    /* 🎯 カレンダー最下部にも同様に25pxの底上げ領域を自動追加 */
-    .gantt-body { 
-      position: relative; 
-      background-color: #FFFFFF; 
-      padding-bottom: 25px; 
-    }
+    .gantt-body { position: relative; background-color: #FFFFFF; }
 
     .gantt-row {
       display: flex;
@@ -2370,6 +2377,17 @@
           ganttBody.appendChild(gRow);
         });
       });
+
+      // 🎯 最下部スクロール時に最後の行（7.2など）が隠れないための透明底上げ行を追加
+      const padTr = document.createElement("tr");
+      padTr.className = "bottom-padding-row";
+      padTr.innerHTML = `<td colspan="9"></td>`;
+      tbody.appendChild(padTr);
+
+      const gPadRow = document.createElement("div");
+      gPadRow.className = "gantt-bottom-padding-row";
+      gPadRow.style.width = totalWidth + "px";
+      ganttBody.appendChild(gPadRow);
 
       if (TODAY >= START_DATE && TODAY <= END_DATE) {
         const todayDiff = Math.round((TODAY - START_DATE) / (1000 * 60 * 60 * 24));
