@@ -104,7 +104,7 @@
     
     .btn-note { 
       background-color: #34495e; 
-      padding: 2px 6px; 
+      padding: 2px 5px; 
       font-size: 0.72rem;
       border-radius: 3px;
     }
@@ -114,19 +114,37 @@
       box-shadow: 0 0 4px rgba(41, 128, 185, 0.5);
     }
 
+    /* 🎨 備考バッジ & 即時ツールチップ用CSS */
     .note-badge-cell {
       display: inline-block;
       font-size: 0.68rem;
       background: #E2E8F0;
       color: #1E293B;
-      padding: 2px 6px;
-      border-radius: 4px;
-      margin-left: 4px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      margin-left: 2px;
       vertical-align: middle;
       border: 1px solid #CBD5E1;
       font-weight: bold;
       white-space: nowrap;
-      cursor: help;
+      cursor: default; /* 「？」マークを廃止して標準マウスに */
+    }
+
+    /* ⚡ 載せた瞬間に即表示（0秒）されるカスタムツールチップ */
+    #custom-tooltip {
+      position: absolute;
+      display: none;
+      background: rgba(15, 23, 42, 0.92);
+      color: #FFFFFF;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      z-index: 9999;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+      max-width: 280px;
+      word-break: break-word;
+      line-height: 1.4;
     }
 
     .admin-menu {
@@ -777,6 +795,9 @@
 </head>
 <body>
 
+  <!-- 即時ツールチップ用エレメント -->
+  <div id="custom-tooltip"></div>
+
   <header>
     <div>
       <h1>✈️ 【Cuebus社内用】成田空港 CaraCuriCube 工程表</h1>
@@ -856,7 +877,8 @@
               <th style="width: 85px;">完了期限</th>
               <th style="width: 65px;">進捗</th>
               <th style="width: 35px;">CP</th>
-              <th style="width: 110px;">備考・操作</th>
+              <!-- 無駄な余白を削減（コンパクト化） -->
+              <th style="width: 85px;">備考・操作</th>
             </tr>
           </thead>
           <tbody id="task-tbody">
@@ -1122,7 +1144,7 @@
         <ul style="padding-left: 18px; margin: 0 0 12px 0;">
           <li><b>リアルタイム自社同期:</b> 本画面での変更（Cuebus自社用）は専用クラウドへ即座に保存されます。3社統合版データとは分離されています。</li>
           <li><b>🟧 日付未入力タスク表示:</b> 開始日・完了期限が未設定のセルは薄オレンジ破線枠でハイライトされます。</li>
-          <li><b>📝 備考・小窓コメント機能:</b> 操作列の「📝 備考」ボタンからメモの記入やスタンプ（済、確認中、至急等）をセットできます。ボタンやバッジにカーソルを合わせるとポップアップで全文が確認できます。</li>
+          <li><b>📝 備考・小窓コメント機能:</b> 操作列の「📝 備考」ボタンからメモの記入やスタンプ（済、確認中、至急等）をセットできます。ボタンやバッジにカーソルを合わせると即座にポップアップで全文が確認できます。</li>
           <li><b>💬 リアルタイム伝言チャット:</b> 吹き出し形式でメモを共有。各メッセージへの「＋スタンプ」リアクション機能も備えています。</li>
           <li><b>🟢 「今日（現在日）」ハイライト:</b> カレンダーの当日および中央の緑縦線で現在地を強調表示します。</li>
         </ul>
@@ -1226,6 +1248,28 @@
     let draggedIndex = null;
     let currentEditingTaskIdx = null;
     let isAdminUnlocked = false;
+
+    // ⚡ マウスを載せた瞬間に表示（0秒遅延）するカスタムツールチップ制御
+    function showTooltip(e, text) {
+      const tooltip = document.getElementById("custom-tooltip");
+      tooltip.innerText = text;
+      tooltip.style.display = "block";
+      tooltip.style.left = (e.pageX + 10) + "px";
+      tooltip.style.top = (e.pageY + 10) + "px";
+    }
+
+    function moveTooltip(e) {
+      const tooltip = document.getElementById("custom-tooltip");
+      if (tooltip.style.display === "block") {
+        tooltip.style.left = (e.pageX + 10) + "px";
+        tooltip.style.top = (e.pageY + 10) + "px";
+      }
+    }
+
+    function hideTooltip() {
+      const tooltip = document.getElementById("custom-tooltip");
+      tooltip.style.display = "none";
+    }
 
     // Firebaseからタスクデータの監視
     tasksRef.on('value', (snapshot) => {
@@ -2087,10 +2131,11 @@
           ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
         });
 
-        /* 📝 備考メモ存在判定 & ツールチップ生成 */
+        /* 📝 備考メモ存在判定 & 即時ツールチップ用HTML */
         const hasNote = (t.note && t.note.trim().length > 0);
-        const noteTitle = hasNote ? t.note.replace(/"/g, '&quot;') : '備考メモを追加';
-        const noteBadgeHTML = hasNote ? `<span class="note-badge-cell" title="${noteTitle}">${t.note}</span>` : '';
+        const noteTextEscaped = hasNote ? t.note.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
+        
+        const noteBadgeHTML = hasNote ? `<span class="note-badge-cell" onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()">${t.note}</span>` : '';
 
         const tr = document.createElement("tr");
         tr.dataset.index = realIdx;
@@ -2124,7 +2169,7 @@
             </select>
           </td>
           <td style="text-align:center;">
-            <button class="btn-note ${hasNote ? 'has-note' : ''}" title="${noteTitle}" onclick="openNoteModal(${realIdx})">📝 備考</button>
+            <button class="btn-note ${hasNote ? 'has-note' : ''}" ${hasNote ? `onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()"` : ''} onclick="openNoteModal(${realIdx})">📝 備考</button>
             ${noteBadgeHTML}
             <button class="btn-delete" title="削除" onclick="deleteTask(${realIdx})">消</button>
           </td>
