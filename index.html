@@ -116,20 +116,17 @@
     .btn-note.has-note {
       background-color: #2980b9 !important;
       font-weight: bold;
-      width: 52px !important;
       box-shadow: 0 0 4px rgba(41, 128, 185, 0.5);
-      text-align: center;
-      padding: 2px 0;
     }
 
     .action-cell-container {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 2px;
+      gap: 3px;
       width: 100%;
       box-sizing: border-box;
-      padding: 0 1px;
+      padding: 0 2px;
     }
 
     /* ⚡ 載せた瞬間に即表示されるカスタムツールチップ */
@@ -891,6 +888,7 @@
               <th style="width: 85px;">完了期限</th>
               <th style="width: 65px;">進捗</th>
               <th style="width: 35px;">CP</th>
+              <!-- 列幅をスッキリ固定（100px） -->
               <th style="width: 100px;">備考・操作</th>
             </tr>
           </thead>
@@ -2141,14 +2139,11 @@
       const totalWidth = daysArray.length * DAY_WIDTH;
       const allOwnersList = getAllOwners();
 
-      // ★ 登録されている全カテゴリーを取得（タスク0件の空カテゴリーも確実に描画）
       const allCategoryKeys = Object.keys(categoryNames).sort((a,b) => parseInt(a) - parseInt(b));
 
       allCategoryKeys.forEach(mainGroup => {
-        // このカテゴリーに所属するフィルター後のタスク
         const catTasks = filtered.filter(t => t.id && String(t.id).split('.')[0] === String(mainGroup));
 
-        // 検索や絞り込みを行っている最中でタスクが無い場合は、絞り込み結果を邪魔しないようスキップ
         if (catTasks.length === 0 && (ownerVal !== "ALL" || cpVal !== "ALL" || searchKeyword !== "")) {
           return;
         }
@@ -2157,7 +2152,6 @@
         const isCollapsed = !!collapsedCategories[mainGroup];
         const icon = isCollapsed ? '▶' : '▼';
 
-        // カテゴリーヘッダー行の描画
         const phaseTr = document.createElement("tr");
         phaseTr.className = "phase-header-row";
         phaseTr.onclick = () => toggleCategoryCollapse(mainGroup);
@@ -2171,10 +2165,8 @@
         gPhaseRow.style.width = totalWidth + "px";
         ganttBody.appendChild(gPhaseRow);
 
-        // 折りたたまれている場合はタスク行を描画しない
         if (isCollapsed) return;
 
-        // カテゴリー内のタスクを描画
         catTasks.forEach((t) => {
           const realIdx = tasks.findIndex(item => item.id === t.id);
 
@@ -2203,22 +2195,15 @@
             ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
           });
 
+          /* 📝 備考入力の有無に応じたボタン表示（全行3ボタン［備考・複製・消］常時配置） */
           const hasNote = (t.note && t.note.trim().length > 0);
           const noteTextEscaped = hasNote ? t.note.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
 
-          let actionHTML = '';
-          if (hasNote) {
-            actionHTML = `
-              <button class="btn-note has-note" onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="openNoteModal(${realIdx})">📝 備考</button>
-              <button class="btn-duplicate" title="タスクを複製" onclick="duplicateTask(${realIdx})">📋</button>
-            `;
-          } else {
-            actionHTML = `
-              <button class="btn-note" onclick="openNoteModal(${realIdx})">📝 備考</button>
-              <button class="btn-duplicate" title="タスクを複製" onclick="duplicateTask(${realIdx})">📋</button>
-              <button class="btn-delete" title="タスク削除" onclick="deleteTask(${realIdx})">消</button>
-            `;
-          }
+          let actionHTML = `
+            <button class="btn-note ${hasNote ? 'has-note' : ''}" ${hasNote ? `onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()"` : ''} onclick="openNoteModal(${realIdx})">📝 備考</button>
+            <button class="btn-duplicate" title="タスクを複製" onclick="duplicateTask(${realIdx})">📋</button>
+            <button class="btn-delete" title="タスク削除" onclick="deleteTask(${realIdx})">消</button>
+          `;
 
           let endClass = "";
           if (isDelayed) endClass = "is-delayed";
