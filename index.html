@@ -562,7 +562,7 @@
       background: #FFF;
       overflow-y: auto;
       overflow-x: auto;
-      overscroll-behavior-y: none !important; /* バウンスの完全阻止 */
+      overscroll-behavior-y: none !important;
     }
 
     .resizer {
@@ -582,7 +582,7 @@
       overflow: auto;
       background: #FFFFFF;
       position: relative;
-      overscroll-behavior-y: none !important; /* バウンスの完全阻止 */
+      overscroll-behavior-y: none !important;
     }
 
     .task-table {
@@ -590,6 +590,11 @@
       border-collapse: collapse;
       font-size: 0.78rem;
       table-layout: fixed;
+    }
+
+    /* 🎯 最下部スクロールバーで最後の行が隠れないよう「底上げクッション(25px)」を配置 */
+    .task-table tbody {
+      padding-bottom: 25px;
     }
 
     .task-table th {
@@ -720,7 +725,12 @@
       box-shadow: inset 0 0 2px rgba(0,0,0,0.3);
     }
 
-    .gantt-body { position: relative; background-color: #FFFFFF; }
+    /* 🎯 カレンダー最下部にも同様に25pxの底上げ領域を自動追加 */
+    .gantt-body { 
+      position: relative; 
+      background-color: #FFFFFF; 
+      padding-bottom: 25px; 
+    }
 
     .gantt-row {
       display: flex;
@@ -2402,7 +2412,7 @@
       draggedIndex = null;
     }
 
-    /* 🎯 リアルタイム上下スクロール物理絶対同期（トラックパッドのバウンスズレ完全無効化） */
+    /* 🎯 リアルタイム上下スクロール絶対同期 */
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
