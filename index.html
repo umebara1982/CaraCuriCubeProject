@@ -129,7 +129,22 @@
       padding: 0 2px;
     }
 
-    /* ⚡ 載せた瞬間に即表示されるカスタムツールチップ */
+    /* 🔗 自動変換リンクのスタイル */
+    .note-link-preview {
+      margin-top: 4px;
+      padding: 6px 8px;
+      background: #EBF5FB;
+      border: 1px solid #3498db;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      word-break: break-all;
+    }
+    .note-link-preview a {
+      color: #2980b9;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+
     #custom-tooltip {
       position: absolute;
       display: none;
@@ -622,7 +637,6 @@
       background-color: #D5E1ED;
     }
 
-    /* 🔴 期限超過（遅延） */
     .is-delayed {
       background-color: #fce4e4 !important;
       border-color: #e74c3c !important;
@@ -630,7 +644,6 @@
       font-weight: bold;
     }
 
-    /* ⏰ 直近期限（7日以内） */
     .is-near-due {
       background-color: #FFF9C4 !important;
       border-color: #F1C40F !important;
@@ -638,7 +651,6 @@
       font-weight: bold;
     }
 
-    /* 🟧 日付未入力（空欄） */
     .is-empty-date {
       background-color: #FFE8D6 !important;
       border: 1px dashed #E67E22 !important;
@@ -888,7 +900,6 @@
               <th style="width: 85px;">完了期限</th>
               <th style="width: 65px;">進捗</th>
               <th style="width: 35px;">CP</th>
-              <!-- 列幅をスッキリ固定（100px） -->
               <th style="width: 100px;">備考・操作</th>
             </tr>
           </thead>
@@ -986,7 +997,7 @@
 
   <!-- 📝 備考・コメント編集小窓（モーダル） -->
   <div class="modal-overlay" id="note-modal">
-    <div class="modal-card" style="width: 420px;">
+    <div class="modal-card" style="width: 440px;">
       <div class="modal-header" style="background: #34495e;">
         <span id="note-modal-title">📝 備考・メンテコメントの編集</span>
         <button onclick="closeNoteModal()" style="background:transparent; border:none; color:white; font-size:1.2rem; cursor:pointer;">✖</button>
@@ -1007,10 +1018,13 @@
 
         <div class="modal-field">
           <label>メモ・コメント内容（消去・書き換え可能）</label>
-          <textarea id="note-textarea" rows="4" placeholder="例：仕様変更のため次回会議で再確認。" style="width:100%; font-size:0.8rem;"></textarea>
+          <textarea id="note-textarea" rows="4" placeholder="例：仕様変更のため次回会議で再確認。" style="width:100%; font-size:0.8rem;" oninput="updateNoteLinkPreview(this.value)"></textarea>
+          <!-- 🔗 URL自動検出プレビュー領域 -->
+          <div id="note-link-preview-container"></div>
         </div>
       </div>
       <div class="modal-footer">
+        <button id="note-open-url-btn" onclick="openNoteURL()" style="background:#2980b9; padding:6px 12px; display:none; margin-right:auto;">🔗 URLを開く</button>
         <button onclick="clearNoteText()" style="background:#e74c3c; padding:6px 12px;">メモを消去</button>
         <button onclick="saveNoteText()" style="background:#27ae60; padding:6px 16px;">💾 保存する</button>
       </div>
@@ -1154,11 +1168,10 @@
         <h4 style="margin: 0 0 6px 0; color: var(--primary-color);">1. システムの基本仕様</h4>
         <ul style="padding-left: 18px; margin: 0 0 12px 0;">
           <li><b>リアルタイム全社同期:</b> 本画面での変更は3社共有クラウドへ即座に保存されます。</li>
+          <li><b>🔗 URL自動リンク化:</b> 備考メモ内にURL（https://...）が含まれる場合、小窓内にクリックで飛べるリンクボタンが自動生成されます。</li>
           <li><b>🔍 リアルタイムキーワード検索:</b> 上部検索欄に入力した文字で全タスク・メモを高速フィルタリングします。</li>
           <li><b>📍 今日にジャンプ:</b> ワンクリックでガントチャートを本日の日付（緑色ライン）へ即座にスクロールします。</li>
           <li><b>📂 カテゴリー折りたたみ:</b> カテゴリー行（灰色バー）をクリックすると、そのグループの表示/非表示を切り替えられます。</li>
-          <li><b>⏰ 直近期限ハイライト:</b> 完了期限が7日以内に迫っている未完了タスクを薄黄色で自動警告表示します。</li>
-          <li><b>📝 備考・小窓コメント機能:</b> 操作列の「📝 備考」ボタンからメモの記入やスタンプをセットできます。</li>
         </ul>
 
         <h4 style="margin: 0 0 6px 0; color: var(--primary-color);">2. 基本的な操作手順</h4>
@@ -1255,6 +1268,7 @@
     let memoList = [];
     let draggedIndex = null;
     let currentEditingTaskIdx = null;
+    let currentDetectedURL = null;
     let isAdminUnlocked = false;
     let collapsedCategories = {};
 
@@ -1347,11 +1361,14 @@
       updateRef.set(timeString);
     }
 
+    /* 📝 備考モーダル制御 & URL自動抽出 */
     function openNoteModal(idx) {
       currentEditingTaskIdx = idx;
       const task = tasks[idx];
       document.getElementById("note-task-name").innerText = `[${task.id}] ${task.name}`;
-      document.getElementById("note-textarea").value = task.note || "";
+      const noteText = task.note || "";
+      document.getElementById("note-textarea").value = noteText;
+      updateNoteLinkPreview(noteText);
       document.getElementById("note-modal").classList.add("active");
       document.getElementById("note-textarea").focus();
     }
@@ -1359,6 +1376,36 @@
     function closeNoteModal() {
       document.getElementById("note-modal").classList.remove("active");
       currentEditingTaskIdx = null;
+      currentDetectedURL = null;
+    }
+
+    /* 🔗 リアルタイムURL検知 & リンク表示処理 */
+    function updateNoteLinkPreview(text) {
+      const container = document.getElementById("note-link-preview-container");
+      const openBtn = document.getElementById("note-open-url-btn");
+      
+      const urlRegex = /(https?:\/\/[^\s]+)/g;
+      const match = text.match(urlRegex);
+
+      if (match && match.length > 0) {
+        currentDetectedURL = match[0];
+        container.innerHTML = `
+          <div class="note-link-preview">
+            🔗 検知したリンク: <a href="${currentDetectedURL}" target="_blank" rel="noopener noreferrer">${currentDetectedURL}</a>
+          </div>
+        `;
+        openBtn.style.display = "inline-block";
+      } else {
+        currentDetectedURL = null;
+        container.innerHTML = "";
+        openBtn.style.display = "none";
+      }
+    }
+
+    function openNoteURL() {
+      if (currentDetectedURL) {
+        window.open(currentDetectedURL, '_blank');
+      }
     }
 
     function addNoteStamp(stampText) {
@@ -1368,6 +1415,7 @@
       } else {
         textarea.value = stampText;
       }
+      updateNoteLinkPreview(textarea.value);
     }
 
     function saveNoteText() {
