@@ -7,6 +7,7 @@
 
   <!-- Firebase SDK の読み込み -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
 
   <style>
@@ -17,10 +18,14 @@
       --card-bg: #FFFFFF;
       --border-color: #D0D7DE;
       --day-width: 24px;
-      --row-height: 36px;       /* 通常行・カテゴリー行ともに統一 */
+      --row-height: 36px;       /* 通常行・カテゴリー行ともに36px統一 */
       --ai-panel-width: 360px;  /* ダッシュボードパネルの幅 */
     }
     
+    *, *:before, *:after {
+      box-sizing: border-box; /* 枠線を含めた厳密な高さ計算 */
+    }
+
     body {
       font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
       background-color: var(--bg-color);
@@ -76,7 +81,6 @@
       border: 1px solid var(--border-color);
       border-radius: 4px;
       font-size: 0.78rem;
-      box-sizing: border-box;
       user-select: text;
     }
 
@@ -124,11 +128,9 @@
       justify-content: center;
       gap: 3px;
       width: 100%;
-      box-sizing: border-box;
       padding: 0 2px;
     }
 
-    /* 🔗 自動変換リンクのスタイル */
     .note-link-preview {
       margin-top: 4px;
       padding: 6px 8px;
@@ -144,7 +146,6 @@
       text-decoration: underline;
     }
 
-    /* ⚡ 載せた瞬間に即表示されるカスタムツールチップ */
     #custom-tooltip {
       position: absolute;
       display: none;
@@ -159,7 +160,7 @@
       max-width: 320px;
       word-break: break-all;
       line-height: 1.4;
-      white-space: pre-wrap; /* 改行を再現 */
+      white-space: pre-wrap;
     }
 
     .admin-menu {
@@ -553,6 +554,7 @@
     }
     .chat-del-btn:hover { opacity: 1; }
 
+    /* 🎯 左右のスクロール同期強化 & バウンス追放設定 */
     .task-side {
       width: 60%;
       min-width: 300px;
@@ -560,6 +562,7 @@
       background: #FFF;
       overflow-y: auto;
       overflow-x: auto;
+      overscroll-behavior-y: contain; /* バウンスの完全抑制 */
     }
 
     .resizer {
@@ -579,6 +582,7 @@
       overflow: auto;
       background: #FFFFFF;
       position: relative;
+      overscroll-behavior-y: contain; /* バウンスの完全抑制 */
     }
 
     .task-table {
@@ -597,28 +601,25 @@
       padding: 0;
       text-align: center;
       height: 46px;
-      box-sizing: border-box;
       white-space: nowrap;
     }
 
-    /* 🎯 タスク行・カテゴリー行の高さを36pxで完全一元化 */
+    /* 🎯 タスク行・カテゴリー行の高さを36pxで完全一体化 */
     .task-table tr {
       height: var(--row-height);
-      box-sizing: border-box;
     }
 
     .task-table td {
       padding: 0 2px;
       border-bottom: 1px solid var(--border-color);
       height: var(--row-height);
-      box-sizing: border-box;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
       vertical-align: middle;
     }
 
-    /* 🎯 カテゴリー行の高さもタスク行（36px）と同一にしてズレを防止 */
+    /* 🎯 カテゴリー行の高さもタスク行（36px）と完全同一化 */
     .task-table tr.phase-header-row {
       height: var(--row-height);
       cursor: pointer;
@@ -634,19 +635,17 @@
       border-top: 1px solid #B0C4DE;
       border-bottom: 1px solid #B0C4DE;
       height: var(--row-height);
-      box-sizing: border-box;
     }
     .task-table tr.phase-header-row:hover td {
       background-color: #D5E1ED;
     }
 
-    /* 🎯 右側ガントチャートのカテゴリー行も36pxで完全一元化 */
+    /* 🎯 右側ガントチャートのカテゴリー行も36pxで完全一体化 */
     .gantt-phase-row {
       background-color: #E6ECF2;
       height: var(--row-height);
       border-top: 1px solid #B0C4DE;
       border-bottom: 1px solid #B0C4DE;
-      box-sizing: border-box;
       flex-shrink: 0;
     }
 
@@ -682,7 +681,6 @@
       top: 0;
       z-index: 8;
       height: 46px;
-      box-sizing: border-box;
     }
 
     .month-row, .day-row { display: flex; }
@@ -696,7 +694,6 @@
       padding: 2px 0;
       background: #E6ECF2;
       color: var(--primary-color);
-      box-sizing: border-box;
       height: 22px;
       flex-shrink: 0;
     }
@@ -709,7 +706,6 @@
       text-align: center;
       font-size: 0.65rem;
       padding: 3px 0;
-      box-sizing: border-box;
       height: 24px;
       flex-shrink: 0;
       background-color: #FFFFFF;
@@ -733,7 +729,6 @@
       display: flex;
       height: var(--row-height);
       border-bottom: 1px solid var(--border-color);
-      box-sizing: border-box;
       position: relative;
       flex-shrink: 0;
     }
@@ -743,7 +738,6 @@
       min-width: var(--day-width);
       max-width: var(--day-width);
       border-right: 1px solid #F0F0F0;
-      box-sizing: border-box;
       flex-shrink: 0;
       background-color: #FFFFFF;
     }
@@ -1285,7 +1279,6 @@
     let isAdminUnlocked = false;
     let collapsedCategories = {};
 
-    /* ⚡ 安全なデータ属性（data-note, data-tooltip）読み取り式ツールチップ処理 */
     function handleTooltipHover(e) {
       const target = e.currentTarget;
       const noteText = target.getAttribute('data-note') || target.getAttribute('data-tooltip');
@@ -2172,7 +2165,6 @@
       return 'owner-custom';
     }
 
-    /* 🛡️ エスケープ関数（属性用） */
     function escapeAttributeText(str) {
       if (!str) return '';
       return str
@@ -2274,7 +2266,6 @@
             ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
           });
 
-          /* 📝 安全な data-note 属性でホバーテキストを保持 */
           const hasNote = (t.note && t.note.trim().length > 0);
           const safeNoteAttr = hasNote ? escapeAttributeText(t.note) : '';
 
@@ -2414,6 +2405,7 @@
       draggedIndex = null;
     }
 
+    /* 🎯 リアルタイム上下スクロール絶対同期（コンマ数秒のズレ・ラグの追放） */
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
@@ -2440,7 +2432,7 @@
     function updateTaskBool(idx, field, val) {
       tasks[idx][field] = (val === 'true');
       saveTasks();
-      renderAll(); /* ★ CP切り替え時に即座に赤/青を切り替える */
+      renderAll();
     }
 
     function deleteTask(idx) {
