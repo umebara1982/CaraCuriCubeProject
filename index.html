@@ -554,7 +554,7 @@
     }
     .chat-del-btn:hover { opacity: 1; }
 
-    /* 🎯 左右のスクロール同期強化 & バウンス追放設定 */
+    /* 🎯 左右のスクロール同機能 */
     .task-side {
       width: 60%;
       min-width: 300px;
@@ -724,15 +724,6 @@
     .gantt-body { 
       position: relative; 
       background-color: #FFFFFF; 
-    }
-
-    /* 🎯 右側ガントチャート底部に左の横スクロールバーと同じ高さ（16px）のダミー領域を設置 */
-    .gantt-body::after {
-      content: "";
-      display: block;
-      height: 16px;
-      width: 100%;
-      background: transparent;
     }
 
     .gantt-row {
@@ -2415,7 +2406,7 @@
       draggedIndex = null;
     }
 
-    /* 🎯 左右のスクロール同期（下限界スクロールバートリム補正付き） */
+    /* 🎯 縦スクロール位置をダイレクト同期（完全シンプル化） */
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
@@ -2424,21 +2415,11 @@
       const taskSide = document.getElementById("task-side");
       const ganttSide = document.getElementById("gantt-side");
 
-      // 横スクロールバーの有無で生じる最大スクロール差を補正
-      const taskMax = taskSide.scrollHeight - taskSide.clientHeight;
-      const ganttMax = ganttSide.scrollHeight - ganttSide.clientHeight;
-
-      let targetPos = (source === 'task') ? taskSide.scrollTop : ganttSide.scrollTop;
-
-      // 下限界値に達した場合は両方をそれぞれの限界値へピッタリ合わせる
-      if (source === 'task' && taskSide.scrollTop >= taskMax - 2) {
-        targetPos = ganttMax;
-      } else if (source === 'gantt' && ganttSide.scrollTop >= ganttMax - 2) {
-        targetPos = taskMax;
+      if (source === 'task') {
+        ganttSide.scrollTop = taskSide.scrollTop;
+      } else {
+        taskSide.scrollTop = ganttSide.scrollTop;
       }
-
-      taskSide.scrollTop = (source === 'gantt') ? targetPos : taskSide.scrollTop;
-      ganttSide.scrollTop = (source === 'task') ? targetPos : ganttSide.scrollTop;
 
       requestAnimationFrame(() => {
         isSyncing = false;
