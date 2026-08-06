@@ -590,7 +590,6 @@
       border-collapse: collapse;
       font-size: 0.78rem;
       table-layout: fixed;
-      margin-bottom: 50px; /* ★ 最下部の余白確保 */
     }
 
     .task-table th {
@@ -725,7 +724,15 @@
     .gantt-body { 
       position: relative; 
       background-color: #FFFFFF; 
-      padding-bottom: 50px; /* ★ カレンダー側も同じく最下部余白をセット */
+    }
+
+    /* 🎯 右側ガントチャート底部に左の横スクロールバーと同じ高さ（16px）のダミー領域を設置 */
+    .gantt-body::after {
+      content: "";
+      display: block;
+      height: 16px;
+      width: 100%;
+      background: transparent;
     }
 
     .gantt-row {
@@ -2408,7 +2415,7 @@
       draggedIndex = null;
     }
 
-    /* 🎯 左右のスクロール・カレンダー側スクロールの絶対同期関数 */
+    /* 🎯 左右のスクロール同期（下限界スクロールバートリム補正付き） */
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
@@ -2417,10 +2424,21 @@
       const taskSide = document.getElementById("task-side");
       const ganttSide = document.getElementById("gantt-side");
 
-      const targetPos = (source === 'task') ? taskSide.scrollTop : ganttSide.scrollTop;
+      // 横スクロールバーの有無で生じる最大スクロール差を補正
+      const taskMax = taskSide.scrollHeight - taskSide.clientHeight;
+      const ganttMax = ganttSide.scrollHeight - ganttSide.clientHeight;
 
-      taskSide.scrollTop = targetPos;
-      ganttSide.scrollTop = targetPos;
+      let targetPos = (source === 'task') ? taskSide.scrollTop : ganttSide.scrollTop;
+
+      // 下限界値に達した場合は両方をそれぞれの限界値へピッタリ合わせる
+      if (source === 'task' && taskSide.scrollTop >= taskMax - 2) {
+        targetPos = ganttMax;
+      } else if (source === 'gantt' && ganttSide.scrollTop >= ganttMax - 2) {
+        targetPos = taskMax;
+      }
+
+      taskSide.scrollTop = (source === 'gantt') ? targetPos : taskSide.scrollTop;
+      ganttSide.scrollTop = (source === 'task') ? targetPos : ganttSide.scrollTop;
 
       requestAnimationFrame(() => {
         isSyncing = false;
