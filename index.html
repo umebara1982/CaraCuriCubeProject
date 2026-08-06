@@ -1277,7 +1277,7 @@
     /* ⚡ 安全なデータ属性（data-note）読み取り式ツールチップイベント */
     function handleTooltipHover(e) {
       const target = e.currentTarget;
-      const noteText = target.getAttribute('data-note');
+      const noteText = target.getAttribute('data-note') || target.getAttribute('data-tooltip');
       if (noteText) {
         showTooltip(e, noteText);
       }
@@ -2161,6 +2161,14 @@
       return 'owner-custom';
     }
 
+    function escapeTooltipText(str) {
+      if (!str) return '';
+      return str
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     function renderAll() {
       initDays();
       renderGanttHeader();
@@ -2252,14 +2260,14 @@
             ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
           });
 
-          /* 📝 データ属性（data-note）を使った超安全なツールチップ生成 */
+          /* 📝 データ属性（data-note）を使った全ボタン即時ツールチップ対応 */
           const hasNote = (t.note && t.note.trim().length > 0);
-          const noteTextEscapedForHTML = hasNote ? t.note.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;') : '';
+          const noteTextEscapedForHTML = hasNote ? escapeTooltipText(t.note) : '';
 
           let actionHTML = `
             <button class="btn-note ${hasNote ? 'has-note' : ''}" ${hasNote ? `data-note="${noteTextEscapedForHTML}" onmouseenter="handleTooltipHover(event)" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()"` : ''} onclick="openNoteModal(${realIdx})">📝 備考</button>
-            <button class="btn-duplicate" title="タスクを複製" onclick="duplicateTask(${realIdx})">📋</button>
-            <button class="btn-delete" title="タスク削除" onclick="deleteTask(${realIdx})">消</button>
+            <button class="btn-duplicate" data-tooltip="タスクを複製" onmouseenter="handleTooltipHover(event)" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="duplicateTask(${realIdx})">📋</button>
+            <button class="btn-delete" data-tooltip="タスク削除" onmouseenter="handleTooltipHover(event)" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="deleteTask(${realIdx})">消</button>
           `;
 
           let endClass = "";
