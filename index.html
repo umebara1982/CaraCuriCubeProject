@@ -1002,7 +1002,6 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button onclick="deleteCurrentTaskFromNote()" style="background:#c00000; padding:6px 12px; margin-right:auto;">🗑️ タスク自体を削除</button>
         <button onclick="clearNoteText()" style="background:#e74c3c; padding:6px 12px;">メモを消去</button>
         <button onclick="saveNoteText()" style="background:#27ae60; padding:6px 16px;">💾 保存する</button>
       </div>
@@ -1371,16 +1370,6 @@
         tasks[currentEditingTaskIdx].note = "";
         saveTasks();
         closeNoteModal();
-      }
-    }
-
-    function deleteCurrentTaskFromNote() {
-      if (currentEditingTaskIdx !== null) {
-        const taskName = tasks[currentEditingTaskIdx].name;
-        if (confirm(`タスク「${taskName}」を削除しますか？`)) {
-          deleteTask(currentEditingTaskIdx);
-          closeNoteModal();
-        }
       }
     }
 
