@@ -66,7 +66,7 @@
       border-radius: 6px;
       margin-bottom: 12px;
       display: flex;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
       flex-wrap: wrap;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
@@ -98,11 +98,13 @@
     .btn-manual { background-color: #7f8c8d; }
     .btn-dash { background-color: #2980b9; box-shadow: 0 0 5px rgba(41, 128, 185, 0.4); }
     .btn-admin { background-color: #c00000; box-shadow: 0 0 5px rgba(192, 0, 0, 0.4); }
+    .btn-today-jump { background-color: #d35400; font-weight: bold; }
 
     .btn-copy-full { background-color: #6c5ce7; }
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
+    .btn-duplicate { background-color: #27ae60; padding: 2px 5px; font-size: 0.72rem; }
     
-    /* 📝 備考ボタン（通常時） */
+    /* 📝 備考ボタン */
     .btn-note { 
       background-color: #34495e; 
       padding: 2px 5px; 
@@ -111,25 +113,23 @@
       white-space: nowrap;
     }
 
-    /* 📝 備考ボタン（入力あり・明るいブルー＆合算固定幅） */
     .btn-note.has-note {
       background-color: #2980b9 !important;
       font-weight: bold;
-      width: 71px !important;
+      width: 52px !important;
       box-shadow: 0 0 4px rgba(41, 128, 185, 0.5);
       text-align: center;
       padding: 2px 0;
     }
 
-    /* 🎨 操作セルのコンテナ配置最適化 */
     .action-cell-container {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 3px;
+      gap: 2px;
       width: 100%;
       box-sizing: border-box;
-      padding: 0 2px;
+      padding: 0 1px;
     }
 
     /* ⚡ 載せた瞬間に即表示されるカスタムツールチップ */
@@ -606,6 +606,8 @@
 
     .task-table tr.phase-header-row {
       height: var(--phase-height);
+      cursor: pointer;
+      user-select: none;
     }
 
     .task-table tr.phase-header-row td {
@@ -619,6 +621,9 @@
       height: var(--phase-height);
       box-sizing: border-box;
     }
+    .task-table tr.phase-header-row:hover td {
+      background-color: #D5E1ED;
+    }
 
     .gantt-phase-row {
       background-color: #E6ECF2;
@@ -629,6 +634,7 @@
       flex-shrink: 0;
     }
 
+    /* 🔴 期限超過（遅延） */
     .is-delayed {
       background-color: #fce4e4 !important;
       border-color: #e74c3c !important;
@@ -636,6 +642,15 @@
       font-weight: bold;
     }
 
+    /* ⏰ 直近期限（7日以内） */
+    .is-near-due {
+      background-color: #FFF9C4 !important;
+      border-color: #F1C40F !important;
+      color: #D35400 !important;
+      font-weight: bold;
+    }
+
+    /* 🟧 日付未入力（空欄） */
     .is-empty-date {
       background-color: #FFE8D6 !important;
       border: 1px dashed #E67E22 !important;
@@ -821,12 +836,16 @@
   </header>
 
   <div class="controls">
+    <!-- 機能1: 🔍 キーワード検索ボックス -->
+    <label>🔍 検索:</label>
+    <input type="text" id="search-keyword" placeholder="キーワード検索..." oninput="renderAll()" style="width: 110px;">
+
     <label>絞り込み:</label>
     <select id="filter-owner" onchange="renderAll()">
       <option value="ALL">全社表示</option>
     </select>
 
-    <label>表示条件:</label>
+    <label>条件:</label>
     <select id="filter-cp" onchange="renderAll()">
       <option value="ALL">全タスク表示</option>
       <option value="CP">★ クリティカルパス（CP）のみ</option>
@@ -836,6 +855,9 @@
       <option value="STATUS_保留中">🟠 保留中のみ</option>
       <option value="STATUS_完了">🟢 完了のみ</option>
     </select>
+
+    <!-- 機能2: 📍 今日にジャンプボタン -->
+    <button onclick="scrollToToday()" class="btn-today-jump">📍 今日にジャンプ</button>
 
     <button onclick="openAddTaskModal()" class="btn-add">＋ 新規タスク追加</button>
     <button onclick="openCategoryModal()" class="btn-category">📂 カテゴリー管理</button>
@@ -860,8 +882,9 @@
       <span><span class="legend-box" style="background:#C00000;"></span> 赤：最重要パス(CP)</span>
       <span><span class="legend-box" style="background:#3498db;"></span> 青：通常タスク</span>
       <span><span class="legend-box" style="background:#27AE60;"></span> 緑線：今日（現在日）</span>
-      <span><span class="legend-box" style="background:#fce4e4; border:1px solid #e74c3c;"></span> 赤セル：期限超過(遅延)</span>
-      <span><span class="legend-box" style="background:#FFE8D6; border:1px dashed #E67E22;"></span> オレンジ枠：日付未入力</span>
+      <span><span class="legend-box" style="background:#fce4e4; border:1px solid #e74c3c;"></span> 赤セル：遅延</span>
+      <span><span class="legend-box" style="background:#FFF9C4; border:1px solid #F1C40F;"></span> 黄セル：直近期限</span>
+      <span><span class="legend-box" style="background:#FFE8D6; border:1px dashed #E67E22;"></span> 橙枠：日付未入力</span>
     </div>
   </div>
 
@@ -879,7 +902,7 @@
               <th style="width: 85px;">完了期限</th>
               <th style="width: 65px;">進捗</th>
               <th style="width: 35px;">CP</th>
-              <th style="width: 80px;">備考・操作</th>
+              <th style="width: 100px;">備考・操作</th>
             </tr>
           </thead>
           <tbody id="task-tbody">
@@ -1144,16 +1167,17 @@
         <h4 style="margin: 0 0 6px 0; color: var(--primary-color);">1. システムの基本仕様</h4>
         <ul style="padding-left: 18px; margin: 0 0 12px 0;">
           <li><b>リアルタイム全社同期:</b> 本画面での変更は3社共有クラウドへ即座に保存されます。</li>
-          <li><b>🟧 日付未入力タスク表示:</b> 開始日・完了期限が未設定のセルは薄オレンジ破線枠でハイライトされます。</li>
-          <li><b>📝 備考・小窓コメント機能:</b> 操作列の「📝 備考」ボタンからメモの記入やスタンプ（済、確認中、至急等）をセットできます。</li>
-          <li><b>💬 リアルタイム伝言チャット:</b> 吹き出し形式でメモを共有。各メッセージへの「＋スタンプ」リアクション機能も備えています。</li>
-          <li><b>🟢 「今日（現在日）」ハイライト:</b> カレンダーの当日および中央の緑縦線で現在地を強調表示します。</li>
+          <li><b>🔍 リアルタイムキーワード検索:</b> 上部検索欄に入力した文字で全タスク・メモを高速フィルタリングします。</li>
+          <li><b>📍 今日にジャンプ:</b> ワンクリックでガントチャートを本日の日付（緑色ライン）へ即座にスクロールします。</li>
+          <li><b>📂 カテゴリー折りたたみ:</b> カテゴリー行（灰色バー）をクリックすると、そのグループの表示/非表示を切り替えられます。</li>
+          <li><b>⏰ 直近期限ハイライト:</b> 完了期限が7日以内に迫っている未完了タスクを薄黄色で自動警告表示します。</li>
+          <li><b>📝 備考・小窓コメント機能:</b> 操作列の「📝 備考」ボタンからメモの記入やスタンプをセットできます。</li>
         </ul>
 
         <h4 style="margin: 0 0 6px 0; color: var(--primary-color);">2. 基本的な操作手順</h4>
         <ul style="padding-left: 18px; margin: 0 0 12px 0;">
           <li><b>タスク追加:</b> 「＋ 新規タスク追加」ボタンから登録。指定カテゴリーの最下部へ自動配置されます。</li>
-          <li><b>カテゴリー・会社管理:</b> 上部ボタンから区分の作成や、担当会社（外注先）の追加・削除がいつでも可能です。</li>
+          <li><b>タスク複製:</b> 行右側の「📋」ボタンを押すと、そのタスクの設定をワンタップでコピー作成できます。</li>
           <li><b>直接編集・並び替え:</b> 表の各セルを直接書き換え可能。「≡」のドラッグで順序移動ができます。</li>
         </ul>
 
@@ -1183,7 +1207,6 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    /* 🔑 3社統合版の独立したデータ保存ノード */
     const tasksRef = db.ref('narita_gantt_tasks');
     const updateRef = db.ref('narita_gantt_last_update');
     const companiesRef = db.ref('narita_gantt_custom_companies');
@@ -1197,14 +1220,11 @@
     const nowTemp = new Date();
     const TODAY = new Date(nowTemp.getFullYear(), nowTemp.getMonth(), nowTemp.getDate());
 
-    /* 🔑 管理者パスワード設定 */
     const ADMIN_PASSWORD = "0705";
 
-    /* 初期（デフォルト）の担当会社一覧 */
     const defaultOwners = ["Cuebus", "Hamaru Strategy", "成田国際空港", "全社合同"];
     let customOwners = ["Cuebus×Hamaru", "Cuebus×成田空港"];
 
-    /* 初期（デフォルト）のカテゴリー一覧 */
     const defaultCategoryNames = {
       "1": "CUEBUS開発・現地仕様確定",
       "2": "商品・IP選定・IPデザイン・量産手配",
@@ -1249,6 +1269,7 @@
     let draggedIndex = null;
     let currentEditingTaskIdx = null;
     let isAdminUnlocked = false;
+    let collapsedCategories = {}; // 機能5: 折りたたみ状態保持
 
     function showTooltip(e, text) {
       const tooltip = document.getElementById("custom-tooltip");
@@ -1269,6 +1290,18 @@
     function hideTooltip() {
       const tooltip = document.getElementById("custom-tooltip");
       tooltip.style.display = "none";
+    }
+
+    // 機能2: 今日の位置へスラスラスクロール
+    function scrollToToday() {
+      if (TODAY >= START_DATE && TODAY <= END_DATE) {
+        const todayDiff = Math.round((TODAY - START_DATE) / (1000 * 60 * 60 * 24));
+        const scrollPos = (todayDiff * DAY_WIDTH) - 200;
+        const ganttSide = document.getElementById("gantt-side");
+        ganttSide.scrollTo({ left: scrollPos > 0 ? scrollPos : 0, behavior: 'smooth' });
+      } else {
+        alert("今日（現在日）はプロジェクト期間外です。");
+      }
     }
 
     // Firebaseからタスクデータの監視
@@ -1368,6 +1401,28 @@
         saveTasks();
         closeNoteModal();
       }
+    }
+
+    // 機能4: タスク複製機能
+    function duplicateTask(idx) {
+      const original = tasks[idx];
+      const categoryTasks = tasks.filter(t => t.id && String(t.id).startsWith(original.id.split('.')[0] + "."));
+      const newSubIdx = categoryTasks.length + 1;
+      const newID = `${original.id.split('.')[0]}.${newSubIdx}`;
+
+      const duplicated = JSON.parse(JSON.stringify(original));
+      duplicated.id = newID;
+      duplicated.name = original.name + " (コピー)";
+
+      tasks.splice(idx + 1, 0, duplicated);
+      autoRenumberIDs();
+      saveTasks();
+    }
+
+    // 機能5: カテゴリーの折りたたみ切り替え
+    function toggleCategoryCollapse(catKey) {
+      collapsedCategories[catKey] = !collapsedCategories[catKey];
+      renderAll();
     }
 
     function openManualModal() {
@@ -2071,6 +2126,7 @@
 
       const ownerVal = document.getElementById("filter-owner").value;
       const cpVal = document.getElementById("filter-cp").value;
+      const searchKeyword = document.getElementById("search-keyword") ? document.getElementById("search-keyword").value.toLowerCase().trim() : "";
 
       let filtered = tasks.filter(t => {
         if (ownerVal !== "ALL" && t.owner !== ownerVal) return false;
@@ -2080,6 +2136,12 @@
         if (cpVal.startsWith("STATUS_")) {
           const targetStatus = cpVal.replace("STATUS_", "");
           if (targetStatus !== "UNCOMPLETED" && t.status !== targetStatus) return false;
+        }
+
+        // 機能1: キーワード検索フィルター
+        if (searchKeyword !== "") {
+          const targetStr = `${t.id || ''} ${t.name || ''} ${t.owner || ''} ${t.note || ''}`.toLowerCase();
+          if (!targetStr.includes(searchKeyword)) return false;
         }
 
         return true;
@@ -2104,9 +2166,13 @@
           currentCategoryGroup = mainGroup;
           const cNameText = categoryNames[mainGroup] ? `📂 カテゴリー ${mainGroup}：${categoryNames[mainGroup]}` : `📂 カテゴリー ${mainGroup}`;
 
+          const isCollapsed = !!collapsedCategories[mainGroup];
+          const icon = isCollapsed ? '▶' : '▼';
+
           const phaseTr = document.createElement("tr");
           phaseTr.className = "phase-header-row";
-          phaseTr.innerHTML = `<td colspan="9">${cNameText}</td>`;
+          phaseTr.onclick = () => toggleCategoryCollapse(mainGroup);
+          phaseTr.innerHTML = `<td colspan="9">${icon} ${cNameText} <span style="font-size:0.7rem; font-weight:normal; opacity:0.8;">(クリックで${isCollapsed ? '展開' : '折りたたみ'})</span></td>`;
           tbody.appendChild(phaseTr);
 
           const gPhaseRow = document.createElement("div");
@@ -2115,10 +2181,26 @@
           ganttBody.appendChild(gPhaseRow);
         }
 
+        // 機能5: カテゴリーが折りたたまれている場合は描写をスキップ
+        if (collapsedCategories[mainGroup]) {
+          return;
+        }
+
+        // 機能3: 直近期限（7日以内） & 遅延判定
         let isDelayed = false;
+        let isNearDue = false;
+
         if (t.end && t.status !== '完了') {
           const endDate = new Date(t.end);
-          if (endDate < TODAY) isDelayed = true;
+          if (endDate < TODAY) {
+            isDelayed = true;
+          } else {
+            const diffTime = endDate - TODAY;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            if (diffDays >= 0 && diffDays <= 7) {
+              isNearDue = true;
+            }
+          }
         }
 
         const isStartEmpty = !t.start;
@@ -2133,17 +2215,25 @@
         const hasNote = (t.note && t.note.trim().length > 0);
         const noteTextEscaped = hasNote ? t.note.replace(/'/g, "\\'").replace(/"/g, '&quot;') : '';
 
+        // 機能4: 複製ボタン［📋］の追加
         let actionHTML = '';
         if (hasNote) {
           actionHTML = `
             <button class="btn-note has-note" onmouseenter="showTooltip(event, '${noteTextEscaped}')" onmousemove="moveTooltip(event)" onmouseleave="hideTooltip()" onclick="openNoteModal(${realIdx})">📝 備考</button>
+            <button class="btn-duplicate" title="タスクを複製" onclick="duplicateTask(${realIdx})">📋</button>
           `;
         } else {
           actionHTML = `
             <button class="btn-note" onclick="openNoteModal(${realIdx})">📝 備考</button>
+            <button class="btn-duplicate" title="タスクを複製" onclick="duplicateTask(${realIdx})">📋</button>
             <button class="btn-delete" title="タスク削除" onclick="deleteTask(${realIdx})">消</button>
           `;
         }
+
+        let endClass = "";
+        if (isDelayed) endClass = "is-delayed";
+        else if (isNearDue) endClass = "is-near-due";
+        else if (isEndEmpty) endClass = "is-empty-date";
 
         const tr = document.createElement("tr");
         tr.dataset.index = realIdx;
@@ -2161,7 +2251,7 @@
             </select>
           </td>
           <td><input type="date" value="${t.start || ''}" class="${isDelayed ? 'is-delayed' : ''} ${isStartEmpty ? 'is-empty-date' : ''}" onchange="updateTask(${realIdx}, 'start', this.value)" style="width: 100%;"></td>
-          <td><input type="date" value="${t.end || ''}" class="${isDelayed ? 'is-delayed' : ''} ${isEndEmpty ? 'is-empty-date' : ''}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
+          <td><input type="date" value="${t.end || ''}" class="${endClass}" onchange="updateTask(${realIdx}, 'end', this.value)" style="width: 100%;"></td>
           <td style="text-align:center;">
             <select class="status-select ${getStatusClass(t.status)}" onchange="updateTask(${realIdx}, 'status', this.value)">
               <option value="未着手" ${t.status === '未着手' ? 'selected' : ''}>未着手</option>
