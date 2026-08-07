@@ -32,7 +32,7 @@
       background-color: var(--bg-color);
       color: #333;
       font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
-      overflow: hidden; /* 画面全体の無駄なスクロールバーを殺す */
+      overflow: hidden;
       display: flex;
       flex-direction: column;
     }
@@ -106,6 +106,9 @@
     .btn-dash { background-color: #2980b9; box-shadow: 0 0 5px rgba(41, 128, 185, 0.4); }
     .btn-admin { background-color: #c00000; box-shadow: 0 0 5px rgba(192, 0, 0, 0.4); }
     .btn-today-jump { background-color: #d35400; font-weight: bold; }
+
+    .btn-print { background-color: #445566; }
+    .btn-bulk-complete { background-color: #16a085; }
 
     .btn-copy-full { background-color: #6c5ce7; }
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
@@ -312,7 +315,6 @@
       text-align: right;
     }
 
-    /* 🎯 全体コンテナ：残りの高さを全使用して画面にジャストフィット */
     .main-container {
       display: flex;
       width: 100%;
@@ -559,7 +561,7 @@
 
     .task-side {
       width: 60%;
-      min-width: 300px;
+      min-width: 320px;
       flex-shrink: 0;
       background: #FFF;
       overflow-y: auto;
@@ -727,7 +729,6 @@
       background-color: #FFFFFF; 
     }
 
-    /* 右側底部に左の横スクロールバーの厚み分の余白 */
     .gantt-body::after {
       content: "";
       display: block;
@@ -826,6 +827,31 @@
 
     .legend { display: flex; gap: 10px; font-size: 0.75rem; align-items: center; margin-left: auto; }
     .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
+
+    /* 🖨️ 印刷/PDF保存用CSSスタイル */
+    @media print {
+      body {
+        padding: 0;
+        background: #FFF;
+        overflow: visible !important;
+      }
+      header, .controls, .dash-panel, .resizer, .action-cell-container, .drag-handle, #custom-tooltip {
+        display: none !important;
+      }
+      .main-container {
+        height: auto !important;
+      }
+      .gantt-wrapper {
+        border: none !important;
+        box-shadow: none !important;
+        height: auto !important;
+        overflow: visible !important;
+      }
+      .task-side, .gantt-side {
+        overflow: visible !important;
+        height: auto !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -866,6 +892,7 @@
     <select id="filter-cp" onchange="renderAll()">
       <option value="ALL">全タスク表示</option>
       <option value="CP">★ クリティカルパス（CP）のみ</option>
+      <option value="NEAR_DUE">🔥 期限直近（7日以内）</option>
       <option value="STATUS_UNCOMPLETED">⏳ 未完了タスクのみ（未着手・進行中・保留中）</option>
       <option value="STATUS_未着手">⚪ 未着手のみ</option>
       <option value="STATUS_進行中">🟡 進行中のみ</option>
@@ -875,9 +902,25 @@
 
     <button onclick="scrollToToday()" class="btn-today-jump">📍 今日にジャンプ</button>
 
+    <!-- 📅 月ズーム機能 -->
+    <label style="margin-left: 6px; font-weight:bold; color:var(--primary-color);">月ジャンプ:</label>
+    <select onchange="zoomToMonth(this.value)" style="font-weight:bold; color:#1B365D;">
+      <option value="ALL">全期間表示</option>
+      <option value="2026-08">2026年8月</option>
+      <option value="2026-09">2026年9月</option>
+      <option value="2026-10">2026年10月</option>
+      <option value="2026-11">2026年11月 (オープン)</option>
+      <option value="2026-12">2026年12月</option>
+      <option value="2027-01">2027年1月</option>
+      <option value="2027-02">2027年2月</option>
+      <option value="2027-03">2027年3月</option>
+    </select>
+
+    <button onclick="bulkCompleteTasks()" class="btn-bulk-complete">✅ 選択タスクを一括完了</button>
     <button onclick="openAddTaskModal()" class="btn-add">＋ 新規タスク追加</button>
     <button onclick="openCategoryModal()" class="btn-category">📂 カテゴリー管理</button>
     <button onclick="openAddCompanyModal()" class="btn-company">🏢 担当会社管理</button>
+    <button onclick="window.print()" class="btn-print">🖨️ 印刷/PDF</button>
     <button onclick="exportCSV()" class="btn-csv">📥 CSV出力</button>
     <button onclick="openManualModal()" class="btn-manual">📖 マニュアル</button>
     <button onclick="toggleDashPanel(true)" class="btn-dash">📊 分析ダッシュボード</button>
@@ -910,9 +953,10 @@
         <table class="task-table">
           <thead>
             <tr>
+              <th style="width: 25px;"><input type="checkbox" id="select-all-checkbox" onclick="toggleSelectAllTasks(this.checked)" title="全選択/解除"></th>
               <th style="width: 25px;"></th>
               <th style="width: 45px;">ID</th>
-              <th style="width: 150px;">タスク名称</th>
+              <th style="width: 140px;">タスク名称</th>
               <th style="width: 95px;">担当</th>
               <th style="width: 85px;">開始日</th>
               <th style="width: 85px;">完了期限</th>
@@ -1186,10 +1230,9 @@
         <h4 style="margin: 0 0 6px 0; color: var(--primary-color);">1. システムの基本仕様</h4>
         <ul style="padding-left: 18px; margin: 0 0 12px 0;">
           <li><b>リアルタイム全社同期:</b> 本画面での変更は3社共有クラウドへ即座に保存されます。</li>
-          <li><b>🔗 URL自動リンク化:</b> 備考メモ内にURL（https://...）が含まれる場合、小窓内にクリックで飛べるリンクボタンが自動生成されます。</li>
-          <li><b>🔍 リアルタイムキーワード検索:</b> 上部検索欄に入力した文字で全タスク・メモを高速フィルタリングします。</li>
-          <li><b>📍 今日にジャンプ:</b> ワンクリックでガントチャートを本日の日付（緑色ライン）へ即座にスクロールします。</li>
-          <li><b>📂 カテゴリー折りたたみ:</b> カテゴリー行（灰色バー）をクリックすると、そのグループの表示/非表示を切り替えられます。</li>
+          <li><b>☑️ チェック一括更新:</b> 左端のチェックボックスで選択した複数タスクを一発で「完了」に変更できます。</li>
+          <li><b>📅 月ズーム機能:</b> 「月ジャンプ」選択枠から特定の月（オープン月など）へ一発移動できます。</li>
+          <li><b>🖨️ PDF/印刷出力:</b> 現在表示中のガントチャートを綺麗にレイアウトして紙やPDFに保存できます。</li>
         </ul>
 
         <h4 style="margin: 0 0 6px 0; color: var(--primary-color);">2. 基本的な操作手順</h4>
@@ -1197,11 +1240,6 @@
           <li><b>タスク追加:</b> 「＋ 新規タスク追加」ボタンから登録。指定カテゴリーの最下部へ自動配置されます。</li>
           <li><b>タスク複製:</b> 行右側の「📋」ボタンを押すと、そのタスクの設定をワンタップでコピー作成できます。</li>
           <li><b>直接編集・並び替え:</b> 表の各セルを直接書き換え可能。「≡」のドラッグで順序移動ができます。</li>
-        </ul>
-
-        <h4 style="margin: 0 0 6px 0; color: var(--primary-color);">3. バックアップ機能</h4>
-        <ul style="padding-left: 18px; margin: 0 0 0 0;">
-          <li>管理者用メニューから現在の全データバックアップ作成、および過去データの復元・整理が可能です。</li>
         </ul>
       </div>
       <div class="modal-footer">
@@ -1289,6 +1327,7 @@
     let currentDetectedURL = null;
     let isAdminUnlocked = false;
     let collapsedCategories = {};
+    let selectedTaskIndices = new Set();
 
     function handleTooltipHover(e) {
       const target = e.currentTarget;
@@ -1327,6 +1366,50 @@
         ganttSide.scrollTo({ left: scrollPos > 0 ? scrollPos : 0, behavior: 'smooth' });
       } else {
         alert("今日（現在日）はプロジェクト期間外です。");
+      }
+    }
+
+    /* 📅 指定された年月へズームスクロール */
+    function zoomToMonth(monthVal) {
+      if (monthVal === "ALL") {
+        document.getElementById("gantt-side").scrollTo({ left: 0, behavior: 'smooth' });
+        return;
+      }
+      const targetDate = new Date(monthVal + "-01");
+      if (targetDate >= START_DATE && targetDate <= END_DATE) {
+        const diffDays = Math.round((targetDate - START_DATE) / (1000 * 60 * 60 * 24));
+        const scrollPos = diffDays * DAY_WIDTH;
+        document.getElementById("gantt-side").scrollTo({ left: scrollPos, behavior: 'smooth' });
+      }
+    }
+
+    /* ☑️ チェックボックス一括処理 */
+    function toggleSelectTask(idx, checked) {
+      if (checked) selectedTaskIndices.add(idx);
+      else selectedTaskIndices.delete(idx);
+    }
+
+    function toggleSelectAllTasks(checked) {
+      const checkboxes = document.querySelectorAll(".task-row-checkbox");
+      checkboxes.forEach(cb => {
+        cb.checked = checked;
+        const idx = parseInt(cb.dataset.index);
+        toggleSelectTask(idx, checked);
+      });
+    }
+
+    function bulkCompleteTasks() {
+      if (selectedTaskIndices.size === 0) {
+        alert("一括更新したいタスクにチェックを入れてください。");
+        return;
+      }
+      if (confirm(`選択した ${selectedTaskIndices.size} 件のタスクを「完了」に更新しますか？`)) {
+        selectedTaskIndices.forEach(idx => {
+          tasks[idx].status = "完了";
+        });
+        selectedTaskIndices.clear();
+        saveTasks();
+        renderAll();
       }
     }
 
@@ -2198,6 +2281,16 @@
         if (ownerVal !== "ALL" && t.owner !== ownerVal) return false;
 
         if (cpVal === "CP" && !t.cp) return false;
+        
+        /* 🔥 直近7日以内アラートの絞り込み */
+        if (cpVal === "NEAR_DUE") {
+          if (!t.end || t.status === '完了') return false;
+          const endDate = new Date(t.end);
+          const diffTime = endDate - TODAY;
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          if (diffDays < 0 || diffDays > 7) return false;
+        }
+
         if (cpVal === "STATUS_UNCOMPLETED" && t.status === "完了") return false;
         if (cpVal.startsWith("STATUS_")) {
           const targetStatus = cpVal.replace("STATUS_", "");
@@ -2239,7 +2332,7 @@
         phaseTr.onclick = () => toggleCategoryCollapse(mainGroup);
         
         const countText = catTasks.length === 0 ? ' (タスクなし)' : ` (${catTasks.length}件)`;
-        phaseTr.innerHTML = `<td colspan="9">${icon} ${cNameText} <span style="font-size:0.7rem; font-weight:normal; opacity:0.8;">${countText} - クリックで${isCollapsed ? '展開' : '折りたたみ'}</span></td>`;
+        phaseTr.innerHTML = `<td colspan="10">${icon} ${cNameText} <span style="font-size:0.7rem; font-weight:normal; opacity:0.8;">${countText} - クリックで${isCollapsed ? '展開' : '折りたたみ'}</span></td>`;
         tbody.appendChild(phaseTr);
 
         const gPhaseRow = document.createElement("div");
@@ -2291,6 +2384,8 @@
           else if (isNearDue) endClass = "is-near-due";
           else if (isEndEmpty) endClass = "is-empty-date";
 
+          const isChecked = selectedTaskIndices.has(realIdx) ? 'checked' : '';
+
           const tr = document.createElement("tr");
           tr.dataset.index = realIdx;
 
@@ -2298,6 +2393,7 @@
           tr.addEventListener("drop", handleDrop);
 
           tr.innerHTML = `
+            <td style="text-align:center;"><input type="checkbox" class="task-row-checkbox" data-index="${realIdx}" ${isChecked} onchange="toggleSelectTask(${realIdx}, this.checked)"></td>
             <td style="text-align:center;"><span class="drag-handle" draggable="true">≡</span></td>
             <td><input type="text" value="${t.id || ''}" onchange="updateTask(${realIdx}, 'id', this.value)" style="width: 100%; text-align: center;"></td>
             <td><input type="text" value="${t.name || ''}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
@@ -2416,7 +2512,7 @@
       draggedIndex = null;
     }
 
-    /* 🎯 縦スクロール位置をダイレクト同期 */
+    /* 🎯 縦スクロール位置ダイレクト同期 */
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
