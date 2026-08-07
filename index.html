@@ -312,7 +312,6 @@
       text-align: right;
     }
 
-    /* 🎯 全体コンテナ：残りの高さを全使用して画面にジャストフィット */
     .main-container {
       display: flex;
       width: 100%;
@@ -800,29 +799,15 @@
     .status-pending { background-color: #ffe8d6; color: #d9534f; }
     .status-completed { background-color: #d4edda; color: #155724; }
 
+    /* 🎨 動的カラー対応の担当セレクトスタイル */
     .owner-select {
       padding: 2px 4px;
       border-radius: 3px;
       font-weight: bold;
       font-size: 0.72rem;
       border: 1px solid #ccc;
+      transition: background-color 0.2s, color 0.2s;
     }
-    
-    .owner-naa { background-color: #D0E1F9 !important; color: #003366 !important; border-color: #B0C4DE !important; }
-    .owner-cuebus { background-color: #FFF2CC !important; color: #7F6000 !important; border-color: #FFE599 !important; }
-    .owner-hamaru { background-color: #FCE4D6 !important; color: #C00000 !important; border-color: #F8CBAD !important; }
-    .owner-joint { background-color: #E2EFDA !important; color: #375623 !important; border-color: #C6E0B4 !important; }
-
-    .owner-c0 { background-color: #E1BEE7 !important; color: #4A148C !important; border-color: #CE93D8 !important; }
-    .owner-c1 { background-color: #FFE0B2 !important; color: #E65100 !important; border-color: #FFCC80 !important; }
-    .owner-c2 { background-color: #F8BBD0 !important; color: #880E4F !important; border-color: #F48FB1 !important; }
-    .owner-c3 { background-color: #C8E6C9 !important; color: #1B5E20 !important; border-color: #A5D6A7 !important; }
-    .owner-c4 { background-color: #B2EBF2 !important; color: #006064 !important; border-color: #80DEEA !important; }
-    .owner-c5 { background-color: #FFCCBC !important; color: #BF360C !important; border-color: #FFAB91 !important; }
-    .owner-c6 { background-color: #F0F4C3 !important; color: #827717 !important; border-color: #E6EE9C !important; }
-    .owner-c7 { background-color: #D1C4E9 !important; color: #311B92 !important; border-color: #B39DDB !important; }
-    .owner-c8 { background-color: #B2DFDB !important; color: #004D40 !important; border-color: #80CBC4 !important; }
-    .owner-c9 { background-color: #F48FB1 !important; color: #880E4F !important; border-color: #F06292 !important; }
 
     .legend { display: flex; gap: 10px; font-size: 0.75rem; align-items: center; margin-left: auto; }
     .legend-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; }
@@ -877,7 +862,7 @@
 
     <button onclick="openAddTaskModal()" class="btn-add">＋ 新規タスク追加</button>
     <button onclick="openCategoryModal()" class="btn-category">📂 カテゴリー管理</button>
-    <button onclick="openAddCompanyModal()" class="btn-company">🏢 担当会社管理</button>
+    <button onclick="openAddCompanyModal()" class="btn-company">🏢 担当会社管理・色設定</button>
     <button onclick="exportCSV()" class="btn-csv">📥 CSV出力</button>
     <button onclick="openManualModal()" class="btn-manual">📖 マニュアル</button>
     <button onclick="toggleDashPanel(true)" class="btn-dash">📊 分析ダッシュボード</button>
@@ -1144,18 +1129,19 @@
     </div>
   </div>
 
-  <!-- 🏢 担当会社管理ポップアップ -->
+  <!-- 🏢 担当会社管理 ＆ カラー選択モーダル -->
   <div class="modal-overlay" id="add-company-modal">
-    <div class="modal-card" style="width:400px;">
+    <div class="modal-card" style="width:460px;">
       <div class="modal-header" style="background:#e67e22;">
-        <span>🏢 担当会社・外注先の管理</span>
+        <span>🏢 担当会社・外注先の管理 ＆ カラー設定</span>
         <button onclick="closeAddCompanyModal()" style="background:transparent; border:none; color:white; font-size:1.2rem; cursor:pointer;">✖</button>
       </div>
       <div class="modal-body">
         <div class="modal-field">
-          <label>新しい会社名・外注先名称の追加</label>
-          <div style="display:flex; gap:6px;">
+          <label>新しい会社名・外注先の追加</label>
+          <div style="display:flex; gap:6px; align-items:center;">
             <input type="text" id="modal-company-name" placeholder="例：演出外注A社" style="flex:1;">
+            <input type="color" id="modal-company-color" value="#3498db" title="背景色を選択" style="width:36px; height:28px; padding:0; cursor:pointer; border:1px solid #ccc; border-radius:4px;">
             <button onclick="submitNewCompany()" style="background:#e67e22; padding:4px 12px;">追加</button>
           </div>
         </div>
@@ -1163,8 +1149,8 @@
         <hr style="border:0; border-top:1px solid #E2E8F0; margin:8px 0;">
 
         <div>
-          <label style="font-weight:bold; color:#444; display:block; margin-bottom:6px;">登録済みの追加会社一覧（削除可能）</label>
-          <div id="custom-company-list">
+          <label style="font-weight:bold; color:#444; display:block; margin-bottom:6px;">登録済み会社一覧 ＆ カラー自由変更（ピッカーで即変更可能）</label>
+          <div id="custom-company-list" style="max-height:220px; overflow-y:auto;">
             <!-- JSで動的生成 -->
           </div>
         </div>
@@ -1186,6 +1172,7 @@
         <h4 style="margin: 0 0 6px 0; color: var(--primary-color);">1. システムの基本仕様</h4>
         <ul style="padding-left: 18px; margin: 0 0 12px 0;">
           <li><b>リアルタイム全社同期:</b> 本画面での変更は3社共有クラウドへ即座に保存されます。</li>
+          <li><b>🎨 自由な担当会社カラー変更:</b> 「担当会社管理」から各会社の背景色をカラーピッカーでいつでも自由に変更可能です。</li>
           <li><b>🔗 URL自動リンク化:</b> 備考メモ内にURL（https://...）が含まれる場合、小窓内にクリックで飛べるリンクボタンが自動生成されます。</li>
           <li><b>🔍 リアルタイムキーワード検索:</b> 上部検索欄に入力した文字で全タスク・メモを高速フィルタリングします。</li>
           <li><b>📍 今日にジャンプ:</b> ワンクリックでガントチャートを本日の日付（緑色ライン）へ即座にスクロールします。</li>
@@ -1240,8 +1227,18 @@
 
     const ADMIN_PASSWORD = "0705";
 
-    const defaultOwners = ["Cuebus", "Hamaru Strategy", "成田国際空港", "全社合同"];
-    let customOwners = ["Cuebus×Hamaru", "Cuebus×成田空港"];
+    /* 🏢 デフォルト担当会社（色データ付き） */
+    const defaultOwnersData = [
+      { name: "Cuebus", color: "#FFF2CC", isDefault: true },
+      { name: "Hamaru Strategy", color: "#FCE4D6", isDefault: true },
+      { name: "成田国際空港", color: "#D0E1F9", isDefault: true },
+      { name: "全社合同", color: "#E2EFDA", isDefault: true }
+    ];
+
+    let customOwners = [
+      { name: "Cuebus×Hamaru", color: "#E1BEE7", isDefault: false },
+      { name: "Cuebus×成田空港", color: "#FFE0B2", isDefault: false }
+    ];
 
     const defaultCategoryNames = {
       "1": "CUEBUS開発・現地仕様確定",
@@ -1344,9 +1341,17 @@
     companiesRef.on('value', (snapshot) => {
       const data = snapshot.val();
       if (data) {
-        customOwners = data;
+        // 旧形式（文字列配列）からの自動下位互換移行処理
+        if (data.length > 0 && typeof data[0] === 'string') {
+          customOwners = data.map(name => ({ name: name, color: "#E1BEE7", isDefault: false }));
+        } else {
+          customOwners = data;
+        }
       } else {
-        customOwners = ["Cuebus×Hamaru", "Cuebus×成田空港"];
+        customOwners = [
+          { name: "Cuebus×Hamaru", color: "#E1BEE7", isDefault: false },
+          { name: "Cuebus×成田空港", color: "#FFE0B2", isDefault: false }
+        ];
       }
       updateCompanyDropdowns();
       renderAll();
@@ -1548,7 +1553,7 @@
         const item = document.createElement("div");
         item.className = "chat-bubble";
         
-        const ownerCls = getOwnerClass(m.sender || "全社合同");
+        const ownerObj = getOwnerObject(m.sender || "全社合同");
 
         let reactionsHTML = "";
         if (m.reactions) {
@@ -1565,9 +1570,11 @@
           pickerStampsHTML += `<span class="stamp-picker-item" onclick="toggleReaction('${m.id}', '${s}'); toggleStampPicker('${m.id}');">${s}</span>`;
         });
         
+        const textColor = getContrastTextColor(ownerObj.color);
+
         item.innerHTML = `
           <div class="chat-header">
-            <span class="chat-sender ${ownerCls}" style="padding:1px 5px; border-radius:3px;">${m.sender || '全社合同'}</span>
+            <span class="chat-sender" style="padding:1px 5px; border-radius:3px; background-color:${ownerObj.color}; color:${textColor};">${m.sender || '全社合同'}</span>
             <div>
               <span class="chat-time">${m.time}</span>
               <button onclick="deleteMemo('${m.id}')" class="chat-del-btn" style="margin-left:4px;">消</button>
@@ -1590,8 +1597,26 @@
       container.scrollTop = container.scrollHeight;
     }
 
-    function getAllOwners() {
-      return [...defaultOwners, ...customOwners];
+    /* 🎨 会社オブジェクト一覧を取得（デフォルト＋カスタム） */
+    function getAllOwnerObjects() {
+      return [...defaultOwnersData, ...customOwners];
+    }
+
+    function getOwnerObject(ownerName) {
+      const found = getAllOwnerObjects().find(o => o.name === ownerName);
+      if (found) return found;
+      return { name: ownerName, color: "#E0E0E0" };
+    }
+
+    /* 🎨 背景色の明るさからテキスト色（黒/白）を自動計算 */
+    function getContrastTextColor(hexColor) {
+      if (!hexColor || hexColor.charAt(0) !== '#') return '#000000';
+      const rgb = parseInt(hexColor.replace('#',''), 16);
+      const r = (rgb >> 16) & 0xff;
+      const g = (rgb >>  8) & 0xff;
+      const b = (rgb >>  0) & 0xff;
+      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+      return brightness < 128 ? '#FFFFFF' : '#000000';
     }
 
     function updateCategoryDropdowns() {
@@ -1623,15 +1648,15 @@
     }
 
     function updateCompanyDropdowns() {
-      const allList = getAllOwners();
+      const allList = getAllOwnerObjects();
       
       const filterSelect = document.getElementById("filter-owner");
       const currentFilterVal = filterSelect.value;
       filterSelect.innerHTML = `<option value="ALL">全社表示</option>`;
       allList.forEach(o => {
         const opt = document.createElement("option");
-        opt.value = o;
-        opt.innerText = o;
+        opt.value = o.name;
+        opt.innerText = o.name;
         filterSelect.appendChild(opt);
       });
       filterSelect.value = currentFilterVal;
@@ -1644,35 +1669,56 @@
 
       allList.forEach(o => {
         const opt = document.createElement("option");
-        opt.value = o;
-        opt.innerText = o;
+        opt.value = o.name;
+        opt.innerText = o.name;
         modalSelect.appendChild(opt);
 
         if (senderSelect) {
           const opt2 = document.createElement("option");
-          opt2.value = o;
-          opt2.innerText = o;
+          opt2.value = o.name;
+          opt2.innerText = o.name;
           senderSelect.appendChild(opt2);
         }
       });
 
+      /* 🏢 モーダル内の全会社一覧 ＆ カラー変更リストの動的生成 */
       const customListContainer = document.getElementById("custom-company-list");
       if (customListContainer) {
         customListContainer.innerHTML = "";
-        if (customOwners.length === 0) {
-          customListContainer.innerHTML = `<div style="color:#888; font-size:0.75rem;">追加されたカスタム会社はありません。</div>`;
-        } else {
-          customOwners.forEach((company, idx) => {
-            const item = document.createElement("div");
-            item.className = "company-list-item";
-            item.innerHTML = `
-              <span style="font-weight:bold; color:#0277BD;">${company}</span>
-              <button onclick="removeCompany(${idx})" style="background:#e74c3c; padding:2px 8px; font-size:0.72rem;">削除</button>
-            `;
-            customListContainer.appendChild(item);
-          });
-        }
+        
+        allList.forEach((companyObj, idx) => {
+          const item = document.createElement("div");
+          item.className = "company-list-item";
+          
+          const isCustom = !companyObj.isDefault;
+          const deleteBtn = isCustom ? `<button onclick="removeCompany(${idx - defaultOwnersData.length})" style="background:#e74c3c; padding:2px 8px; font-size:0.72rem;">削除</button>` : `<span style="font-size:0.68rem; color:#888;">(標準)</span>`;
+
+          item.innerHTML = `
+            <span style="font-weight:bold; color:#1B365D; flex:1;">${companyObj.name}</span>
+            <input type="color" value="${companyObj.color}" onchange="updateOwnerColor('${companyObj.name}', this.value)" style="width:32px; height:24px; padding:0; cursor:pointer; border:1px solid #ccc; border-radius:3px;" title="背景色を変更">
+            ${deleteBtn}
+          `;
+          customListContainer.appendChild(item);
+        });
       }
+    }
+
+    /* 🎨 会社のカラー変更処理 */
+    function updateOwnerColor(companyName, newColor) {
+      // デフォルト会社の色書き換え
+      const defCompany = defaultOwnersData.find(o => o.name === companyName);
+      if (defCompany) {
+        defCompany.color = newColor;
+      }
+      
+      // カスタム会社の色書き換え
+      const custCompany = customOwners.find(o => o.name === companyName);
+      if (custCompany) {
+        custCompany.color = newColor;
+        companiesRef.set(customOwners);
+      }
+
+      renderAll();
     }
 
     function toggleDashPanel(openState) {
@@ -1753,17 +1799,19 @@
 
     function submitNewCompany() {
       const name = document.getElementById("modal-company-name").value.trim();
+      const color = document.getElementById("modal-company-color").value;
+
       if (!name) {
         alert("会社名・外注先名称を入力してください。");
         return;
       }
 
-      if (getAllOwners().includes(name)) {
+      if (getAllOwnerObjects().some(o => o.name === name)) {
         alert("すでに登録されている名称です。");
         return;
       }
 
-      customOwners.push(name);
+      customOwners.push({ name: name, color: color, isDefault: false });
       companiesRef.set(customOwners);
       document.getElementById("modal-company-name").value = "";
       alert(`🎉 担当会社「${name}」を登録しました！`);
@@ -1771,7 +1819,7 @@
 
     function removeCompany(idx) {
       const targetCompany = customOwners[idx];
-      if (confirm(`担当会社「${targetCompany}」を削除しますか？`)) {
+      if (confirm(`担当会社「${targetCompany.name}」を削除しますか？`)) {
         customOwners.splice(idx, 1);
         companiesRef.set(customOwners);
       }
@@ -1967,19 +2015,20 @@
 
       const loadBarsContainer = document.getElementById("dash-load-bars");
       loadBarsContainer.innerHTML = "";
-      const owners = getAllOwners();
+      const owners = getAllOwnerObjects();
 
-      owners.forEach(owner => {
-        const ownerUncompleted = tasks.filter(t => t.owner === owner && t.status !== "完了").length;
-        const ownerTotal = tasks.filter(t => t.owner === owner).length;
+      owners.forEach(ownerObj => {
+        const ownerName = ownerObj.name;
+        const ownerUncompleted = tasks.filter(t => t.owner === ownerName && t.status !== "完了").length;
+        const ownerTotal = tasks.filter(t => t.owner === ownerName).length;
         const loadPercent = ownerTotal > 0 ? Math.round((ownerUncompleted / ownerTotal) * 100) : 0;
 
         const row = document.createElement("div");
         row.className = "load-bar-row";
         row.innerHTML = `
-          <div class="load-bar-label" title="${owner}">${owner}</div>
+          <div class="load-bar-label" title="${ownerName}">${ownerName}</div>
           <div class="load-bar-bg">
-            <div class="load-bar-fill" style="width: ${loadPercent}%;"></div>
+            <div class="load-bar-fill" style="width: ${loadPercent}%; background-color:${ownerObj.color};"></div>
           </div>
           <div style="width: 50px; text-align: right; font-weight: bold; color: #555;">残 ${ownerUncompleted}件</div>
         `;
@@ -2163,19 +2212,6 @@
       return 'status-not-started';
     }
 
-    function getOwnerClass(owner) {
-      if (owner === '成田国際空港') return 'owner-naa';
-      if (owner === 'Cuebus') return 'owner-cuebus';
-      if (owner === 'Hamaru Strategy') return 'owner-hamaru';
-      if (owner === '全社合同') return 'owner-joint';
-
-      const customIdx = customOwners.indexOf(owner);
-      if (customIdx !== -1) {
-        return `owner-c${customIdx % 10}`;
-      }
-      return 'owner-custom';
-    }
-
     function escapeAttributeText(str) {
       if (!str) return '';
       return str
@@ -2219,7 +2255,7 @@
       ganttBody.innerHTML = "";
 
       const totalWidth = daysArray.length * DAY_WIDTH;
-      const allOwnersList = getAllOwners();
+      const allOwnersList = getAllOwnerObjects();
 
       const allCategoryKeys = Object.keys(categoryNames).sort((a,b) => parseInt(a) - parseInt(b));
 
@@ -2271,10 +2307,13 @@
           const isStartEmpty = !t.start;
           const isEndEmpty = !t.end;
 
+          /* 🎨 動的カラープルダウンのHTML生成 */
           let ownerOptionsHTML = "";
+          let currentOwnerObj = getOwnerObject(t.owner);
+
           allOwnersList.forEach(o => {
-            const isSelected = (t.owner === o) ? 'selected' : '';
-            ownerOptionsHTML += `<option value="${o}" class="${getOwnerClass(o)}" ${isSelected}>${o}</option>`;
+            const isSelected = (t.owner === o.name) ? 'selected' : '';
+            ownerOptionsHTML += `<option value="${o.name}" ${isSelected} style="background-color:${o.color}; color:${getContrastTextColor(o.color)};">${o.name}</option>`;
           });
 
           const hasNote = (t.note && t.note.trim().length > 0);
@@ -2297,12 +2336,14 @@
           tr.addEventListener("dragover", handleDragOver);
           tr.addEventListener("drop", handleDrop);
 
+          const selectTextColor = getContrastTextColor(currentOwnerObj.color);
+
           tr.innerHTML = `
             <td style="text-align:center;"><span class="drag-handle" draggable="true">≡</span></td>
             <td><input type="text" value="${t.id || ''}" onchange="updateTask(${realIdx}, 'id', this.value)" style="width: 100%; text-align: center;"></td>
             <td><input type="text" value="${t.name || ''}" onchange="updateTask(${realIdx}, 'name', this.value)" style="width: 100%;"></td>
             <td style="text-align:center;">
-              <select class="owner-select ${getOwnerClass(t.owner)}" onchange="updateTask(${realIdx}, 'owner', this.value)" style="width: 100%;">
+              <select class="owner-select" onchange="updateTaskOwner(${realIdx}, this.value)" style="width: 100%; background-color: ${currentOwnerObj.color}; color: ${selectTextColor};">
                 ${ownerOptionsHTML}
               </select>
             </td>
@@ -2416,7 +2457,7 @@
       draggedIndex = null;
     }
 
-    /* 🎯 縦スクロール位置をダイレクト同期 */
+    /* 🎯 縦スクロール位置ダイレクト同期 */
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
@@ -2444,6 +2485,13 @@
       saveTasks();
     }
 
+    /* 🎨 担当会社の変更時に色を即時反映 */
+    function updateTaskOwner(idx, newOwnerName) {
+      tasks[idx].owner = newOwnerName;
+      saveTasks();
+      renderAll();
+    }
+
     function updateTaskBool(idx, field, val) {
       tasks[idx][field] = (val === 'true');
       saveTasks();
@@ -2461,7 +2509,10 @@
     function resetData() {
       if (confirm("初期状態にリセットしますか？")) {
         tasks = JSON.parse(JSON.stringify(defaultTasks));
-        customOwners = ["Cuebus×Hamaru", "Cuebus×成田空港"];
+        customOwners = [
+          { name: "Cuebus×Hamaru", color: "#E1BEE7", isDefault: false },
+          { name: "Cuebus×成田空港", color: "#FFE0B2", isDefault: false }
+        ];
         categoryNames = JSON.parse(JSON.stringify(defaultCategoryNames));
         memoList = [];
         companiesRef.set(customOwners);
