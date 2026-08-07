@@ -22,64 +22,69 @@
     }
     
     *, *:before, *:after {
-      box-sizing: border-box; /* 枠線を含めた厳密な高さ計算 */
+      box-sizing: border-box;
     }
 
-    body {
-      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+    html, body {
+      height: 100vh;
+      margin: 0;
+      padding: 12px;
       background-color: var(--bg-color);
       color: #333;
-      margin: 0;
-      padding: 15px;
-      overflow-x: hidden;
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      overflow: hidden; /* 画面全体の無駄なスクロールバーを殺す */
+      display: flex;
+      flex-direction: column;
     }
 
     header {
       background-color: var(--primary-color);
       color: white;
-      padding: 12px 20px;
+      padding: 10px 16px;
       border-radius: 6px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
     }
 
-    header h1 { margin: 0; font-size: 1.2rem; }
-    header p { margin: 3px 0 0 0; font-size: 0.8rem; opacity: 0.9; line-height: 1.4; }
+    header h1 { margin: 0; font-size: 1.1rem; }
+    header p { margin: 2px 0 0 0; font-size: 0.78rem; opacity: 0.9; line-height: 1.3; }
 
     .open-target {
       font-weight: bold;
       color: #FFD700;
-      font-size: 0.85rem;
+      font-size: 0.8rem;
     }
 
     .countdown {
       background: rgba(255, 255, 255, 0.15);
-      padding: 6px 15px;
+      padding: 4px 12px;
       border-radius: 6px;
       text-align: center;
     }
 
-    .countdown-num { font-size: 1.3rem; font-weight: bold; color: #FFD700; }
+    .countdown-num { font-size: 1.1rem; font-weight: bold; color: #FFD700; }
 
     .controls {
       background: var(--card-bg);
-      padding: 10px 15px;
+      padding: 8px 12px;
       border-radius: 6px;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
       display: flex;
       gap: 8px;
       align-items: center;
       flex-wrap: wrap;
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      flex-shrink: 0;
     }
 
     select, button, input[type="date"], input[type="text"], textarea {
       padding: 4px 6px;
       border: 1px solid var(--border-color);
       border-radius: 4px;
-      font-size: 0.78rem;
+      font-size: 0.75rem;
       user-select: text;
     }
 
@@ -106,7 +111,6 @@
     .btn-delete { background-color: #e74c3c; padding: 2px 5px; font-size: 0.72rem; }
     .btn-duplicate { background-color: #27ae60; padding: 2px 5px; font-size: 0.72rem; }
     
-    /* 📝 備考ボタン */
     .btn-note { 
       background-color: #34495e; 
       padding: 2px 5px; 
@@ -145,7 +149,6 @@
       text-decoration: underline;
     }
 
-    /* ⚡ 載せた瞬間に即表示されるカスタムツールチップ */
     #custom-tooltip {
       position: absolute;
       display: none;
@@ -292,8 +295,8 @@
     .sync-badge {
       background-color: #27ae60;
       color: white;
-      font-size: 0.75rem;
-      padding: 4px 10px;
+      font-size: 0.72rem;
+      padding: 3px 8px;
       border-radius: 12px;
       font-weight: bold;
       display: flex;
@@ -303,24 +306,25 @@
     }
 
     .last-update {
-      font-size: 0.72rem;
+      font-size: 0.68rem;
       color: #ddd;
-      margin-top: 3px;
+      margin-top: 2px;
       text-align: right;
     }
 
+    /* 🎯 全体コンテナ：残りの高さを全使用して画面にジャストフィット */
     .main-container {
       display: flex;
       width: 100%;
+      flex-grow: 1;
       gap: 0;
-      transition: all 0.3s ease;
+      overflow: hidden;
     }
 
     .gantt-wrapper {
       display: flex;
       flex-grow: 1;
-      height: calc(100vh - 180px);
-      min-height: 500px;
+      height: 100%;
       background: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: 6px;
@@ -339,8 +343,7 @@
       margin-left: 0;
       display: flex;
       flex-direction: column;
-      height: calc(100vh - 180px);
-      min-height: 500px;
+      height: 100%;
       transition: all 0.3s ease;
       box-shadow: -2px 0 8px rgba(0,0,0,0.08);
       overflow: hidden;
@@ -554,7 +557,6 @@
     }
     .chat-del-btn:hover { opacity: 1; }
 
-    /* 🎯 左右のスクロール同機能 */
     .task-side {
       width: 60%;
       min-width: 300px;
@@ -604,7 +606,6 @@
       white-space: nowrap;
     }
 
-    /* 行の高さを全て同一（36px）に完全統一 */
     .task-table tr {
       height: var(--row-height);
     }
@@ -724,6 +725,15 @@
     .gantt-body { 
       position: relative; 
       background-color: #FFFFFF; 
+    }
+
+    /* 右側底部に左の横スクロールバーの厚み分の余白 */
+    .gantt-body::after {
+      content: "";
+      display: block;
+      height: 16px;
+      width: 100%;
+      background: transparent;
     }
 
     .gantt-row {
@@ -2406,7 +2416,7 @@
       draggedIndex = null;
     }
 
-    /* 🎯 縦スクロール位置をダイレクト同期（完全シンプル化） */
+    /* 🎯 縦スクロール位置をダイレクト同期 */
     let isSyncing = false;
     function syncScroll(source) {
       if (isSyncing) return;
